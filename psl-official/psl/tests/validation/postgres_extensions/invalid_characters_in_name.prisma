@@ -1,0 +1,15 @@
+generator js {
+  provider        = "prisma-client"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource mypg {
+  provider   = "postgresql"
+  extensions = [uuid-ossp]
+}
+// [1;91merror[0m: [1mError validating: The character `-` is not allowed in extension names.[0m
+//   [1;94m-->[0m  [4mschema.prisma:8[0m
+// [1;94m   | [0m
+// [1;94m 7 | [0m  provider   = "postgresql"
+// [1;94m 8 | [0m  extensions = [[1;91muuid-ossp[0m]
+// [1;94m   | [0m

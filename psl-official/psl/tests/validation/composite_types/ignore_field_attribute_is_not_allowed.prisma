@@ -1,0 +1,23 @@
+datasource mdb {
+  provider = "mongodb"
+}
+
+type A {
+  name String
+  c String @ignore
+}
+
+model B {
+  id Int @id
+  a  A
+}
+
+
+
+
+// [1;91merror[0m: [1mAttribute not known: "@ignore".[0m
+//   [1;94m-->[0m  [4mschema.prisma:7[0m
+// [1;94m   | [0m
+// [1;94m 6 | [0m  name String
+// [1;94m 7 | [0m  c String [1;91m@ignore[0m
+// [1;94m   | [0m

@@ -1,0 +1,23 @@
+datasource testds {
+    provider = "postgresql"
+    schemas = ["public"]
+}
+
+generator js {
+    provider = "prisma-client"
+    previewFeatures = []
+}
+
+model Test {
+  id Int @id
+  @@schema("public")
+}
+
+enum Language {
+  English
+  Spanish
+
+  @@schema("public")
+}
+
+

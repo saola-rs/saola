@@ -1,0 +1,16 @@
+datasource testds {
+    provider = "sqlserver"
+    schemas = ["public"]
+}
+
+generator js {
+    provider = "prisma-client"
+    previewFeatures = []
+}
+
+model Test {
+  id Int @id
+  @@schema("public")
+}
+
+

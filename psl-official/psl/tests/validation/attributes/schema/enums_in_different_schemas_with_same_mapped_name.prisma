@@ -1,0 +1,28 @@
+generator client {
+  provider        = "prisma-client"
+  previewFeatures = []
+}
+
+datasource db {
+  provider = "postgresql"
+  schemas  = ["base", "transactional"]
+}
+
+enum Color {
+    RED
+    GREEN
+    BLUE
+
+    @@map("attribute")
+    @@schema("base")
+}
+
+enum Size {
+    SMALL
+    MEDIUM
+    LARGE
+    VENTI
+
+    @@map("attribute")
+    @@schema("transactional")
+}

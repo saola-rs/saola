@@ -1,0 +1,22 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "./generated/client"
+}
+
+datasource db {
+  provider = "sqlserver"
+}
+
+model somemodel {
+  frownyFaceId String
+  frownyFace   frownyface @relation(fields: [], references: []) // 囧
+
+  id Int @id
+}
+
+model frownyface {
+  somes somemodel[]
+}

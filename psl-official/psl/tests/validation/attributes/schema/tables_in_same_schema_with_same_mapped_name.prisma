@@ -1,0 +1,31 @@
+datasource mydb {
+  provider = "sqlserver"
+  schemas  = ["base", "transactional"]
+}
+
+generator client {
+  provider        = "prisma-client"
+  previewFeatures = []
+}
+
+
+model Dog {
+  id Int @id
+
+  @@map("pets")
+  @@schema("base")
+}
+
+model Cat {
+  id Int @id(map: "cat_pets_pkey")
+
+  @@map("pets")
+  @@schema("base")
+}
+
+// [1;91merror[0m: [1mThe model with database name "pets" could not be defined because another model or view with this name exists: "Dog"[0m
+//   [1;94m-->[0m  [4mschema.prisma:22[0m
+// [1;94m   | [0m
+// [1;94m21 | [0m
+// [1;94m22 | [0m  [1;91m@@map("pets")[0m
+// [1;94m   | [0m

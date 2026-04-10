@@ -1,0 +1,23 @@
+[package]
+name = "psl"
+version = "0.1.0"
+edition.workspace = true
+
+[features]
+postgresql = ["psl-core/postgresql"]
+sqlite = ["psl-core/sqlite"]
+mysql = ["psl-core/mysql"]
+cockroachdb = ["psl-core/cockroachdb", "postgresql"]
+mssql = ["psl-core/mssql"]
+mongodb = ["psl-core/mongodb"]
+all = ["postgresql", "sqlite", "mysql", "cockroachdb", "mssql", "mongodb"]
+
+[dependencies]
+psl-core.workspace = true
+
+[dev-dependencies]
+base64.workspace = true
+dissimilar.workspace = true
+expect-test.workspace = true
+indoc.workspace = true
+either.workspace = true

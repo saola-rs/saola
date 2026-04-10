@@ -1,0 +1,46 @@
+datasource testds {
+    provider = "postgresql"
+    schemas = ["public"]
+}
+
+generator js {
+    provider = "prisma-client"
+    previewFeatures = []
+}
+
+model Test {
+  id Int @id
+  @@schema
+}
+
+enum Language {
+  English
+  Spanish
+
+  @@schema
+}
+
+model Test2 {
+  id Int @id
+  @@schema(101)
+}
+
+
+// [1;91merror[0m: [1mArgument "map" is missing.[0m
+//   [1;94m-->[0m  [4mschema.prisma:13[0m
+// [1;94m   | [0m
+// [1;94m12 | [0m  id Int @id
+// [1;94m13 | [0m  [1;91m@@schema[0m
+// [1;94m   | [0m
+// [1;91merror[0m: [1mArgument "map" is missing.[0m
+//   [1;94m-->[0m  [4mschema.prisma:20[0m
+// [1;94m   | [0m
+// [1;94m19 | [0m
+// [1;94m20 | [0m  [1;91m@@schema[0m
+// [1;94m   | [0m
+// [1;91merror[0m: [1mExpected a string value, but received numeric value `101`.[0m
+//   [1;94m-->[0m  [4mschema.prisma:25[0m
+// [1;94m   | [0m
+// [1;94m24 | [0m  id Int @id
+// [1;94m25 | [0m  @@schema([1;91m101[0m)
+// [1;94m   | [0m

@@ -1,0 +1,15 @@
+datasource mydb {
+    provider = "mongodb"
+}
+
+model Foo {
+  id    Int    @id @map("_id")
+  field String @map("$field")
+}
+
+// [1;91merror[0m: [1mError parsing attribute "@map": The field name cannot start with a `$` character[0m
+//   [1;94m-->[0m  [4mschema.prisma:7[0m
+// [1;94m   | [0m
+// [1;94m 6 | [0m  id    Int    @id @map("_id")
+// [1;94m 7 | [0m  field String [1;91m@map("$field")[0m
+// [1;94m   | [0m

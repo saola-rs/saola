@@ -1,0 +1,8 @@
+generator js {
+  provider = "prisma-client"
+  previewFeatures = [ "postgresqlExtensions" ]
+}
+
+datasource mypg {
+  provider   = "postgresql"
+}

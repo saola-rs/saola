@@ -1,0 +1,88 @@
+[workspace]
+members = [
+    "psl-official/psl",
+    "psl-official/psl-core",
+    "psl-official/diagnostics",
+    "psl-official/schema-ast",
+    "psl-official/parser-database",
+    "psl-official/prisma-value",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+authors = ["Ravi", "Prisma Team"]
+license = "MIT"
+
+[workspace.dependencies]
+# PSL (Prisma Schema Language) - Official Prisma Parser
+psl = { path = "./psl-official/psl" }
+psl-core = { path = "./psl-official/psl-core" }
+diagnostics = { path = "./psl-official/diagnostics" }
+schema-ast = { path = "./psl-official/schema-ast" }
+parser-database = { path = "./psl-official/parser-database" }
+prisma-value = { path = "./psl-official/prisma-value" }
+
+# Core dependencies
+serde = { version = "1.0", features = ["derive"] }
+serde_json = { version = "1.0", features = ["raw_value", "preserve_order", "float_roundtrip"] }
+tokio = { version = "1.0", features = ["full"] }
+uuid = { version = "1.0", features = ["v4", "v7", "js", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+thiserror = "2"
+regex = "1"
+anyhow = "1"
+
+# Parsing - required by PSL
+pest = "2"
+pest_derive = "2"
+nom = "7"
+
+# Data structures
+itertools = "0.13"
+indexmap = "2"
+petgraph = "0.8"
+rustc-hash = "2"
+smallvec = "1"
+
+# String/formatting
+sqlformat = "0.2"
+sqlparser = "0.32"
+heck = "0.4"
+convert_case = "0.8"
+concat-idents = "1"
+colored = "3"
+
+# URL/Connection string handling
+url = "2"
+connection-string = "0.2"
+
+# Numeric types
+bigdecimal = "0.3"
+
+# Utilities
+base64 = "0.22"
+cruet = "0.15"
+hex = "0.4"
+enumflags2 = "0.7"
+indoc = "2"
+either = "1"
+cfg-if = "1"
+
+# LSP support
+lsp-types = "0.95"
+
+# WASM support (for PSL)
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+js-sys = "0.3"
+
+# Proc macros for code generation
+proc-macro2 = "1"
+quote = "1"
+syn = { version = "2", features = ["full"] }
+
+# Testing
+dissimilar = "1"
+expect-test = "1"

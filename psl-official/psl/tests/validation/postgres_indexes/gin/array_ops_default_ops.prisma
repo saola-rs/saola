@@ -1,0 +1,10 @@
+datasource test {
+  provider = "postgresql"
+}
+
+model A {
+  id Int      @id
+  a  String[] @test.Uuid
+
+  @@index([a], type: Gin)
+}

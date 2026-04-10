@@ -1,0 +1,13 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator js {
+  provider = "prisma-client"
+  previewFeatures = ["views"]
+}
+
+view Mountain {
+  id Int
+  val String
+}

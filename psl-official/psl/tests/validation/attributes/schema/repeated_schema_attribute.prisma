@@ -1,0 +1,37 @@
+datasource testds {
+    provider = "postgresql"
+    schemas = ["public", "private"]
+}
+
+generator js {
+    provider = "prisma-client"
+    previewFeatures = []
+}
+
+model Test {
+  id Int @id
+  @@schema("public")
+}
+
+enum toggle {
+  on
+  off
+
+  @@schema("public")
+  @@schema("private")
+}
+
+
+
+// [1;91merror[0m: [1mAttribute "@schema" can only be defined once.[0m
+//   [1;94m-->[0m  [4mschema.prisma:20[0m
+// [1;94m   | [0m
+// [1;94m19 | [0m
+// [1;94m20 | [0m  [1;91m@@schema("public")[0m
+// [1;94m   | [0m
+// [1;91merror[0m: [1mAttribute "@schema" can only be defined once.[0m
+//   [1;94m-->[0m  [4mschema.prisma:21[0m
+// [1;94m   | [0m
+// [1;94m20 | [0m  @@schema("public")
+// [1;94m21 | [0m  [1;91m@@schema("private")[0m
+// [1;94m   | [0m

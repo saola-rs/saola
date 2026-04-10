@@ -1,0 +1,13 @@
+generator client {
+  provider = "prisma-client"
+}
+
+datasource db {
+  provider = "mongodb"
+}
+
+type MongoID = String @id @default(dbgenerated()) @map("_id") @db.ObjectId
+model User {
+  id    MongoID
+  email String  @unique
+}
