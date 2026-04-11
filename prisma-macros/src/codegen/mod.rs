@@ -2,9 +2,14 @@ use parser_database::ParserDatabase;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 
+mod enums;
+
 /// Generate all client code from the parsed schema
 pub fn generate_client(db: &ParserDatabase) -> TokenStream {
     let mut output = TokenStream::new();
+
+    // 0. Generate enums first (needed for filter methods)
+    output.extend(enums::generate_enums(db));
 
     for model in db.walk_models() {
         let model_name = model.name();

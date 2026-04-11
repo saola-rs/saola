@@ -6,17 +6,32 @@ generator client {
   provider = "prisma-client-js"
 }
 
+enum Role {
+  ADMIN
+  USER
+  MODERATOR
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
 model User {
   id    String  @id @default(cuid())
   email String  @unique
   name  String?
+  role  Role    @default(USER)
   posts Post[]
 }
 
 model Post {
-  id        String  @id @default(cuid())
+  id        String     @id @default(cuid())
   title     String
-  published Boolean @default(false)
+  status    PostStatus @default(DRAFT)
+  published Boolean    @default(false)
   userId    String
-  user      User    @relation(fields: [userId], references: [id])
+  user      User       @relation(fields: [userId], references: [id])
 }
+
