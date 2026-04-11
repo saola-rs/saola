@@ -12,7 +12,10 @@ pub fn generate_client(db: &ParserDatabase) -> TokenStream {
         // 1. Generate SelectBuilder for this model
         output.extend(generate_select_builder(model_name, model));
 
-        // 2. Generate WhereBuilder for this model
+        // 2. Generate IncludeBuilder for this model
+        output.extend(generate_include_builder(model_name, model));
+
+        // 3. Generate WhereBuilder for this model
         output.extend(generate_where_builder(model_name, model));
 
         // 3. Generate all query builders
@@ -39,7 +42,7 @@ fn generate_select_builder(
 ) -> TokenStream {
     let builder_name = format_ident!("{}SelectBuilder", model_name);
 
-    // Generate method for each scalar field
+    // Generate method for each scalar field only
     let field_methods: Vec<_> = model
         .scalar_fields()
         .map(|field| {
@@ -56,27 +59,65 @@ fn generate_select_builder(
         })
         .collect();
 
-    // Generate method for each relation field
+    quote! {
+        pub struct #builder_name {
+            pub fields: Vec<&'static str>,
+        }
+
+        impl #builder_name {
+            #[inline]
+            pub fn new() -> Self {
+                #builder_name {
+                    fields: Vec::new(),
+                }
+            }
+
+            #(#field_methods)*
+        }
+
+        impl Default for #builder_name {
+            fn default() -> Self {
+                Self::new()
+            }
+        }
+    }
+}
+
+/// Generate IncludeBuilder for a model (relation fields only)
+fn generate_include_builder(
+    model_name: &str,
+    model: parser_database::walkers::ModelWalker,
+) -> TokenStream {
+    let builder_name = format_ident!("{}IncludeBuilder", model_name);
+
+    // Generate method for each relation field (two methods: with and without nested select)
     let relation_methods: Vec<_> = model
         .relation_fields()
         .map(|field| {
             let field_name = field.name();
             let field_ident = format_ident!("{}", field_name);
-            
+            let field_ident_with = format_ident!("{}_with", field_name);
+
             // Get the related model name properly
             let related_model_name = field.related_model().name();
-            let related_builder_name = format!("{}SelectBuilder", related_model_name);
-            let related_builder = format_ident!("{}", related_builder_name);
+            let related_select_name = format!("{}SelectBuilder", related_model_name);
+            let related_select = format_ident!("{}", related_select_name);
 
             quote! {
                 #[inline]
-                pub fn #field_ident<F>(&mut self, f: F) -> &mut Self
+                pub fn #field_ident(&mut self) -> &mut Self {
+                    self.relations.push((stringify!(#field_ident), None));
+                    self
+                }
+
+                #[inline]
+                pub fn #field_ident_with<F>(&mut self, f: F) -> &mut Self
                 where
-                    F: FnOnce(&mut #related_builder),
+                    F: FnOnce(&mut #related_select),
                 {
-                    let mut nested = #related_builder::new();
+                    let mut nested = #related_select::new();
                     f(&mut nested);
-                    self.nested.push((stringify!(#field_ident), Box::new(nested)));
+                    self.relations.push((stringify!(#field_ident), Some(Box::new(nested))));
                     self
                 }
             }
@@ -85,20 +126,17 @@ fn generate_select_builder(
 
     quote! {
         pub struct #builder_name {
-            pub fields: Vec<&'static str>,
-            pub nested: Vec<(&'static str, Box<dyn std::any::Any>)>,
+            pub relations: Vec<(&'static str, Option<Box<dyn std::any::Any>>)>,
         }
 
         impl #builder_name {
             #[inline]
             pub fn new() -> Self {
                 #builder_name {
-                    fields: Vec::new(),
-                    nested: Vec::new(),
+                    relations: Vec::new(),
                 }
             }
 
-            #(#field_methods)*
             #(#relation_methods)*
         }
 
@@ -123,6 +161,8 @@ fn generate_where_builder(
         .map(|field| {
             let field_name = field.name();
             let filter_name = format_ident!("{}{}", model_name, capitalize_first(field_name));
+            let scalar_type = field.scalar_type();
+            let filter_methods = get_scalar_filter_methods(&filter_name, &builder_name, scalar_type);
 
             quote! {
                 pub struct #filter_name<'a> {
@@ -131,23 +171,7 @@ fn generate_where_builder(
                 }
 
                 impl<'a> #filter_name<'a> {
-                    #[inline]
-                    pub fn eq(self, value: &'static str) -> &'a mut #builder_name {
-                        self.builder.conditions.push(format!("{} = {}", self.field, value));
-                        self.builder
-                    }
-
-                    #[inline]
-                    pub fn contains(self, value: &'static str) -> &'a mut #builder_name {
-                        self.builder.conditions.push(format!("{} CONTAINS {}", self.field, value));
-                        self.builder
-                    }
-
-                    #[inline]
-                    pub fn in_list(self, values: &'static [&'static str]) -> &'a mut #builder_name {
-                        self.builder.conditions.push(format!("{} IN {:?}", self.field, values));
-                        self.builder
-                    }
+                    #filter_methods
                 }
             }
         })
@@ -238,6 +262,7 @@ fn generate_find_many_builder(model_name: &str) -> TokenStream {
     let builder_name = format_ident!("FindMany{}Builder", model_name);
     let where_builder = format_ident!("{}WhereBuilder", model_name);
     let select_builder = format_ident!("{}SelectBuilder", model_name);
+    let include_builder = format_ident!("{}IncludeBuilder", model_name);
 
     quote! {
         pub struct #builder_name {
@@ -274,6 +299,16 @@ fn generate_find_many_builder(model_name: &str) -> TokenStream {
             {
                 let mut _s = #select_builder::new();
                 f(&mut _s);
+                self
+            }
+
+            #[inline]
+            pub fn include<F>(mut self, f: F) -> Self
+            where
+                F: FnOnce(&mut #include_builder),
+            {
+                let mut _i = #include_builder::new();
+                f(&mut _i);
                 self
             }
 
@@ -483,6 +518,103 @@ fn generate_client_root(db: &ParserDatabase) -> TokenStream {
 
     quote! {
         #(#models)*
+    }
+}
+
+// ============== Helper Functions ==============
+
+/// Generate type-aware filter methods based on scalar type
+fn get_scalar_filter_methods(
+    _filter_name: &proc_macro2::Ident,
+    builder_name: &proc_macro2::Ident,
+    scalar_type: Option<parser_database::ScalarType>,
+) -> TokenStream {
+    match scalar_type {
+        Some(parser_database::ScalarType::String) => {
+            quote! {
+                #[inline]
+                pub fn eq(self, value: &'static str) -> &'a mut #builder_name {
+                    self.builder.conditions.push(format!("{} = {}", self.field, value));
+                    self.builder
+                }
+
+                #[inline]
+                pub fn contains(self, value: &'static str) -> &'a mut #builder_name {
+                    self.builder.conditions.push(format!("{} CONTAINS {}", self.field, value));
+                    self.builder
+                }
+
+                #[inline]
+                pub fn in_list(self, values: &'static [&'static str]) -> &'a mut #builder_name {
+                    self.builder.conditions.push(format!("{} IN {:?}", self.field, values));
+                    self.builder
+                }
+            }
+        },
+        Some(parser_database::ScalarType::Boolean) => {
+            quote! {
+                #[inline]
+                pub fn eq(self, value: bool) -> &'a mut #builder_name {
+                    self.builder.conditions.push(format!("{} = {}", self.field, value));
+                    self.builder
+                }
+
+                #[inline]
+                pub fn is_true(self) -> &'a mut #builder_name {
+                    self.builder.conditions.push(format!("{} = true", self.field));
+                    self.builder
+                }
+
+                #[inline]
+                pub fn is_false(self) -> &'a mut #builder_name {
+                    self.builder.conditions.push(format!("{} = false", self.field));
+                    self.builder
+                }
+            }
+        },
+        Some(parser_database::ScalarType::Int) | Some(parser_database::ScalarType::BigInt) => {
+            quote! {
+                #[inline]
+                pub fn eq(self, value: i64) -> &'a mut #builder_name {
+                    self.builder.conditions.push(format!("{} = {}", self.field, value));
+                    self.builder
+                }
+
+                #[inline]
+                pub fn gt(self, value: i64) -> &'a mut #builder_name {
+                    self.builder.conditions.push(format!("{} > {}", self.field, value));
+                    self.builder
+                }
+
+                #[inline]
+                pub fn gte(self, value: i64) -> &'a mut #builder_name {
+                    self.builder.conditions.push(format!("{} >= {}", self.field, value));
+                    self.builder
+                }
+
+                #[inline]
+                pub fn lt(self, value: i64) -> &'a mut #builder_name {
+                    self.builder.conditions.push(format!("{} < {}", self.field, value));
+                    self.builder
+                }
+
+                #[inline]
+                pub fn lte(self, value: i64) -> &'a mut #builder_name {
+                    self.builder.conditions.push(format!("{} <= {}", self.field, value));
+                    self.builder
+                }
+            }
+        },
+        _ => {
+            // Default to string-like for unknown types
+            quote! {
+                #[inline]
+                pub fn eq(self, value: &'static str) -> &'a mut #builder_name {
+                    self.builder.conditions.push(format!("{} = {}", self.field, value));
+                    self.builder
+                }
+            }
+        }
     }
 }
 

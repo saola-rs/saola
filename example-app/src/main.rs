@@ -34,30 +34,34 @@ async fn main() {
     let _deleter = client::user().delete();
     println!("✓ delete() works");
 
-    // Test SelectBuilder chaining
+    // Test SelectBuilder with scalar fields only (no nested relations in SelectBuilder)
     let mut select_builder = client::UserSelectBuilder::new();
     select_builder.id().email().name();
-    println!("✓ SelectBuilder chaining works");
+    println!("✓ SelectBuilder scalar-only chaining works");
 
-    // Test nested SelectBuilder
-    let mut select_with_posts = client::UserSelectBuilder::new();
-    select_with_posts.id().posts(|p| {
-        p.id().title();
+    // Test IncludeBuilder (include full relations)
+    let mut include_all = client::UserIncludeBuilder::new();
+    include_all.posts();
+    println!("✓ IncludeBuilder include all works");
+
+    // Test IncludeBuilder with nested select
+    let mut include_with_select = client::UserIncludeBuilder::new();
+    include_with_select.posts_with(|s| {
+        s.id().title();
     });
-    println!("✓ Nested SelectBuilder works");
+    println!("✓ IncludeBuilder with nested select works");
 
     // Test WhereBuilder chaining
     let mut where_builder = client::UserWhereBuilder::new();
     where_builder.email().contains("@gmail.com");
-    println!("✓ WhereBuilder chaining works");
+    println!("✓ WhereBuilder string filter works");
 
-    // Test nested WhereBuilder
-    let mut where_with_posts = client::UserWhereBuilder::new();
-    where_with_posts.posts(|p| {
-        p.published().eq("true");
+    // Test type-aware WhereBuilder with boolean field
+    let mut where_with_bool = client::UserWhereBuilder::new();
+    where_with_bool.posts(|p| {
+        p.published().eq(true);  // Type-aware: boolean field takes bool, not &str!
     });
-    println!("✓ Nested WhereBuilder works");
+    println!("✓ Type-aware boolean filter works");
 
-    println!("\nAll builder chains compile and work!");
+    println!("\nAll Phase 2 builder patterns work correctly!");
 }
-
