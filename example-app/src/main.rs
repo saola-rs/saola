@@ -69,5 +69,36 @@ async fn main() {
     });
     println!("✓ Type-aware boolean filter works");
 
-    println!("\nAll Phase 2 builder patterns work correctly!");
+    // Test enum-aware filter with Role enum
+    let mut where_role = client::UserWhereBuilder::new();
+    where_role.role().eq(client::Role::Admin);
+    println!("✓ Enum-aware filter for Role works");
+
+    // Test enum-aware filter with dynamic string value
+    let role_str = "MODERATOR";
+    let mut where_role_str = client::UserWhereBuilder::new();
+    where_role_str.role().eq_str(role_str);
+    println!("✓ Enum filter with dynamic string value works");
+
+    // Test enum-aware filter with PostStatus enum
+    let mut where_status = client::PostWhereBuilder::new();
+    where_status.status().eq(client::PostStatus::Published);
+    println!("✓ Enum-aware filter for PostStatus works");
+
+    // Test PostStatus with dynamic string
+    let status_str = "DRAFT";
+    let mut where_status_str = client::PostWhereBuilder::new();
+    where_status_str.status().eq_str(status_str);
+    println!("✓ PostStatus filter with dynamic string works");
+
+    // Test that enums can be converted from strings
+    let role_from_str = client::Role::from("ADMIN");
+    println!("✓ Enum conversion from &str works: {:?}", role_from_str);
+
+    // Test that enums have as_str() method
+    let status = client::PostStatus::Draft;
+    let status_str = status.as_str();
+    println!("✓ Enum as_str() method works: {}", status_str);
+
+    println!("\nAll Phase 3 enum-aware features work correctly!");
 }

@@ -165,9 +165,35 @@ fn generate_where_builder(
         .scalar_fields()
         .map(|field| {
             let field_name = field.name();
-            let filter_name = format_ident!("{}{}", model_name, capitalize_first(field_name));
+            // Suffix with "Filter" to avoid collision with enum names
+            let filter_name = format_ident!("{}{}Filter", model_name, capitalize_first(field_name));
             let scalar_type = field.scalar_type();
-            let filter_methods = get_scalar_filter_methods(&filter_name, &builder_name, scalar_type);
+
+            // Check if this is an enum field
+            let field_enum = field.field_type_as_enum();
+
+            let filter_methods = if let Some(enum_def) = field_enum {
+                // This is an enum field - generate enum-specific filter methods
+                let enum_name = enum_def.name();
+                let enum_ident = format_ident!("{}", enum_name);
+
+                quote! {
+                    #[inline]
+                    pub fn eq(self, value: #enum_ident) -> &'a mut #builder_name {
+                        self.builder.conditions.push(format!("{} = {}", self.field, value.as_str()));
+                        self.builder
+                    }
+
+                    #[inline]
+                    pub fn eq_str(self, value: &str) -> &'a mut #builder_name {
+                        self.builder.conditions.push(format!("{} = {}", self.field, value));
+                        self.builder
+                    }
+                }
+            } else {
+                // Regular scalar field - use scalar-type-aware filters
+                get_scalar_filter_methods(&filter_name, &builder_name, scalar_type)
+            };
 
             quote! {
                 pub struct #filter_name<'a> {
@@ -188,7 +214,8 @@ fn generate_where_builder(
         .map(|field| {
             let field_name = field.name();
             let field_ident = format_ident!("{}", field_name);
-            let filter_name = format_ident!("{}{}", model_name, capitalize_first(field_name));
+            // Suffix with "Filter" to match the filter struct name
+            let filter_name = format_ident!("{}{}Filter", model_name, capitalize_first(field_name));
 
             quote! {
                 #[inline]
@@ -208,7 +235,7 @@ fn generate_where_builder(
         .map(|field| {
             let field_name = field.name();
             let field_ident = format_ident!("{}", field_name);
-            
+
             // Get the related model name properly
             let related_model_name = field.related_model().name();
             let related_builder_name = format!("{}WhereBuilder", related_model_name);
@@ -555,7 +582,7 @@ fn get_scalar_filter_methods(
                     self.builder
                 }
             }
-        },
+        }
         Some(parser_database::ScalarType::Boolean) => {
             quote! {
                 #[inline]
@@ -576,7 +603,7 @@ fn get_scalar_filter_methods(
                     self.builder
                 }
             }
-        },
+        }
         Some(parser_database::ScalarType::Int) | Some(parser_database::ScalarType::BigInt) => {
             quote! {
                 #[inline]
@@ -609,7 +636,7 @@ fn get_scalar_filter_methods(
                     self.builder
                 }
             }
-        },
+        }
         _ => {
             // Default to string-like for unknown types
             quote! {

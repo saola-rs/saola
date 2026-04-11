@@ -45,18 +45,6 @@ pub fn generate_enums(db: &ParserDatabase) -> TokenStream {
             })
             .collect();
 
-        // Generate serde support
-        let _serde_serialize_arms: Vec<_> = enm
-            .values()
-            .map(|variant| {
-                let variant_name = variant.name();
-                let variant_ident = format_ident!("{}", to_pascal_case(variant_name));
-                quote! {
-                    #enum_ident::#variant_ident => #variant_name.serialize(serializer),
-                }
-            })
-            .collect();
-
         output.extend(quote! {
             #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
             pub enum #enum_ident {
@@ -83,25 +71,6 @@ pub fn generate_enums(db: &ParserDatabase) -> TokenStream {
             impl From<String> for #enum_ident {
                 fn from(s: String) -> Self {
                     #enum_ident::from(s.as_str())
-                }
-            }
-
-            impl serde::Serialize for #enum_ident {
-                fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-                where
-                    S: serde::Serializer,
-                {
-                    self.as_str().serialize(serializer)
-                }
-            }
-
-            impl<'de> serde::Deserialize<'de> for #enum_ident {
-                fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-                where
-                    D: serde::Deserializer<'de>,
-                {
-                    let s = String::deserialize(deserializer)?;
-                    Ok(#enum_ident::from(s))
                 }
             }
 
