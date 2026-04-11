@@ -39,6 +39,11 @@ async fn main() {
     select_builder.id().email().name();
     println!("✓ SelectBuilder scalar-only chaining works");
 
+    // Test SelectBuilder.all() method
+    let mut select_all = client::UserSelectBuilder::new();
+    select_all.all();
+    println!("✓ SelectBuilder.all() selects all scalar fields");
+
     // Test IncludeBuilder (include full relations)
     let mut include_all = client::UserIncludeBuilder::new();
     include_all.posts();
@@ -54,7 +59,7 @@ async fn main() {
     // Test WhereBuilder with dynamic string values
     let search_email = "user@example.com".to_string();
     let mut where_with_dynamic = client::UserWhereBuilder::new();
-    where_with_dynamic.email().contains(&search_email);  // Dynamic string now works!
+    where_with_dynamic.email().contains(&search_email); // Dynamic string now works!
     println!("✓ WhereBuilder accepts dynamic strings");
 
     // Test WhereBuilder chaining with literals still works
@@ -65,7 +70,7 @@ async fn main() {
     // Test type-aware WhereBuilder with boolean field
     let mut where_with_bool = client::UserWhereBuilder::new();
     where_with_bool.posts(|p| {
-        p.published().eq(true);  // Type-aware: boolean field takes bool, not &str!
+        p.published().eq(true); // Type-aware: boolean field takes bool, not &str!
     });
     println!("✓ Type-aware boolean filter works");
 

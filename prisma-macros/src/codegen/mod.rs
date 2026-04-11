@@ -47,6 +47,12 @@ fn generate_select_builder(
 ) -> TokenStream {
     let builder_name = format_ident!("{}SelectBuilder", model_name);
 
+    // Collect all scalar field names for the .all() method
+    let all_field_names: Vec<_> = model
+        .scalar_fields()
+        .map(|f| f.name())
+        .collect();
+
     // Generate method for each scalar field only
     let field_methods: Vec<_> = model
         .scalar_fields()
@@ -75,6 +81,13 @@ fn generate_select_builder(
                 #builder_name {
                     fields: Vec::new(),
                 }
+            }
+
+            /// Select all scalar fields
+            #[inline]
+            pub fn all(&mut self) -> &mut Self {
+                self.fields = vec![#(#all_field_names),*];
+                self
             }
 
             #(#field_methods)*
