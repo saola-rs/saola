@@ -6,6 +6,10 @@ members = [
     "psl-official/schema-ast",
     "psl-official/parser-database",
     "psl-official/prisma-value",
+    "prisma-schema",
+    "prisma-macros",
+    "prisma-core",
+    "example-app",
 ]
 resolver = "2"
 
@@ -18,7 +22,7 @@ license = "MIT"
 [workspace.dependencies]
 # PSL (Prisma Schema Language) - Official Prisma Parser
 psl = { path = "./psl-official/psl" }
-psl-core = { path = "./psl-official/psl-core" }
+psl-core = { path = "./psl-official/psl-core", features = ["postgresql", "sqlite", "mysql", "cockroachdb", "mssql", "mongodb"] }
 diagnostics = { path = "./psl-official/diagnostics" }
 schema-ast = { path = "./psl-official/schema-ast" }
 parser-database = { path = "./psl-official/parser-database" }

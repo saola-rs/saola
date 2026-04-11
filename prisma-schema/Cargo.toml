@@ -1,0 +1,15 @@
+[package]
+name = "prisma-schema"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+psl = { workspace = true }
+psl-core = { workspace = true }
+schema-ast = { workspace = true }
+parser-database = { workspace = true }
+diagnostics = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }

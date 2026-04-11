@@ -1,0 +1,11 @@
+[package]
+name = "example-app"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+prisma-macros = { path = "../prisma-macros" }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+serde_json = { workspace = true }
