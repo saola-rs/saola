@@ -105,5 +105,60 @@ async fn main() {
     let status_str = status.as_str();
     println!("✓ Enum as_str() method works: {}", status_str);
 
-    println!("\nAll Phase 3 enum-aware features work correctly!");
+    // ============ NEW: Test Generated Return Types ============
+
+    // Verify UserSelected struct exists and has the right fields
+    let _user_selected: Option<client::UserSelected> = None;
+    println!("✓ UserSelected return type generated");
+
+    // Verify UserWithPosts struct exists
+    let _user_with_posts: Option<client::UserWithPosts> = None;
+    println!("✓ UserWithPosts return type generated");
+
+    // Verify PostSelected struct exists
+    let _post_selected: Option<client::PostSelected> = None;
+    println!("✓ PostSelected return type generated");
+
+    // Verify PostWithUser struct exists
+    let _post_with_user: Option<client::PostWithUser> = None;
+    println!("✓ PostWithUser return type generated");
+
+    // Test that UserSelected has the expected fields
+    let user_selected = client::UserSelected {
+        id: "123".to_string(),
+        email: "test@example.com".to_string(),
+        name: Some("Test User".to_string()),
+        role: client::Role::User,
+    };
+    println!("✓ UserSelected can be constructed with all scalar fields");
+    println!("  - id: {}", user_selected.id);
+    println!("  - email: {}", user_selected.email);
+    println!("  - name: {:?}", user_selected.name);
+    println!("  - role: {:?}", user_selected.role);
+
+    // Test that PostSelected has the expected fields
+    let post_selected = client::PostSelected {
+        id: "post-123".to_string(),
+        title: "My Post".to_string(),
+        status: client::PostStatus::Published,
+        published: true,
+        userId: "user-123".to_string(),
+    };
+    println!("✓ PostSelected can be constructed with all scalar fields");
+    println!("  - id: {}", post_selected.id);
+    println!("  - title: {}", post_selected.title);
+    println!("  - status: {:?}", post_selected.status);
+    println!("  - published: {}", post_selected.published);
+    println!("  - userId: {}", post_selected.userId);
+
+    // Test serde serialization/deserialization
+    let json_user = serde_json::to_string(&user_selected).expect("Failed to serialize");
+    println!("✓ UserSelected serializes to JSON: {}", json_user);
+
+    let deserialized: client::UserSelected =
+        serde_json::from_str(&json_user).expect("Failed to deserialize");
+    println!("✓ UserSelected deserializes from JSON: {:?}", deserialized.role);
+
+    println!("\n✅ Phase 3 Part 2: Return Type Generation - All tests pass!");
 }
+

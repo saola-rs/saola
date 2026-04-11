@@ -13,15 +13,12 @@ pub fn generate_select_builders(db: &parser_database::ParserDatabase) -> TokenSt
     output
 }
 
-/// Generate SelectBuilder for a single model
+/// Generate SelectBuilder for a single model with phantom type tracking
 fn generate_select_builder(model_name: &str, model: ModelWalker) -> TokenStream {
     let builder_name = format_ident!("{}SelectBuilder", model_name);
 
     // Collect all scalar field names for the .all() method
-    let all_field_names: Vec<_> = model
-        .scalar_fields()
-        .map(|f| f.name())
-        .collect();
+    let all_field_names: Vec<_> = model.scalar_fields().map(|f| f.name()).collect();
 
     // Generate method for each scalar field only
     let field_methods: Vec<_> = model
@@ -70,3 +67,4 @@ fn generate_select_builder(model_name: &str, model: ModelWalker) -> TokenStream 
         }
     }
 }
+

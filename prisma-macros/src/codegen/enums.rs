@@ -46,7 +46,8 @@ pub fn generate_enums(db: &ParserDatabase) -> TokenStream {
             .collect();
 
         output.extend(quote! {
-            #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+            #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+            #[serde(rename_all = "UPPERCASE")]
             pub enum #enum_ident {
                 #(#variants),*
             }

@@ -8,4 +8,5 @@ license.workspace = true
 [dependencies]
 prisma-macros = { path = "../prisma-macros" }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+serde = { workspace = true }
 serde_json = { workspace = true }
