@@ -51,7 +51,13 @@ async fn main() {
     });
     println!("✓ IncludeBuilder with nested select works");
 
-    // Test WhereBuilder chaining
+    // Test WhereBuilder with dynamic string values
+    let search_email = "user@example.com".to_string();
+    let mut where_with_dynamic = client::UserWhereBuilder::new();
+    where_with_dynamic.email().contains(&search_email);  // Dynamic string now works!
+    println!("✓ WhereBuilder accepts dynamic strings");
+
+    // Test WhereBuilder chaining with literals still works
     let mut where_builder = client::UserWhereBuilder::new();
     where_builder.email().contains("@gmail.com");
     println!("✓ WhereBuilder string filter works");

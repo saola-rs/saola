@@ -533,19 +533,19 @@ fn get_scalar_filter_methods(
         Some(parser_database::ScalarType::String) => {
             quote! {
                 #[inline]
-                pub fn eq(self, value: &'static str) -> &'a mut #builder_name {
+                pub fn eq(self, value: &str) -> &'a mut #builder_name {
                     self.builder.conditions.push(format!("{} = {}", self.field, value));
                     self.builder
                 }
 
                 #[inline]
-                pub fn contains(self, value: &'static str) -> &'a mut #builder_name {
+                pub fn contains(self, value: &str) -> &'a mut #builder_name {
                     self.builder.conditions.push(format!("{} CONTAINS {}", self.field, value));
                     self.builder
                 }
 
                 #[inline]
-                pub fn in_list(self, values: &'static [&'static str]) -> &'a mut #builder_name {
+                pub fn in_list(self, values: &[&str]) -> &'a mut #builder_name {
                     self.builder.conditions.push(format!("{} IN {:?}", self.field, values));
                     self.builder
                 }
