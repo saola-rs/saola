@@ -404,10 +404,9 @@ pub(crate) struct ModelAttributes {
 /// ```
 #[bitflags]
 #[repr(u8)]
-#[derive(Debug, Clone, Copy, PartialEq, Default)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum IndexAlgorithm {
     /// Binary tree index (the default in most databases)
-    #[default]
     BTree,
     /// Hash index
     Hash,
@@ -516,6 +515,12 @@ impl IndexAlgorithm {
     }
 }
 
+impl Default for IndexAlgorithm {
+    fn default() -> Self {
+        Self::BTree
+    }
+}
+
 /// The different types of indexes supported in the Prisma Schema Language.
 #[derive(Debug, Default, Clone, Copy, PartialEq)]
 pub enum IndexType {
@@ -528,48 +533,6 @@ pub enum IndexType {
     Fulltext,
 }
 
-/// A condition operator in a partial index WHERE clause.
-#[derive(Debug, Clone, PartialEq)]
-pub enum WhereCondition {
-    /// `IS NULL`
-    IsNull,
-    /// `IS NOT NULL`
-    IsNotNull,
-    /// `= value`
-    Equals(WhereValue),
-    /// `!= value`
-    NotEquals(WhereValue),
-}
-
-/// A literal value in a partial index WHERE condition.
-#[derive(Debug, Clone, PartialEq)]
-pub enum WhereValue {
-    /// A string literal.
-    String(String),
-    /// A numeric literal.
-    Number(String),
-    /// A boolean literal.
-    Boolean(bool),
-}
-
-/// A field condition in an object-syntax WHERE clause.
-#[derive(Debug, Clone)]
-pub struct WhereFieldCondition {
-    /// The scalar field referenced by this condition.
-    pub scalar_field_id: ScalarFieldId,
-    /// The condition to apply.
-    pub condition: WhereCondition,
-}
-
-/// The WHERE clause of a partial index.
-#[derive(Debug, Clone)]
-pub enum WhereClause {
-    /// A raw SQL predicate string.
-    Raw(String),
-    /// Structured conditions from the object syntax.
-    Object(Vec<WhereFieldCondition>),
-}
-
 #[derive(Debug, Default)]
 pub(crate) struct IndexAttribute {
     pub(crate) r#type: IndexType,
@@ -579,7 +542,6 @@ pub(crate) struct IndexAttribute {
     pub(crate) mapped_name: Option<StringId>,
     pub(crate) algorithm: Option<IndexAlgorithm>,
     pub(crate) clustered: Option<bool>,
-    pub(crate) where_clause: Option<WhereClause>,
 }
 
 impl IndexAttribute {
@@ -1532,13 +1494,18 @@ impl OperatorClassStore {
 }
 
 /// The sort order of an index.
-#[derive(Debug, Clone, Copy, PartialEq, Default)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum SortOrder {
     /// ASCending
-    #[default]
     Asc,
     /// DESCending
     Desc,
+}
+
+impl Default for SortOrder {
+    fn default() -> Self {
+        Self::Asc
+    }
 }
 
 /// Prisma's builtin scalar types.

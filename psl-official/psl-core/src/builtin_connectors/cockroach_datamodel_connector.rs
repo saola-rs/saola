@@ -64,8 +64,7 @@ const CAPABILITIES: ConnectorCapabilities = enumflags2::make_bitflags!(Connector
     SupportsFiltersOnRelationsWithoutJoins |
     LateralJoin |
     SupportsDefaultInInsert |
-    SupportsTxIsolationReadCommitted |
-    PartialIndex
+    SupportsTxIsolationReadCommitted
 });
 
 const DATE_TIME_DEFAULT: CockroachType = CockroachType::Timestamp(Some(3));
@@ -354,10 +353,6 @@ impl Connector for CockroachDatamodelConnector {
             },
             None => self.parse_json_bytes(str, Some(NativeTypeInstance::new::<CockroachType>(BYTES_DEFAULT))),
         }
-    }
-
-    fn can_assume_strict_equality_in_joins(&self) -> bool {
-        true
     }
 }
 

@@ -1,0 +1,13 @@
+[package]
+name = "mongodb-client"
+version = "0.1.0"
+edition.workspace = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+mongodb.workspace = true
+
+# Remove these when mongo opens up their connection string parsing
+percent-encoding.workspace = true
+thiserror.workspace = true

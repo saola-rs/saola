@@ -2,6 +2,7 @@
 
 datasource db {
     provider = "mongodb"
+    url = "dummy-url"
 }
 
 model SomeUser {

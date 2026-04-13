@@ -1,6 +1,7 @@
 use crate::{
     Datasource,
     ast::{self, SourceConfig, Span, WithName},
+    configuration::StringFromEnvVar,
     datamodel_connector::{ConnectorCapability, RelationMode},
     diagnostics::{DatamodelError, Diagnostics},
 };
@@ -26,11 +27,12 @@ pub(crate) fn load_datasources_from_ast(
     ast_schema: &ast::SchemaAst,
     diagnostics: &mut Diagnostics,
     connectors: crate::ConnectorRegistry<'_>,
+    is_using_schema_engine_driver_adapters: bool,
 ) -> Vec<Datasource> {
     let mut sources = Vec::new();
 
     for src in ast_schema.sources() {
-        if let Some(source) = lift_datasource(src, diagnostics, connectors) {
+        if let Some(source) = lift_datasource(src, diagnostics, connectors, is_using_schema_engine_driver_adapters) {
             sources.push(source);
         }
     }
@@ -52,6 +54,7 @@ fn lift_datasource(
     ast_source: &ast::SourceConfig,
     diagnostics: &mut Diagnostics,
     connectors: crate::ConnectorRegistry<'_>,
+    is_using_schema_engine_driver_adapters: bool,
 ) -> Option<Datasource> {
     let source_name = ast_source.name();
     let mut args: HashMap<_, (_, &Expression)> = ast_source
@@ -71,8 +74,8 @@ fn lift_datasource(
         })
         .collect::<Option<HashMap<_, (_, _)>>>()?;
 
-    let (provider, provider_span, provider_arg) = match args.remove(PROVIDER_KEY) {
-        Some((span, provider_arg)) => {
+    let (provider, provider_arg) = match args.remove(PROVIDER_KEY) {
+        Some((_span, provider_arg)) => {
             if provider_arg.is_env_expression() {
                 let msg = Cow::Borrowed("A datasource must not use the env() function in the provider argument.");
                 diagnostics.push_error(DatamodelError::new_functional_evaluation_error(msg, ast_source.span));
@@ -99,7 +102,7 @@ fn lift_datasource(
                 Some(provider) => provider,
             };
 
-            (provider, span, provider_arg)
+            (provider, provider_arg)
         }
 
         None => {
@@ -125,20 +128,73 @@ fn lift_datasource(
             }
         };
 
+    // TODO (since Prisma 6.6.0 until 7.0.0 / Driver Adapters GA):
+    // We've only introduced end-to-end Driver Adapters usage in SQLite so far, where users can define a Driver Adapter for both
+    // Prisma Client and Schema Engine. We want to allow leaving `datasource.url` empty in that case.
+    // We however cannot forbid it as we don't know if the user is actually using Driver Adapters at runtime and in the CLI yet!
+    // In the future, we'll roll out support for PostgreSQL and other database providers as well.
+    // Once that's the case, we should update the logic here.
+    let is_using_driver_adapters =
+        is_using_schema_engine_driver_adapters && ["sqlite"].contains(&active_connector.name());
+
     let relation_mode = get_relation_mode(&mut args, ast_source, diagnostics, active_connector);
 
     let connector_data = active_connector.parse_datasource_properties(&mut args, diagnostics);
 
-    if let Some((span, _)) = args.remove(URL_KEY) {
-        diagnostics.push_error(DatamodelError::new_datasource_url_removed_error(span));
-    }
+    let (url, url_span) = match args.remove(URL_KEY) {
+        Some((_span, url_arg)) => (StringFromEnvVar::coerce(url_arg, diagnostics)?, url_arg.span()),
 
-    if let Some((span, _)) = args.remove(SHADOW_DATABASE_URL_KEY) {
-        diagnostics.push_error(DatamodelError::new_datasource_shadow_database_url_removed_error(span));
-    }
+        None => {
+            if is_using_driver_adapters {
+                (StringFromEnvVar::new_literal("<invalid>".to_owned()), ast_source.span())
+            } else {
+                diagnostics.push_error(DatamodelError::new_source_argument_not_found_error(
+                    URL_KEY,
+                    source_name,
+                    ast_source.span,
+                ));
 
-    if let Some((span, _)) = args.remove(DIRECT_URL_KEY) {
-        diagnostics.push_error(DatamodelError::new_datasource_direct_url_removed_error(span));
+                return None;
+            }
+        }
+    };
+
+    let shadow_database_url = match args.remove(SHADOW_DATABASE_URL_KEY) {
+        Some((_span, shadow_db_url_arg)) => match StringFromEnvVar::coerce(shadow_db_url_arg, diagnostics) {
+            Some(shadow_db_url) => Some(shadow_db_url)
+                .filter(|s| !s.as_literal().map(|literal| literal.is_empty()).unwrap_or(false))
+                .map(|url| (url, shadow_db_url_arg.span())),
+            None => None,
+        },
+
+        _ => None,
+    };
+
+    let (direct_url, direct_url_span) = match args.remove(DIRECT_URL_KEY) {
+        Some((_, direct_url)) => (
+            StringFromEnvVar::coerce(direct_url, diagnostics),
+            Some(direct_url.span()),
+        ),
+
+        None => (None, None),
+    };
+
+    if let Some((shadow_url, _)) = &shadow_database_url {
+        if let (Some(direct_url), Some(direct_url_span)) = (&direct_url, direct_url_span)
+            && shadow_url == direct_url
+        {
+            diagnostics.push_error(DatamodelError::new_shadow_database_is_same_as_direct_url_error(
+                source_name,
+                direct_url_span,
+            ));
+        }
+
+        if shadow_url == &url {
+            diagnostics.push_error(DatamodelError::new_shadow_database_is_same_as_main_url_error(
+                source_name,
+                url_span,
+            ));
+        }
     }
 
     preview_features_guardrail(&mut args, diagnostics);
@@ -194,10 +250,14 @@ fn lift_datasource(
         schemas_span,
         name: source_name.to_owned(),
         provider: provider.to_owned(),
-        provider_span,
         active_provider: active_connector.provider_name(),
+        url,
+        url_span,
+        direct_url,
+        direct_url_span,
         documentation,
         active_connector,
+        shadow_database_url,
         relation_mode,
         connector_data,
     })

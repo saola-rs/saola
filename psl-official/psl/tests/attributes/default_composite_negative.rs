@@ -5,6 +5,7 @@ fn must_error_on_list_default_value_for_singular() {
     let dml = indoc! {r#"
         datasource db {
           provider = "mongodb"
+          url = env("DATABASE_URL")
         }
 
         type Model {
@@ -14,10 +15,10 @@ fn must_error_on_list_default_value_for_singular() {
 
     let expectation = expect![[r#"
         [1;91merror[0m: [1mError parsing attribute "@default": The default value of a non-list field cannot be a list.[0m
-          [1;94m-->[0m  [4mschema.prisma:6[0m
+          [1;94m-->[0m  [4mschema.prisma:7[0m
         [1;94m   | [0m
-        [1;94m 5 | [0mtype Model {
-        [1;94m 6 | [0m  rel String [1;91m@default(["hello"])[0m
+        [1;94m 6 | [0mtype Model {
+        [1;94m 7 | [0m  rel String [1;91m@default(["hello"])[0m
         [1;94m   | [0m
     "#]];
     expect_error(dml, &expectation);
@@ -28,6 +29,7 @@ fn must_error_on_singular_default_value_for_list() {
     let dml = indoc! {r#"
         datasource db {
           provider = "mongodb"
+          url = env("DATABASE_URL")
         }
 
         type Model {
@@ -37,10 +39,10 @@ fn must_error_on_singular_default_value_for_list() {
 
     let expectation = expect![[r#"
         [1;91merror[0m: [1mError parsing attribute "@default": The default value of a list field must be a list.[0m
-          [1;94m-->[0m  [4mschema.prisma:6[0m
+          [1;94m-->[0m  [4mschema.prisma:7[0m
         [1;94m   | [0m
-        [1;94m 5 | [0mtype Model {
-        [1;94m 6 | [0m  rel String[] [1;91m@default("hello")[0m
+        [1;94m 6 | [0mtype Model {
+        [1;94m 7 | [0m  rel String[] [1;91m@default("hello")[0m
         [1;94m   | [0m
     "#]];
     expect_error(dml, &expectation);
@@ -51,6 +53,7 @@ fn must_error_on_bad_value_inside_list_default() {
     let dml = indoc! {r#"
         datasource db {
           provider = "mongodb"
+          url = env("DATABASE_URL")
         }
 
         type Model {
@@ -60,10 +63,10 @@ fn must_error_on_bad_value_inside_list_default() {
 
     let expectation = expect![[r#"
         [1;91merror[0m: [1mError parsing attribute "@default": Expected a String value, but found `101`.[0m
-          [1;94m-->[0m  [4mschema.prisma:6[0m
+          [1;94m-->[0m  [4mschema.prisma:7[0m
         [1;94m   | [0m
-        [1;94m 5 | [0mtype Model {
-        [1;94m 6 | [0m  rel String[] [1;91m@default(["hello", 101, "dalmatians"])[0m
+        [1;94m 6 | [0mtype Model {
+        [1;94m 7 | [0m  rel String[] [1;91m@default(["hello", 101, "dalmatians"])[0m
         [1;94m   | [0m
     "#]];
     expect_error(dml, &expectation);
@@ -96,6 +99,7 @@ fn datetime_defaults_must_be_valid_rfc3339() {
     let dml = indoc! {r#"
       datasource mongo {
         provider = "mongodb"
+        url = "mongodb://"
       }
 
         type Composite {
@@ -107,10 +111,10 @@ fn datetime_defaults_must_be_valid_rfc3339() {
 
     let expectation = expect![[r#"
         [1;91merror[0m: [1mError parsing attribute "@default": Parse error: "Hugo" is not a valid rfc3339 datetime string. (input contains invalid characters)[0m
-          [1;94m-->[0m  [4mschema.prisma:6[0m
+          [1;94m-->[0m  [4mschema.prisma:7[0m
         [1;94m   | [0m
-        [1;94m 5 | [0m  type Composite {
-        [1;94m 6 | [0m    rel DateTime @default([1;91m"Hugo"[0m)
+        [1;94m 6 | [0m  type Composite {
+        [1;94m 7 | [0m    rel DateTime @default([1;91m"Hugo"[0m)
         [1;94m   | [0m
     "#]];
 
@@ -240,6 +244,7 @@ fn must_error_if_scalar_default_on_unsupported() {
     let dml = indoc! {r#"
         datasource db1 {
           provider = "postgresql"
+          url = "postgresql://"
         }
 
         type Composite {
@@ -251,10 +256,10 @@ fn must_error_if_scalar_default_on_unsupported() {
 
     let expectation = expect![[r#"
         [1;91merror[0m: [1mError parsing attribute "@default": Composite field of type `Unsupported` cannot have default values.[0m
-          [1;94m-->[0m  [4mschema.prisma:6[0m
+          [1;94m-->[0m  [4mschema.prisma:7[0m
         [1;94m   | [0m
-        [1;94m 5 | [0mtype Composite {
-        [1;94m 6 | [0m  balance Unsupported("some random stuff") [1;91m@default(12)[0m
+        [1;94m 6 | [0mtype Composite {
+        [1;94m 7 | [0m  balance Unsupported("some random stuff") [1;91m@default(12)[0m
         [1;94m   | [0m
     "#]];
 
@@ -288,6 +293,7 @@ fn default_on_composite_type_field_errors() {
     let schema = indoc! { r#"
         datasource db {
             provider = "mongodb"
+            url = "mongodb://"
         }
 
         type Address {
@@ -303,10 +309,10 @@ fn default_on_composite_type_field_errors() {
 
     let expected = expect![[r#"
         [1;91merror[0m: [1mError validating field `address` in composite type `Address`: Defaults on fields of type composite are not supported. Please remove the `@default` attribute.[0m
-          [1;94m-->[0m  [4mschema.prisma:10[0m
+          [1;94m-->[0m  [4mschema.prisma:11[0m
         [1;94m   | [0m
-        [1;94m 9 | [0mtype User {
-        [1;94m10 | [0m    address Address? [1;91m@default("{ \"street\": \"broadway\"}")[0m
+        [1;94m10 | [0mtype User {
+        [1;94m11 | [0m    address Address? [1;91m@default("{ \"street\": \"broadway\"}")[0m
         [1;94m   | [0m
     "#]];
 
@@ -340,6 +346,7 @@ fn json_defaults_must_be_valid_json() {
     let schema = r#"
         datasource db {
           provider = "mongodb"
+          url = "mongodb://"
         }
 
         type Test {
@@ -351,10 +358,10 @@ fn json_defaults_must_be_valid_json() {
 
     let expected = expect![[r#"
         [1;91merror[0m: [1mError parsing attribute "@default": Parse error: "not json" is not a valid JSON string. (expected ident at line 1 column 2)[0m
-          [1;94m-->[0m  [4mschema.prisma:7[0m
+          [1;94m-->[0m  [4mschema.prisma:8[0m
         [1;94m   | [0m
-        [1;94m 6 | [0m        type Test {
-        [1;94m 7 | [0m            name Json @default([1;91m"not json"[0m)
+        [1;94m 7 | [0m        type Test {
+        [1;94m 8 | [0m            name Json @default([1;91m"not json"[0m)
         [1;94m   | [0m
     "#]];
 
@@ -366,6 +373,7 @@ fn bytes_defaults_must_be_base64() {
     let schema = r#"
         datasource db {
           provider = "mongodb"
+          url = "mongodb://"
         }
 
         type Test {
@@ -377,10 +385,10 @@ fn bytes_defaults_must_be_base64() {
 
     let expected = expect![[r#"
         [1;91merror[0m: [1mError parsing attribute "@default": Parse error: "not base64" is not a valid base64 string. (Could not convert from `base64 encoded bytes` to `PrismaValue::Bytes`)[0m
-          [1;94m-->[0m  [4mschema.prisma:7[0m
+          [1;94m-->[0m  [4mschema.prisma:8[0m
         [1;94m   | [0m
-        [1;94m 6 | [0m        type Test {
-        [1;94m 7 | [0m            name Bytes @default([1;91m"not base64"[0m)
+        [1;94m 7 | [0m        type Test {
+        [1;94m 8 | [0m            name Bytes @default([1;91m"not base64"[0m)
         [1;94m   | [0m
     "#]];
 
@@ -392,6 +400,7 @@ fn int_defaults_must_not_contain_decimal_point() {
     let schema = r#"
         datasource db {
           provider = "mongodb"
+          url = "mongodb://"
         }
 
         type Test {
@@ -403,10 +412,10 @@ fn int_defaults_must_not_contain_decimal_point() {
 
     let expected = expect![[r#"
         [1;91merror[0m: [1mError parsing attribute "@default": Parse error: "3.14" is not a valid integer. (invalid digit found in string)[0m
-          [1;94m-->[0m  [4mschema.prisma:7[0m
+          [1;94m-->[0m  [4mschema.prisma:8[0m
         [1;94m   | [0m
-        [1;94m 6 | [0m        type Test {
-        [1;94m 7 | [0m            score Int @default([1;91m3.14[0m)
+        [1;94m 7 | [0m        type Test {
+        [1;94m 8 | [0m            score Int @default([1;91m3.14[0m)
         [1;94m   | [0m
     "#]];
 
@@ -418,6 +427,7 @@ fn bigint_defaults_must_not_contain_decimal_point() {
     let schema = r#"
         datasource db {
           provider = "mongodb"
+          url = "mongodb://"
         }
 
         type Test {
@@ -429,10 +439,10 @@ fn bigint_defaults_must_not_contain_decimal_point() {
 
     let expected = expect![[r#"
         [1;91merror[0m: [1mError parsing attribute "@default": Parse error: "3.14" is not a valid integer. (invalid digit found in string)[0m
-          [1;94m-->[0m  [4mschema.prisma:7[0m
+          [1;94m-->[0m  [4mschema.prisma:8[0m
         [1;94m   | [0m
-        [1;94m 6 | [0m        type Test {
-        [1;94m 7 | [0m            score BigInt @default([1;91m3.14[0m)
+        [1;94m 7 | [0m        type Test {
+        [1;94m 8 | [0m            score BigInt @default([1;91m3.14[0m)
         [1;94m   | [0m
     "#]];
 
@@ -466,6 +476,7 @@ fn nested_scalar_list_defaults_are_disallowed() {
     let schema = r#"
         datasource db {
             provider = "mongodb"
+            url = env("DBURL")
         }
 
         type Pizza {
@@ -475,10 +486,10 @@ fn nested_scalar_list_defaults_are_disallowed() {
 
     let expected = expect![[r#"
         [1;91merror[0m: [1mError parsing attribute "@default": Expected a String value, but found `["potato","with","rosmarin"]`.[0m
-          [1;94m-->[0m  [4mschema.prisma:7[0m
+          [1;94m-->[0m  [4mschema.prisma:8[0m
         [1;94m   | [0m
-        [1;94m 6 | [0m        type Pizza {
-        [1;94m 7 | [0m            toppings String[] [1;91m@default(["reblochon cheese", ["potato", "with", "rosmarin"], "onions"])[0m
+        [1;94m 7 | [0m        type Pizza {
+        [1;94m 8 | [0m            toppings String[] [1;91m@default(["reblochon cheese", ["potato", "with", "rosmarin"], "onions"])[0m
         [1;94m   | [0m
     "#]];
 
@@ -490,6 +501,7 @@ fn scalar_list_default_on_non_list_field() {
     let schema = r#"
         datasource db {
             provider = "mongodb"
+            url = env("DBURL")
         }
 
         type Pizza {
@@ -499,10 +511,10 @@ fn scalar_list_default_on_non_list_field() {
 
     let expected = expect![[r#"
         [1;91merror[0m: [1mError parsing attribute "@default": The default value of a non-list field cannot be a list.[0m
-          [1;94m-->[0m  [4mschema.prisma:7[0m
+          [1;94m-->[0m  [4mschema.prisma:8[0m
         [1;94m   | [0m
-        [1;94m 6 | [0m        type Pizza {
-        [1;94m 7 | [0m            toppings String [1;91m@default(["reblochon cheese", "potato", "rosmarin", "onions"])[0m
+        [1;94m 7 | [0m        type Pizza {
+        [1;94m 8 | [0m            toppings String [1;91m@default(["reblochon cheese", "potato", "rosmarin", "onions"])[0m
         [1;94m   | [0m
     "#]];
 
@@ -514,6 +526,7 @@ fn dbgenerated_inside_scalar_list_default() {
     let schema = r#"
         datasource db {
             provider = "mongodb"
+            url = env("DBURL")
         }
 
         type Pizza {
@@ -523,10 +536,10 @@ fn dbgenerated_inside_scalar_list_default() {
 
     let expected = expect![[r#"
         [1;91merror[0m: [1mError parsing attribute "@default": Expected a String value, but found `dbgenerated("potato")`.[0m
-          [1;94m-->[0m  [4mschema.prisma:7[0m
+          [1;94m-->[0m  [4mschema.prisma:8[0m
         [1;94m   | [0m
-        [1;94m 6 | [0m        type Pizza {
-        [1;94m 7 | [0m            toppings String[] [1;91m@default(["reblochon cheese", dbgenerated("potato"), "rosmarin", "onions"])[0m
+        [1;94m 7 | [0m        type Pizza {
+        [1;94m 8 | [0m            toppings String[] [1;91m@default(["reblochon cheese", dbgenerated("potato"), "rosmarin", "onions"])[0m
         [1;94m   | [0m
     "#]];
 

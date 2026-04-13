@@ -86,6 +86,7 @@ fn fail_on_duplicate_composite_types() {
     let dml = indoc! {r#"
         datasource db {
             provider = "mongodb"
+            url = "mongodb://"
         }
 
         type Address {
@@ -99,10 +100,10 @@ fn fail_on_duplicate_composite_types() {
 
     let expectation = expect![[r#"
         [1;91merror[0m: [1mThe composite type "Address" cannot be defined because a composite type with that name already exists.[0m
-          [1;94m-->[0m  [4mschema.prisma:9[0m
+          [1;94m-->[0m  [4mschema.prisma:10[0m
         [1;94m   | [0m
-        [1;94m 8 | [0m
-        [1;94m 9 | [0mtype [1;91mAddress[0m {
+        [1;94m 9 | [0m
+        [1;94m10 | [0mtype [1;91mAddress[0m {
         [1;94m   | [0m
     "#]];
 
@@ -114,6 +115,7 @@ fn fail_on_composite_type_model_conflict() {
     let dml = indoc! {r#"
         datasource db {
             provider = "mongodb"
+            url = "mongodb://"
         }
 
         type Address {
@@ -127,10 +129,10 @@ fn fail_on_composite_type_model_conflict() {
 
     let expectation = expect![[r#"
         [1;91merror[0m: [1mThe model "Address" cannot be defined because a composite type with that name already exists.[0m
-          [1;94m-->[0m  [4mschema.prisma:9[0m
+          [1;94m-->[0m  [4mschema.prisma:10[0m
         [1;94m   | [0m
-        [1;94m 8 | [0m
-        [1;94m 9 | [0mmodel [1;91mAddress[0m {
+        [1;94m 9 | [0m
+        [1;94m10 | [0mmodel [1;91mAddress[0m {
         [1;94m   | [0m
     "#]];
 
@@ -142,6 +144,7 @@ fn fail_on_composite_type_enum_conflict() {
     let dml = indoc! {r#"
         datasource db {
             provider = "mongodb"
+            url = "mongodb://"
         }
 
         type Address {
@@ -156,10 +159,10 @@ fn fail_on_composite_type_enum_conflict() {
 
     let expectation = expect![[r#"
         [1;91merror[0m: [1mThe enum "Address" cannot be defined because a composite type with that name already exists.[0m
-          [1;94m-->[0m  [4mschema.prisma:9[0m
+          [1;94m-->[0m  [4mschema.prisma:10[0m
         [1;94m   | [0m
-        [1;94m 8 | [0m
-        [1;94m 9 | [0menum [1;91mAddress[0m {
+        [1;94m 9 | [0m
+        [1;94m10 | [0menum [1;91mAddress[0m {
         [1;94m   | [0m
     "#]];
 
@@ -216,6 +219,7 @@ fn fail_on_duplicate_composite_type_field() {
     let dml = indoc! {r#"
         datasource db {
             provider = "mongodb"
+            url = "mongodb://"
         }
 
         type Address {
@@ -228,10 +232,10 @@ fn fail_on_duplicate_composite_type_field() {
 
     let expectation = expect![[r#"
         [1;91merror[0m: [1mField "street" is already defined on composite type "Address".[0m
-          [1;94m-->[0m  [4mschema.prisma:8[0m
+          [1;94m-->[0m  [4mschema.prisma:9[0m
         [1;94m   | [0m
-        [1;94m 7 | [0m  street String
-        [1;94m 8 | [0m  [1;91mstreet[0m String
+        [1;94m 8 | [0m  street String
+        [1;94m 9 | [0m  [1;91mstreet[0m String
         [1;94m   | [0m
     "#]];
 
@@ -279,6 +283,7 @@ fn fail_on_duplicate_composite_type_field_with_map() {
     let dml = indoc! {r#"
         datasource db {
             provider = "mongodb"
+            url = "mongodb://"
         }
 
         type User {
@@ -289,11 +294,11 @@ fn fail_on_duplicate_composite_type_field_with_map() {
 
     let expectation = expect![[r#"
         [1;91merror[0m: [1mField "otherName" is already defined on composite type "User".[0m
-          [1;94m-->[0m  [4mschema.prisma:7[0m
+          [1;94m-->[0m  [4mschema.prisma:8[0m
         [1;94m   | [0m
-        [1;94m 6 | [0m    firstName String
-        [1;94m 7 | [0m    [1;91motherName String @map("firstName")[0m
-        [1;94m 8 | [0m}
+        [1;94m 7 | [0m    firstName String
+        [1;94m 8 | [0m    [1;91motherName String @map("firstName")[0m
+        [1;94m 9 | [0m}
         [1;94m   | [0m
     "#]];
 
@@ -321,6 +326,7 @@ fn fail_on_duplicate_mapped_composite_type_field() {
     let dml = indoc! {r#"
         datasource db {
             provider = "mongodb"
+            url = "mongodb://"
         }
 
         type User {
@@ -331,11 +337,11 @@ fn fail_on_duplicate_mapped_composite_type_field() {
 
     let expectation = expect![[r#"
         [1;91merror[0m: [1mField "firstName" is already defined on composite type "User".[0m
-          [1;94m-->[0m  [4mschema.prisma:7[0m
+          [1;94m-->[0m  [4mschema.prisma:8[0m
         [1;94m   | [0m
-        [1;94m 6 | [0m    primaryName String @map("firstName")
-        [1;94m 7 | [0m    [1;91motherName String @map("firstName")[0m
-        [1;94m 8 | [0m}
+        [1;94m 7 | [0m    primaryName String @map("firstName")
+        [1;94m 8 | [0m    [1;91motherName String @map("firstName")[0m
+        [1;94m 9 | [0m}
         [1;94m   | [0m
     "#]];
 
@@ -434,6 +440,7 @@ fn multiple_indexes_with_same_autogenerated_name_trigger_datamodel_validation() 
     let dml = indoc! {r#"
         datasource test {
           provider = "postgres"
+          url = "postgresql://..."
         }
 
         model User {
@@ -448,16 +455,16 @@ fn multiple_indexes_with_same_autogenerated_name_trigger_datamodel_validation() 
 
     let expectation = expect![[r#"
         [1;91merror[0m: [1mError parsing attribute "@@unique": The given constraint name `User_email_name_key` has to be unique in the following namespace: global for primary key, indexes and unique constraints. Please provide a different name using the `map` argument.[0m
-          [1;94m-->[0m  [4mschema.prisma:10[0m
-        [1;94m   | [0m
-        [1;94m 9 | [0m
-        [1;94m10 | [0m  [1;91m@@unique([email, name])[0m
-        [1;94m   | [0m
-        [1;91merror[0m: [1mError parsing attribute "@@unique": The given constraint name `User_email_name_key` has to be unique in the following namespace: global for primary key, indexes and unique constraints. Please provide a different name using the `map` argument.[0m
           [1;94m-->[0m  [4mschema.prisma:11[0m
         [1;94m   | [0m
-        [1;94m10 | [0m  @@unique([email, name])
+        [1;94m10 | [0m
         [1;94m11 | [0m  [1;91m@@unique([email, name])[0m
+        [1;94m   | [0m
+        [1;91merror[0m: [1mError parsing attribute "@@unique": The given constraint name `User_email_name_key` has to be unique in the following namespace: global for primary key, indexes and unique constraints. Please provide a different name using the `map` argument.[0m
+          [1;94m-->[0m  [4mschema.prisma:12[0m
+        [1;94m   | [0m
+        [1;94m11 | [0m  @@unique([email, name])
+        [1;94m12 | [0m  [1;91m@@unique([email, name])[0m
         [1;94m   | [0m
     "#]];
 

@@ -10,6 +10,7 @@ pub enum SourcePosition<'ast> {
     /// datasource db {
     /// //         ^^
     ///     provider = "mongodb"
+    ///     url      = env("DATABASE_URL")
     /// }
     /// ```
     Name(&'ast str),
@@ -18,6 +19,7 @@ pub enum SourcePosition<'ast> {
     /// datasource db {
     ///     provider = "mongodb"
     /// //  ^^^^^^^^^^^^^^^^^^^^
+    ///     url      = env("DATABASE_URL")
     /// }
     /// ```
     Property(&'ast str, PropertyPosition<'ast>),

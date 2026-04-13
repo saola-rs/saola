@@ -1,0 +1,34 @@
+[package]
+edition.workspace = true
+name = "mongodb-schema-connector"
+version = "0.1.0"
+
+[dependencies]
+psl = { workspace = true, features = ["mongodb"] }
+mongodb-client.workspace = true
+mongodb-schema-describer.workspace = true
+datamodel-renderer.workspace = true
+schema-connector.workspace = true
+user-facing-errors = { workspace = true, features = [
+    "all-native",
+] }
+
+enumflags2.workspace = true
+futures.workspace = true
+mongodb.workspace = true
+bson.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+convert_case.workspace = true
+regex.workspace = true
+indoc.workspace = true
+
+[dev-dependencies]
+serde.workspace = true
+dissimilar.workspace = true
+url.workspace = true
+expect-test.workspace = true
+names.workspace = true
+itertools.workspace = true
+indoc.workspace = true

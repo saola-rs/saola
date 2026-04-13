@@ -6,6 +6,7 @@ fn should_be_able_to_handle_native_type_combined_with_default_autoincrement_attr
     let dml = r#"
         datasource db {
             provider        = "postgres"
+            url             = "postgresql://"
         }
 
         model User {
@@ -29,6 +30,7 @@ fn should_be_able_to_handle_native_type_combined_with_default_attribute() {
     let dml = r#"
         datasource db {
             provider        = "mysql"
+            url             = "mysql://"
         }
 
         model User {
@@ -50,6 +52,7 @@ fn should_handle_type_specifications_on_postgres() {
     let dml = r#"
         datasource pg {
           provider = "postgres"
+          url = "postgresql://"
         }
 
         model Blog {
@@ -78,6 +81,7 @@ fn should_handle_type_specifications_on_mysql() {
     let dml = r#"
         datasource mys {
           provider = "mysql"
+          url = "mysql://"
         }
 
         model Blog {

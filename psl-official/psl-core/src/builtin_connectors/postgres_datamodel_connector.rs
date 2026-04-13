@@ -73,8 +73,7 @@ pub const CAPABILITIES: ConnectorCapabilities = enumflags2::make_bitflags!(Conne
     DeleteReturning |
     SupportsFiltersOnRelationsWithoutJoins |
     LateralJoin |
-    SupportsDefaultInInsert |
-    PartialIndex
+    SupportsDefaultInInsert
 });
 
 pub struct PostgresDatamodelConnector;
@@ -658,10 +657,6 @@ impl Connector for PostgresDatamodelConnector {
             },
             None => self.parse_json_bytes(str, Some(NativeTypeInstance::new(PostgresType::Known(BYTES_DEFAULT)))),
         }
-    }
-
-    fn can_assume_strict_equality_in_joins(&self) -> bool {
-        true
     }
 }
 

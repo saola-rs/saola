@@ -1,5 +1,6 @@
 datasource test {
   provider = "postgresql"
+  url      = "dummy-url"
 }
 
 model A {

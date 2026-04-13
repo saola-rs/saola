@@ -19,6 +19,7 @@ schema-ast.workspace = true
 
 bigdecimal.workspace = true
 chrono.workspace = true
+connection-string.workspace = true
 cruet.workspace = true
 itertools.workspace = true
 regex.workspace = true
@@ -26,6 +27,7 @@ serde.workspace = true
 serde_json.workspace = true
 enumflags2.workspace = true
 indoc.workspace = true
+either.workspace = true
 hex.workspace = true
 
 # For the connector API.

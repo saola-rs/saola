@@ -6,6 +6,7 @@ fn cascading_on_delete_self_relations() {
         r#"
         datasource db {
             provider = "sqlserver"
+            url = "sqlserver://"
         }
 
         model A {
@@ -18,11 +19,11 @@ fn cascading_on_delete_self_relations() {
 
     let expect = expect![[r#"
         [1;91merror[0m: [1mError validating: A self-relation must have `onDelete` and `onUpdate` referential actions set to `NoAction` in one of the @relation attributes. (Implicit default `onUpdate`: `Cascade`) Read more at https://pris.ly/d/cyclic-referential-actions[0m
-          [1;94m-->[0m  [4mschema.prisma:8[0m
+          [1;94m-->[0m  [4mschema.prisma:9[0m
         [1;94m   | [0m
-        [1;94m 7 | [0m    child  A?   @relation(name: "a_self_relation")
-        [1;94m 8 | [0m    [1;91mparent A?   @relation(name: "a_self_relation", fields: [aId], references: [id], onDelete: Cascade)[0m
-        [1;94m 9 | [0m    aId    Int? @unique
+        [1;94m 8 | [0m    child  A?   @relation(name: "a_self_relation")
+        [1;94m 9 | [0m    [1;91mparent A?   @relation(name: "a_self_relation", fields: [aId], references: [id], onDelete: Cascade)[0m
+        [1;94m10 | [0m    aId    Int? @unique
         [1;94m   | [0m
     "#]];
 
@@ -34,6 +35,7 @@ fn cascading_cycles_cannot_loop_infinitely() {
     let dml = indoc! {r#"
         datasource db {
           provider = "sqlserver"
+          url = "sqlserver://"
         }
 
         model A {
@@ -60,18 +62,18 @@ fn cascading_cycles_cannot_loop_infinitely() {
 
     let expect = expect![[r#"
         [1;91merror[0m: [1mError validating: Reference causes a cycle. One of the @relation attributes in this cycle must have `onDelete` and `onUpdate` referential actions set to `NoAction`. Cycle path: A.c → C.a. (Implicit default `onUpdate`: `Cascade`) Read more at https://pris.ly/d/cyclic-referential-actions[0m
-          [1;94m-->[0m  [4mschema.prisma:8[0m
+          [1;94m-->[0m  [4mschema.prisma:9[0m
         [1;94m   | [0m
-        [1;94m 7 | [0m  name Int @unique
-        [1;94m 8 | [0m  [1;91mc C @relation(name: "atoc", fields: [name], references: [name], onDelete: Cascade)[0m
-        [1;94m 9 | [0m  cs C[] @relation(name: "ctoa")
+        [1;94m 8 | [0m  name Int @unique
+        [1;94m 9 | [0m  [1;91mc C @relation(name: "atoc", fields: [name], references: [name], onDelete: Cascade)[0m
+        [1;94m10 | [0m  cs C[] @relation(name: "ctoa")
         [1;94m   | [0m
         [1;91merror[0m: [1mError validating: Reference causes a cycle. One of the @relation attributes in this cycle must have `onDelete` and `onUpdate` referential actions set to `NoAction`. Cycle path: C.a → A.c. (Implicit default `onUpdate`: `Cascade`) Read more at https://pris.ly/d/cyclic-referential-actions[0m
-          [1;94m-->[0m  [4mschema.prisma:21[0m
+          [1;94m-->[0m  [4mschema.prisma:22[0m
         [1;94m   | [0m
-        [1;94m20 | [0m  name Int @unique
-        [1;94m21 | [0m  [1;91ma A @relation(name: "ctoa", fields: [name], references: [name], onDelete: Cascade)[0m
-        [1;94m22 | [0m  as A[] @relation(name: "atoc")
+        [1;94m21 | [0m  name Int @unique
+        [1;94m22 | [0m  [1;91ma A @relation(name: "ctoa", fields: [name], references: [name], onDelete: Cascade)[0m
+        [1;94m23 | [0m  as A[] @relation(name: "atoc")
         [1;94m   | [0m
     "#]];
 
@@ -84,6 +86,7 @@ fn cycles_are_allowed_outside_of_emulation_and_sqlserver() {
         r#"
         datasource db {
             provider = "mysql"
+            url = "mysql://"
         }
 
         generator js1 {
@@ -107,6 +110,7 @@ fn emulated_cascading_on_delete_self_relations() {
         r#"
         datasource db {
             provider = "mysql"
+            url = "mysql://"
             relationMode = "prisma"
         }
 
@@ -124,11 +128,11 @@ fn emulated_cascading_on_delete_self_relations() {
 
     let expect = expect![[r#"
         [1;91merror[0m: [1mError validating: A self-relation must have `onDelete` and `onUpdate` referential actions set to `NoAction` in one of the @relation attributes. (Implicit default `onUpdate`: `Cascade`) Read more at https://pris.ly/d/cyclic-referential-actions[0m
-          [1;94m-->[0m  [4mschema.prisma:13[0m
+          [1;94m-->[0m  [4mschema.prisma:14[0m
         [1;94m   | [0m
-        [1;94m12 | [0m    child  A?   @relation(name: "a_self_relation")
-        [1;94m13 | [0m    [1;91mparent A?   @relation(name: "a_self_relation", fields: [aId], references: [id], onDelete: Cascade)[0m
-        [1;94m14 | [0m    aId    Int? @unique
+        [1;94m13 | [0m    child  A?   @relation(name: "a_self_relation")
+        [1;94m14 | [0m    [1;91mparent A?   @relation(name: "a_self_relation", fields: [aId], references: [id], onDelete: Cascade)[0m
+        [1;94m15 | [0m    aId    Int? @unique
         [1;94m   | [0m
     "#]];
 
@@ -141,6 +145,7 @@ fn cascading_on_update_self_relations() {
         r#"
         datasource db {
             provider = "sqlserver"
+            url = "sqlserver://"
         }
 
         model A {
@@ -153,11 +158,11 @@ fn cascading_on_update_self_relations() {
 
     let expect = expect![[r#"
         [1;91merror[0m: [1mError validating: A self-relation must have `onDelete` and `onUpdate` referential actions set to `NoAction` in one of the @relation attributes. (Implicit default `onDelete`: `SetNull`) Read more at https://pris.ly/d/cyclic-referential-actions[0m
-          [1;94m-->[0m  [4mschema.prisma:8[0m
+          [1;94m-->[0m  [4mschema.prisma:9[0m
         [1;94m   | [0m
-        [1;94m 7 | [0m    child  A?   @relation(name: "a_self_relation")
-        [1;94m 8 | [0m    [1;91mparent A?   @relation(name: "a_self_relation", fields: [aId], references: [id], onUpdate: Cascade)[0m
-        [1;94m 9 | [0m    aId    Int? @unique
+        [1;94m 8 | [0m    child  A?   @relation(name: "a_self_relation")
+        [1;94m 9 | [0m    [1;91mparent A?   @relation(name: "a_self_relation", fields: [aId], references: [id], onUpdate: Cascade)[0m
+        [1;94m10 | [0m    aId    Int? @unique
         [1;94m   | [0m
     "#]];
 
@@ -170,6 +175,7 @@ fn emulated_cascading_on_update_self_relations() {
         r#"
         datasource db {
             provider = "mysql"
+            url = "mysql://"
             relationMode = "prisma"
         }
 
@@ -187,11 +193,11 @@ fn emulated_cascading_on_update_self_relations() {
 
     let expect = expect![[r#"
         [1;91merror[0m: [1mError validating: A self-relation must have `onDelete` and `onUpdate` referential actions set to `NoAction` in one of the @relation attributes. (Implicit default `onDelete`: `SetNull`) Read more at https://pris.ly/d/cyclic-referential-actions[0m
-          [1;94m-->[0m  [4mschema.prisma:13[0m
+          [1;94m-->[0m  [4mschema.prisma:14[0m
         [1;94m   | [0m
-        [1;94m12 | [0m    child  A?   @relation(name: "a_self_relation")
-        [1;94m13 | [0m    [1;91mparent A?   @relation(name: "a_self_relation", fields: [aId], references: [id], onUpdate: Cascade)[0m
-        [1;94m14 | [0m    aId    Int? @unique
+        [1;94m13 | [0m    child  A?   @relation(name: "a_self_relation")
+        [1;94m14 | [0m    [1;91mparent A?   @relation(name: "a_self_relation", fields: [aId], references: [id], onUpdate: Cascade)[0m
+        [1;94m15 | [0m    aId    Int? @unique
         [1;94m   | [0m
     "#]];
 
@@ -204,6 +210,7 @@ fn null_setting_on_delete_self_relations() {
         r#"
         datasource db {
             provider = "sqlserver"
+            url = "sqlserver://"
         }
 
         model A {
@@ -216,11 +223,11 @@ fn null_setting_on_delete_self_relations() {
 
     let expect = expect![[r#"
         [1;91merror[0m: [1mError validating: A self-relation must have `onDelete` and `onUpdate` referential actions set to `NoAction` in one of the @relation attributes. (Implicit default `onUpdate`: `Cascade`) Read more at https://pris.ly/d/cyclic-referential-actions[0m
-          [1;94m-->[0m  [4mschema.prisma:8[0m
+          [1;94m-->[0m  [4mschema.prisma:9[0m
         [1;94m   | [0m
-        [1;94m 7 | [0m    child  A?   @relation(name: "a_self_relation")
-        [1;94m 8 | [0m    [1;91mparent A?   @relation(name: "a_self_relation", fields: [aId], references: [id], onDelete: SetNull)[0m
-        [1;94m 9 | [0m    aId    Int? @unique
+        [1;94m 8 | [0m    child  A?   @relation(name: "a_self_relation")
+        [1;94m 9 | [0m    [1;91mparent A?   @relation(name: "a_self_relation", fields: [aId], references: [id], onDelete: SetNull)[0m
+        [1;94m10 | [0m    aId    Int? @unique
         [1;94m   | [0m
     "#]];
 
@@ -233,6 +240,7 @@ fn emulated_null_setting_on_delete_self_relations() {
         r#"
         datasource db {
             provider = "mysql"
+            url = "mysql://"
             relationMode = "prisma"
         }
 
@@ -250,11 +258,11 @@ fn emulated_null_setting_on_delete_self_relations() {
 
     let expect = expect![[r#"
         [1;91merror[0m: [1mError validating: A self-relation must have `onDelete` and `onUpdate` referential actions set to `NoAction` in one of the @relation attributes. (Implicit default `onUpdate`: `Cascade`) Read more at https://pris.ly/d/cyclic-referential-actions[0m
-          [1;94m-->[0m  [4mschema.prisma:13[0m
+          [1;94m-->[0m  [4mschema.prisma:14[0m
         [1;94m   | [0m
-        [1;94m12 | [0m    child  A?   @relation(name: "a_self_relation")
-        [1;94m13 | [0m    [1;91mparent A?   @relation(name: "a_self_relation", fields: [aId], references: [id], onDelete: SetNull)[0m
-        [1;94m14 | [0m    aId    Int? @unique
+        [1;94m13 | [0m    child  A?   @relation(name: "a_self_relation")
+        [1;94m14 | [0m    [1;91mparent A?   @relation(name: "a_self_relation", fields: [aId], references: [id], onDelete: SetNull)[0m
+        [1;94m15 | [0m    aId    Int? @unique
         [1;94m   | [0m
     "#]];
 
@@ -267,6 +275,7 @@ fn null_setting_on_update_self_relations() {
         r#"
         datasource db {
             provider = "sqlserver"
+            url = "sqlserver://"
         }
 
         model A {
@@ -279,11 +288,11 @@ fn null_setting_on_update_self_relations() {
 
     let expect = expect![[r#"
         [1;91merror[0m: [1mError validating: A self-relation must have `onDelete` and `onUpdate` referential actions set to `NoAction` in one of the @relation attributes. (Implicit default `onDelete`: `SetNull`) Read more at https://pris.ly/d/cyclic-referential-actions[0m
-          [1;94m-->[0m  [4mschema.prisma:8[0m
+          [1;94m-->[0m  [4mschema.prisma:9[0m
         [1;94m   | [0m
-        [1;94m 7 | [0m    child  A?   @relation(name: "a_self_relation")
-        [1;94m 8 | [0m    [1;91mparent A?   @relation(name: "a_self_relation", fields: [aId], references: [id], onUpdate: SetNull)[0m
-        [1;94m 9 | [0m    aId    Int? @unique
+        [1;94m 8 | [0m    child  A?   @relation(name: "a_self_relation")
+        [1;94m 9 | [0m    [1;91mparent A?   @relation(name: "a_self_relation", fields: [aId], references: [id], onUpdate: SetNull)[0m
+        [1;94m10 | [0m    aId    Int? @unique
         [1;94m   | [0m
     "#]];
 
@@ -296,6 +305,7 @@ fn emulated_null_setting_on_update_self_relations() {
         r#"
         datasource db {
             provider = "mysql"
+            url = "mysql://"
             relationMode = "prisma"
         }
 
@@ -313,11 +323,11 @@ fn emulated_null_setting_on_update_self_relations() {
 
     let expect = expect![[r#"
         [1;91merror[0m: [1mError validating: A self-relation must have `onDelete` and `onUpdate` referential actions set to `NoAction` in one of the @relation attributes. (Implicit default `onDelete`: `SetNull`) Read more at https://pris.ly/d/cyclic-referential-actions[0m
-          [1;94m-->[0m  [4mschema.prisma:13[0m
+          [1;94m-->[0m  [4mschema.prisma:14[0m
         [1;94m   | [0m
-        [1;94m12 | [0m    child  A?   @relation(name: "a_self_relation")
-        [1;94m13 | [0m    [1;91mparent A?   @relation(name: "a_self_relation", fields: [aId], references: [id], onUpdate: SetNull)[0m
-        [1;94m14 | [0m    aId    Int? @unique
+        [1;94m13 | [0m    child  A?   @relation(name: "a_self_relation")
+        [1;94m14 | [0m    [1;91mparent A?   @relation(name: "a_self_relation", fields: [aId], references: [id], onUpdate: SetNull)[0m
+        [1;94m15 | [0m    aId    Int? @unique
         [1;94m   | [0m
     "#]];
 
@@ -330,6 +340,7 @@ fn default_setting_on_delete_self_relations() {
         r#"
         datasource db {
             provider = "sqlserver"
+            url = "sqlserver://"
         }
 
         model A {
@@ -342,11 +353,11 @@ fn default_setting_on_delete_self_relations() {
 
     let expect = expect![[r#"
         [1;91merror[0m: [1mError validating: A self-relation must have `onDelete` and `onUpdate` referential actions set to `NoAction` in one of the @relation attributes. (Implicit default `onUpdate`: `Cascade`) Read more at https://pris.ly/d/cyclic-referential-actions[0m
-          [1;94m-->[0m  [4mschema.prisma:8[0m
+          [1;94m-->[0m  [4mschema.prisma:9[0m
         [1;94m   | [0m
-        [1;94m 7 | [0m    child  A?   @relation(name: "a_self_relation")
-        [1;94m 8 | [0m    [1;91mparent A?   @relation(name: "a_self_relation", fields: [aId], references: [id], onDelete: SetDefault)[0m
-        [1;94m 9 | [0m    aId    Int? @unique
+        [1;94m 8 | [0m    child  A?   @relation(name: "a_self_relation")
+        [1;94m 9 | [0m    [1;91mparent A?   @relation(name: "a_self_relation", fields: [aId], references: [id], onDelete: SetDefault)[0m
+        [1;94m10 | [0m    aId    Int? @unique
         [1;94m   | [0m
     "#]];
 
@@ -359,6 +370,7 @@ fn emulated_default_setting_on_delete_self_relations() {
         r#"
         datasource db {
             provider = "mysql"
+            url = "mysql://"
             relationMode = "prisma"
         }
 
@@ -376,17 +388,17 @@ fn emulated_default_setting_on_delete_self_relations() {
 
     let expect = expect![[r#"
         [1;91merror[0m: [1mError validating: Invalid referential action: `SetDefault`. Allowed values: (`Cascade`, `Restrict`, `NoAction`, `SetNull`)[0m
-          [1;94m-->[0m  [4mschema.prisma:13[0m
+          [1;94m-->[0m  [4mschema.prisma:14[0m
         [1;94m   | [0m
-        [1;94m12 | [0m    child  A?   @relation(name: "a_self_relation")
-        [1;94m13 | [0m    parent A?   @relation(name: "a_self_relation", fields: [aId], references: [id], [1;91monDelete: SetDefault[0m)
+        [1;94m13 | [0m    child  A?   @relation(name: "a_self_relation")
+        [1;94m14 | [0m    parent A?   @relation(name: "a_self_relation", fields: [aId], references: [id], [1;91monDelete: SetDefault[0m)
         [1;94m   | [0m
         [1;91merror[0m: [1mError validating: A self-relation must have `onDelete` and `onUpdate` referential actions set to `NoAction` in one of the @relation attributes. (Implicit default `onUpdate`: `Cascade`) Read more at https://pris.ly/d/cyclic-referential-actions[0m
-          [1;94m-->[0m  [4mschema.prisma:13[0m
+          [1;94m-->[0m  [4mschema.prisma:14[0m
         [1;94m   | [0m
-        [1;94m12 | [0m    child  A?   @relation(name: "a_self_relation")
-        [1;94m13 | [0m    [1;91mparent A?   @relation(name: "a_self_relation", fields: [aId], references: [id], onDelete: SetDefault)[0m
-        [1;94m14 | [0m    aId    Int? @unique
+        [1;94m13 | [0m    child  A?   @relation(name: "a_self_relation")
+        [1;94m14 | [0m    [1;91mparent A?   @relation(name: "a_self_relation", fields: [aId], references: [id], onDelete: SetDefault)[0m
+        [1;94m15 | [0m    aId    Int? @unique
         [1;94m   | [0m
     "#]];
 
@@ -399,6 +411,7 @@ fn default_setting_on_update_self_relations() {
         r#"
         datasource db {
             provider = "sqlserver"
+            url = "sqlserver://"
         }
 
         model A {
@@ -411,11 +424,11 @@ fn default_setting_on_update_self_relations() {
 
     let expect = expect![[r#"
         [1;91merror[0m: [1mError validating: A self-relation must have `onDelete` and `onUpdate` referential actions set to `NoAction` in one of the @relation attributes. (Implicit default `onDelete`: `SetNull`) Read more at https://pris.ly/d/cyclic-referential-actions[0m
-          [1;94m-->[0m  [4mschema.prisma:8[0m
+          [1;94m-->[0m  [4mschema.prisma:9[0m
         [1;94m   | [0m
-        [1;94m 7 | [0m    child  A?   @relation(name: "a_self_relation")
-        [1;94m 8 | [0m    [1;91mparent A?   @relation(name: "a_self_relation", fields: [aId], references: [id], onUpdate: SetDefault)[0m
-        [1;94m 9 | [0m    aId    Int? @unique
+        [1;94m 8 | [0m    child  A?   @relation(name: "a_self_relation")
+        [1;94m 9 | [0m    [1;91mparent A?   @relation(name: "a_self_relation", fields: [aId], references: [id], onUpdate: SetDefault)[0m
+        [1;94m10 | [0m    aId    Int? @unique
         [1;94m   | [0m
     "#]];
 
@@ -428,6 +441,7 @@ fn emulated_default_setting_on_update_self_relations() {
         r#"
         datasource db {
             provider = "mysql"
+            url = "mysql://"
             relationMode = "prisma"
         }
 
@@ -445,17 +459,17 @@ fn emulated_default_setting_on_update_self_relations() {
 
     let expect = expect![[r#"
         [1;91merror[0m: [1mError validating: Invalid referential action: `SetDefault`. Allowed values: (`Cascade`, `Restrict`, `NoAction`, `SetNull`)[0m
-          [1;94m-->[0m  [4mschema.prisma:13[0m
+          [1;94m-->[0m  [4mschema.prisma:14[0m
         [1;94m   | [0m
-        [1;94m12 | [0m    child  A?   @relation(name: "a_self_relation")
-        [1;94m13 | [0m    parent A?   @relation(name: "a_self_relation", fields: [aId], references: [id], [1;91monUpdate: SetDefault[0m)
+        [1;94m13 | [0m    child  A?   @relation(name: "a_self_relation")
+        [1;94m14 | [0m    parent A?   @relation(name: "a_self_relation", fields: [aId], references: [id], [1;91monUpdate: SetDefault[0m)
         [1;94m   | [0m
         [1;91merror[0m: [1mError validating: A self-relation must have `onDelete` and `onUpdate` referential actions set to `NoAction` in one of the @relation attributes. (Implicit default `onDelete`: `SetNull`) Read more at https://pris.ly/d/cyclic-referential-actions[0m
-          [1;94m-->[0m  [4mschema.prisma:13[0m
+          [1;94m-->[0m  [4mschema.prisma:14[0m
         [1;94m   | [0m
-        [1;94m12 | [0m    child  A?   @relation(name: "a_self_relation")
-        [1;94m13 | [0m    [1;91mparent A?   @relation(name: "a_self_relation", fields: [aId], references: [id], onUpdate: SetDefault)[0m
-        [1;94m14 | [0m    aId    Int? @unique
+        [1;94m13 | [0m    child  A?   @relation(name: "a_self_relation")
+        [1;94m14 | [0m    [1;91mparent A?   @relation(name: "a_self_relation", fields: [aId], references: [id], onUpdate: SetDefault)[0m
+        [1;94m15 | [0m    aId    Int? @unique
         [1;94m   | [0m
     "#]];
 
@@ -468,6 +482,7 @@ fn cascading_cyclic_one_hop_relations() {
         r#"
         datasource db {
             provider = "sqlserver"
+            url = "sqlserver://"
         }
 
         model A {
@@ -487,18 +502,18 @@ fn cascading_cyclic_one_hop_relations() {
 
     let expect = expect![[r#"
         [1;91merror[0m: [1mError validating: Reference causes a cycle. One of the @relation attributes in this cycle must have `onDelete` and `onUpdate` referential actions set to `NoAction`. Cycle path: A.b → B.a. (Implicit default `onUpdate`: `Cascade`) Read more at https://pris.ly/d/cyclic-referential-actions[0m
-          [1;94m-->[0m  [4mschema.prisma:7[0m
+          [1;94m-->[0m  [4mschema.prisma:8[0m
         [1;94m   | [0m
-        [1;94m 6 | [0m    id     Int  @id @default(autoincrement())
-        [1;94m 7 | [0m    [1;91mb      B    @relation(name: "foo", fields: [bId], references: [id], onDelete: Cascade)[0m
-        [1;94m 8 | [0m    bId    Int
+        [1;94m 7 | [0m    id     Int  @id @default(autoincrement())
+        [1;94m 8 | [0m    [1;91mb      B    @relation(name: "foo", fields: [bId], references: [id], onDelete: Cascade)[0m
+        [1;94m 9 | [0m    bId    Int
         [1;94m   | [0m
         [1;91merror[0m: [1mError validating: Reference causes a cycle. One of the @relation attributes in this cycle must have `onDelete` and `onUpdate` referential actions set to `NoAction`. Cycle path: B.a → A.b. Read more at https://pris.ly/d/cyclic-referential-actions[0m
-          [1;94m-->[0m  [4mschema.prisma:14[0m
+          [1;94m-->[0m  [4mschema.prisma:15[0m
         [1;94m   | [0m
-        [1;94m13 | [0m    id     Int @id @default(autoincrement())
-        [1;94m14 | [0m    [1;91ma      A   @relation(name: "bar", fields: [aId], references: [id], onUpdate: Cascade)[0m
-        [1;94m15 | [0m    as     A[] @relation(name: "foo")
+        [1;94m14 | [0m    id     Int @id @default(autoincrement())
+        [1;94m15 | [0m    [1;91ma      A   @relation(name: "bar", fields: [aId], references: [id], onUpdate: Cascade)[0m
+        [1;94m16 | [0m    as     A[] @relation(name: "foo")
         [1;94m   | [0m
     "#]];
 
@@ -511,6 +526,7 @@ fn emulated_cascading_cyclic_one_hop_relations() {
         r#"
         datasource db {
             provider = "mysql"
+            url = "mysql://"
             relationMode = "prisma"
         }
 
@@ -535,18 +551,18 @@ fn emulated_cascading_cyclic_one_hop_relations() {
 
     let expect = expect![[r#"
         [1;91merror[0m: [1mError validating: Reference causes a cycle. One of the @relation attributes in this cycle must have `onDelete` and `onUpdate` referential actions set to `NoAction`. Cycle path: A.b → B.a. (Implicit default `onUpdate`: `Cascade`) Read more at https://pris.ly/d/cyclic-referential-actions[0m
-          [1;94m-->[0m  [4mschema.prisma:12[0m
+          [1;94m-->[0m  [4mschema.prisma:13[0m
         [1;94m   | [0m
-        [1;94m11 | [0m    id     Int  @id @default(autoincrement())
-        [1;94m12 | [0m    [1;91mb      B    @relation(name: "foo", fields: [bId], references: [id], onDelete: Cascade)[0m
-        [1;94m13 | [0m    bId    Int
+        [1;94m12 | [0m    id     Int  @id @default(autoincrement())
+        [1;94m13 | [0m    [1;91mb      B    @relation(name: "foo", fields: [bId], references: [id], onDelete: Cascade)[0m
+        [1;94m14 | [0m    bId    Int
         [1;94m   | [0m
         [1;91merror[0m: [1mError validating: Reference causes a cycle. One of the @relation attributes in this cycle must have `onDelete` and `onUpdate` referential actions set to `NoAction`. Cycle path: B.a → A.b. Read more at https://pris.ly/d/cyclic-referential-actions[0m
-          [1;94m-->[0m  [4mschema.prisma:19[0m
+          [1;94m-->[0m  [4mschema.prisma:20[0m
         [1;94m   | [0m
-        [1;94m18 | [0m    id     Int @id @default(autoincrement())
-        [1;94m19 | [0m    [1;91ma      A   @relation(name: "bar", fields: [aId], references: [id], onUpdate: Cascade)[0m
-        [1;94m20 | [0m    as     A[] @relation(name: "foo")
+        [1;94m19 | [0m    id     Int @id @default(autoincrement())
+        [1;94m20 | [0m    [1;91ma      A   @relation(name: "bar", fields: [aId], references: [id], onUpdate: Cascade)[0m
+        [1;94m21 | [0m    as     A[] @relation(name: "foo")
         [1;94m   | [0m
     "#]];
 
@@ -559,6 +575,7 @@ fn cascading_cyclic_hop_over_table_relations() {
         r#"
         datasource db {
             provider = "sqlserver"
+            url = "sqlserver://"
         }
 
         model A {
@@ -585,25 +602,25 @@ fn cascading_cyclic_hop_over_table_relations() {
 
     let expect = expect![[r#"
         [1;91merror[0m: [1mError validating: Reference causes a cycle. One of the @relation attributes in this cycle must have `onDelete` and `onUpdate` referential actions set to `NoAction`. Cycle path: A.b → B.c → C.a. (Implicit default `onUpdate`: `Cascade`) Read more at https://pris.ly/d/cyclic-referential-actions[0m
-          [1;94m-->[0m  [4mschema.prisma:8[0m
+          [1;94m-->[0m  [4mschema.prisma:9[0m
         [1;94m   | [0m
-        [1;94m 7 | [0m    bId    Int
-        [1;94m 8 | [0m    [1;91mb      B    @relation(fields: [bId], references: [id])[0m
-        [1;94m 9 | [0m    cs     C[]
+        [1;94m 8 | [0m    bId    Int
+        [1;94m 9 | [0m    [1;91mb      B    @relation(fields: [bId], references: [id])[0m
+        [1;94m10 | [0m    cs     C[]
         [1;94m   | [0m
         [1;91merror[0m: [1mError validating: Reference causes a cycle. One of the @relation attributes in this cycle must have `onDelete` and `onUpdate` referential actions set to `NoAction`. Cycle path: B.c → C.a → A.b. (Implicit default `onUpdate`: `Cascade`) Read more at https://pris.ly/d/cyclic-referential-actions[0m
-          [1;94m-->[0m  [4mschema.prisma:16[0m
+          [1;94m-->[0m  [4mschema.prisma:17[0m
         [1;94m   | [0m
-        [1;94m15 | [0m    cId    Int
-        [1;94m16 | [0m    [1;91mc      C    @relation(fields: [cId], references: [id])[0m
-        [1;94m17 | [0m}
+        [1;94m16 | [0m    cId    Int
+        [1;94m17 | [0m    [1;91mc      C    @relation(fields: [cId], references: [id])[0m
+        [1;94m18 | [0m}
         [1;94m   | [0m
         [1;91merror[0m: [1mError validating: Reference causes a cycle. One of the @relation attributes in this cycle must have `onDelete` and `onUpdate` referential actions set to `NoAction`. Cycle path: C.a → A.b → B.c. (Implicit default `onUpdate`: `Cascade`) Read more at https://pris.ly/d/cyclic-referential-actions[0m
-          [1;94m-->[0m  [4mschema.prisma:23[0m
+          [1;94m-->[0m  [4mschema.prisma:24[0m
         [1;94m   | [0m
-        [1;94m22 | [0m    aId    Int
-        [1;94m23 | [0m    [1;91ma      A   @relation(fields: [aId], references: [id])[0m
-        [1;94m24 | [0m}
+        [1;94m23 | [0m    aId    Int
+        [1;94m24 | [0m    [1;91ma      A   @relation(fields: [aId], references: [id])[0m
+        [1;94m25 | [0m}
         [1;94m   | [0m
     "#]];
 
@@ -616,6 +633,7 @@ fn multiple_cascading_simple() {
         r#"
         datasource test {
             provider = "sqlserver"
+            url      = "sqlserver://localhost:1433;database=master;user=SA;password=<YourStrong@Passw0rd>;trustServerCertificate=true"
         }
 
         model User {
@@ -650,18 +668,18 @@ fn multiple_cascading_simple() {
 
     let expect = expect![[r#"
         [1;91merror[0m: [1mError validating: When any of the records in model `User` is updated or deleted, the referential actions on the relations cascade to model `Comment` through multiple paths. Please break one of these paths by setting the `onUpdate` and `onDelete` to `NoAction`. (Implicit default `onUpdate`: `Cascade`) Read more at https://pris.ly/d/cyclic-referential-actions[0m
-          [1;94m-->[0m  [4mschema.prisma:24[0m
-        [1;94m   | [0m
-        [1;94m23 | [0m    postId      Int
-        [1;94m24 | [0m    [1;91mwrittenBy   User     @relation(fields: [writtenById], references: [id])[0m
-        [1;94m25 | [0m    post        Post     @relation(fields: [postId], references: [id])
-        [1;94m   | [0m
-        [1;91merror[0m: [1mError validating: When any of the records in model `User` is updated or deleted, the referential actions on the relations cascade to model `Comment` through multiple paths. Please break one of these paths by setting the `onUpdate` and `onDelete` to `NoAction`. (Implicit default `onUpdate`: `Cascade`) Read more at https://pris.ly/d/cyclic-referential-actions[0m
           [1;94m-->[0m  [4mschema.prisma:25[0m
         [1;94m   | [0m
-        [1;94m24 | [0m    writtenBy   User     @relation(fields: [writtenById], references: [id])
-        [1;94m25 | [0m    [1;91mpost        Post     @relation(fields: [postId], references: [id])[0m
-        [1;94m26 | [0m}
+        [1;94m24 | [0m    postId      Int
+        [1;94m25 | [0m    [1;91mwrittenBy   User     @relation(fields: [writtenById], references: [id])[0m
+        [1;94m26 | [0m    post        Post     @relation(fields: [postId], references: [id])
+        [1;94m   | [0m
+        [1;91merror[0m: [1mError validating: When any of the records in model `User` is updated or deleted, the referential actions on the relations cascade to model `Comment` through multiple paths. Please break one of these paths by setting the `onUpdate` and `onDelete` to `NoAction`. (Implicit default `onUpdate`: `Cascade`) Read more at https://pris.ly/d/cyclic-referential-actions[0m
+          [1;94m-->[0m  [4mschema.prisma:26[0m
+        [1;94m   | [0m
+        [1;94m25 | [0m    writtenBy   User     @relation(fields: [writtenById], references: [id])
+        [1;94m26 | [0m    [1;91mpost        Post     @relation(fields: [postId], references: [id])[0m
+        [1;94m27 | [0m}
         [1;94m   | [0m
     "#]];
 
@@ -674,6 +692,7 @@ fn multiple_cascading_complex() {
         r#"
         datasource test {
             provider = "sqlserver"
+            url      = "sqlserver://localhost:1433;database=master;user=SA;password=<YourStrong@Passw0rd>;trustServerCertificate=true"
         }
 
         model Address {
@@ -730,39 +749,39 @@ fn multiple_cascading_complex() {
 
     let expect = expect![[r#"
         [1;91merror[0m: [1mError validating: When any of the records in models `Address`, `User` are updated or deleted, the referential actions on the relations cascade to model `Cement` through multiple paths. Please break one of these paths by setting the `onUpdate` and `onDelete` to `NoAction`. (Implicit default `onUpdate`: `Cascade`) Read more at https://pris.ly/d/cyclic-referential-actions[0m
-          [1;94m-->[0m  [4mschema.prisma:33[0m
-        [1;94m   | [0m
-        [1;94m32 | [0m    tagId       Int
-        [1;94m33 | [0m    [1;91mpost        Post      @relation(fields: [postId], references: [id])[0m
-        [1;94m34 | [0m    user        User      @relation(fields: [userId], references: [id])
-        [1;94m   | [0m
-        [1;91merror[0m: [1mError validating: When any of the records in models `Address`, `User` are updated or deleted, the referential actions on the relations cascade to model `Cement` through multiple paths. Please break one of these paths by setting the `onUpdate` and `onDelete` to `NoAction`. (Implicit default `onUpdate`: `Cascade`) Read more at https://pris.ly/d/cyclic-referential-actions[0m
           [1;94m-->[0m  [4mschema.prisma:34[0m
         [1;94m   | [0m
-        [1;94m33 | [0m    post        Post      @relation(fields: [postId], references: [id])
-        [1;94m34 | [0m    [1;91muser        User      @relation(fields: [userId], references: [id])[0m
-        [1;94m35 | [0m    tag         Tag       @relation(fields: [tagId], references: [id])
+        [1;94m33 | [0m    tagId       Int
+        [1;94m34 | [0m    [1;91mpost        Post      @relation(fields: [postId], references: [id])[0m
+        [1;94m35 | [0m    user        User      @relation(fields: [userId], references: [id])
+        [1;94m   | [0m
+        [1;91merror[0m: [1mError validating: When any of the records in models `Address`, `User` are updated or deleted, the referential actions on the relations cascade to model `Cement` through multiple paths. Please break one of these paths by setting the `onUpdate` and `onDelete` to `NoAction`. (Implicit default `onUpdate`: `Cascade`) Read more at https://pris.ly/d/cyclic-referential-actions[0m
+          [1;94m-->[0m  [4mschema.prisma:35[0m
+        [1;94m   | [0m
+        [1;94m34 | [0m    post        Post      @relation(fields: [postId], references: [id])
+        [1;94m35 | [0m    [1;91muser        User      @relation(fields: [userId], references: [id])[0m
+        [1;94m36 | [0m    tag         Tag       @relation(fields: [tagId], references: [id])
         [1;94m   | [0m
         [1;91merror[0m: [1mError validating: When any of the records in models `Address`, `User` are updated or deleted, the referential actions on the relations cascade to model `Comment` through multiple paths. Please break one of these paths by setting the `onUpdate` and `onDelete` to `NoAction`. (Implicit default `onUpdate`: `Cascade`) Read more at https://pris.ly/d/cyclic-referential-actions[0m
-          [1;94m-->[0m  [4mschema.prisma:44[0m
-        [1;94m   | [0m
-        [1;94m43 | [0m    cementId    Int
-        [1;94m44 | [0m    [1;91mwrittenBy   User     @relation(fields: [writtenById], references: [id])[0m
-        [1;94m45 | [0m    post        Post     @relation(fields: [postId], references: [id])
-        [1;94m   | [0m
-        [1;91merror[0m: [1mError validating: When any of the records in models `Address`, `Post`, `User` are updated or deleted, the referential actions on the relations cascade to model `Comment` through multiple paths. Please break one of these paths by setting the `onUpdate` and `onDelete` to `NoAction`. (Implicit default `onUpdate`: `Cascade`) Read more at https://pris.ly/d/cyclic-referential-actions[0m
           [1;94m-->[0m  [4mschema.prisma:45[0m
         [1;94m   | [0m
-        [1;94m44 | [0m    writtenBy   User     @relation(fields: [writtenById], references: [id])
-        [1;94m45 | [0m    [1;91mpost        Post     @relation(fields: [postId], references: [id])[0m
-        [1;94m46 | [0m    cement      Cement   @relation(fields: [cementId], references: [id])
+        [1;94m44 | [0m    cementId    Int
+        [1;94m45 | [0m    [1;91mwrittenBy   User     @relation(fields: [writtenById], references: [id])[0m
+        [1;94m46 | [0m    post        Post     @relation(fields: [postId], references: [id])
         [1;94m   | [0m
         [1;91merror[0m: [1mError validating: When any of the records in models `Address`, `Post`, `User` are updated or deleted, the referential actions on the relations cascade to model `Comment` through multiple paths. Please break one of these paths by setting the `onUpdate` and `onDelete` to `NoAction`. (Implicit default `onUpdate`: `Cascade`) Read more at https://pris.ly/d/cyclic-referential-actions[0m
           [1;94m-->[0m  [4mschema.prisma:46[0m
         [1;94m   | [0m
-        [1;94m45 | [0m    post        Post     @relation(fields: [postId], references: [id])
-        [1;94m46 | [0m    [1;91mcement      Cement   @relation(fields: [cementId], references: [id])[0m
-        [1;94m47 | [0m}
+        [1;94m45 | [0m    writtenBy   User     @relation(fields: [writtenById], references: [id])
+        [1;94m46 | [0m    [1;91mpost        Post     @relation(fields: [postId], references: [id])[0m
+        [1;94m47 | [0m    cement      Cement   @relation(fields: [cementId], references: [id])
+        [1;94m   | [0m
+        [1;91merror[0m: [1mError validating: When any of the records in models `Address`, `Post`, `User` are updated or deleted, the referential actions on the relations cascade to model `Comment` through multiple paths. Please break one of these paths by setting the `onUpdate` and `onDelete` to `NoAction`. (Implicit default `onUpdate`: `Cascade`) Read more at https://pris.ly/d/cyclic-referential-actions[0m
+          [1;94m-->[0m  [4mschema.prisma:47[0m
+        [1;94m   | [0m
+        [1;94m46 | [0m    post        Post     @relation(fields: [postId], references: [id])
+        [1;94m47 | [0m    [1;91mcement      Cement   @relation(fields: [cementId], references: [id])[0m
+        [1;94m48 | [0m}
         [1;94m   | [0m
     "#]];
 
@@ -774,6 +793,7 @@ fn cycle_detection_prints_the_right_path() {
     let dm = r#"
     datasource db {
         provider = "sqlserver"
+        url = "sqlserver://"
     }
 
     model Post {
@@ -824,25 +844,25 @@ fn cycle_detection_prints_the_right_path() {
 
     let expect = expect![[r#"
         [1;91merror[0m: [1mError validating: Reference causes a cycle. One of the @relation attributes in this cycle must have `onDelete` and `onUpdate` referential actions set to `NoAction`. Cycle path: Post.user → User.comment → Comment.post. (Implicit default `onUpdate`: `Cascade`) Read more at https://pris.ly/d/cyclic-referential-actions[0m
-          [1;94m-->[0m  [4mschema.prisma:9[0m
+          [1;94m-->[0m  [4mschema.prisma:10[0m
         [1;94m   | [0m
-        [1;94m 8 | [0m        user_id  Int       @map("bId")
-        [1;94m 9 | [0m        [1;91muser     User      @relation(fields: [user_id], references: [id])[0m
-        [1;94m10 | [0m        comments Comment[]
+        [1;94m 9 | [0m        user_id  Int       @map("bId")
+        [1;94m10 | [0m        [1;91muser     User      @relation(fields: [user_id], references: [id])[0m
+        [1;94m11 | [0m        comments Comment[]
         [1;94m   | [0m
         [1;91merror[0m: [1mError validating: Reference causes a cycle. One of the @relation attributes in this cycle must have `onDelete` and `onUpdate` referential actions set to `NoAction`. Cycle path: User.comment → Comment.post → Post.user. (Implicit default `onUpdate`: `Cascade`) Read more at https://pris.ly/d/cyclic-referential-actions[0m
-          [1;94m-->[0m  [4mschema.prisma:20[0m
+          [1;94m-->[0m  [4mschema.prisma:21[0m
         [1;94m   | [0m
-        [1;94m19 | [0m        address    Address @relation(fields: [address_id], references: [id])
-        [1;94m20 | [0m        [1;91mcomment    Comment @relation(fields: [comment_id], references: [id])[0m
-        [1;94m21 | [0m        @@map("B")
+        [1;94m20 | [0m        address    Address @relation(fields: [address_id], references: [id])
+        [1;94m21 | [0m        [1;91mcomment    Comment @relation(fields: [comment_id], references: [id])[0m
+        [1;94m22 | [0m        @@map("B")
         [1;94m   | [0m
         [1;91merror[0m: [1mError validating: Reference causes a cycle. One of the @relation attributes in this cycle must have `onDelete` and `onUpdate` referential actions set to `NoAction`. Cycle path: Comment.post → Post.user → User.comment. (Implicit default `onUpdate`: `Cascade`) Read more at https://pris.ly/d/cyclic-referential-actions[0m
-          [1;94m-->[0m  [4mschema.prisma:47[0m
+          [1;94m-->[0m  [4mschema.prisma:48[0m
         [1;94m   | [0m
-        [1;94m46 | [0m        post_id Int    @map("aId")
-        [1;94m47 | [0m        [1;91mpost    Post   @relation(fields: [post_id], references: [id])[0m
-        [1;94m48 | [0m        @@map("C")
+        [1;94m47 | [0m        post_id Int    @map("aId")
+        [1;94m48 | [0m        [1;91mpost    Post   @relation(fields: [post_id], references: [id])[0m
+        [1;94m49 | [0m        @@map("C")
         [1;94m   | [0m
     "#]];
 
@@ -854,6 +874,7 @@ fn separate_non_crossing_cascade_paths_should_work() {
     let dm = r#"
         datasource db {
             provider = "sqlserver"
+            url      = "sqlserver://localhost:1433;database=master;user=SA;password=<YourStrong@Passw0rd>;trustServerCertificate=true"
         }
 
         model order_items {

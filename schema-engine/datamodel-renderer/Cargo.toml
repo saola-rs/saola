@@ -1,0 +1,15 @@
+[package]
+name = "datamodel-renderer"
+version = "0.1.0"
+edition.workspace = true
+
+[dependencies]
+psl.workspace = true
+regex.workspace = true
+itertools.workspace = true
+base64.workspace = true
+
+[dev-dependencies]
+expect-test.workspace = true
+indoc.workspace = true
+itertools.workspace = true

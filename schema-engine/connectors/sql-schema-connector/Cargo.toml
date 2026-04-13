@@ -1,0 +1,65 @@
+[package]
+edition.workspace = true
+name = "sql-schema-connector"
+version = "0.1.0"
+
+[features]
+vendored-openssl = ["quaint/vendored-openssl"]
+postgresql = ["psl/postgresql", "quaint/postgresql", "schema-connector/postgresql", "sql-schema-describer/postgresql"]
+postgresql-native = ["postgresql", "quaint/postgresql-native", "quaint/pooled"]
+sqlite = ["psl/sqlite", "quaint/sqlite", "schema-connector/sqlite", "sql-schema-describer/sqlite"]
+sqlite-native = ["sqlite", "quaint/sqlite-native", "quaint/pooled", "quaint/expose-drivers", "sqlx-sqlite", "sqlx-core"]
+mysql = ["psl/mysql", "quaint/mysql", "schema-connector/mysql", "sql-schema-describer/mysql"]
+mysql-native = ["mysql", "quaint/mysql-native", "quaint/pooled"]
+mssql = ["psl/mssql", "quaint/mssql", "schema-connector/mssql", "sql-schema-describer/mssql"]
+mssql-native = ["mssql", "quaint/mssql-native", "quaint/pooled"]
+cockroachdb = ["psl/cockroachdb", "quaint/postgresql", "schema-connector/cockroachdb", "sql-schema-describer/cockroachdb"]
+cockroachdb-native = ["cockroachdb", "quaint/postgresql-native", "quaint/pooled"]
+all-native = [
+    "quaint/fmt-sql",
+    "postgresql-native",
+    "sqlite-native",
+    "mysql-native",
+    "mssql-native",
+    "cockroachdb-native",
+    "schema-connector/all-native",
+    "sql-schema-describer/all-native",
+    "user-facing-errors/all-native",
+]
+
+[dependencies]
+crosstarget-utils.workspace = true
+psl.workspace = true
+quaint.workspace = true
+tokio = { workspace = true, features = ["macros", "sync", "io-util", "time"] }
+serde.workspace = true
+indoc.workspace = true
+uuid.workspace = true
+indexmap.workspace = true
+itertools.workspace = true
+
+prisma-value.workspace = true
+schema-connector.workspace = true
+sql-schema-describer.workspace = true
+datamodel-renderer.workspace = true
+sql-ddl.workspace = true
+user-facing-errors = { workspace = true, features = ["sql"] }
+
+base64.workspace = true
+chrono.workspace = true
+connection-string.workspace = true
+enumflags2.workspace = true
+regex.workspace = true
+serde_json.workspace = true
+tracing.workspace = true
+tracing-futures.workspace = true
+url.workspace = true
+either.workspace = true
+sqlformat.workspace = true
+sqlparser.workspace = true
+versions.workspace = true
+sqlx-sqlite = { workspace = true, optional = true }
+sqlx-core = { workspace = true, optional = true }
+
+[dev-dependencies]
+expect-test.workspace = true

@@ -1,0 +1,199 @@
+[package]
+authors = [
+  "Julius de Bruijn <bruijn@prisma.io>",
+  "Katharina Fey <kookie@spacekookie.de>",
+  "Tom Houlé <tom@tomhoule.com>",
+  "Emanuel Jöbstl <emanuel.joebstl@gmail.com>",
+  "Matthias Oertel <oertel@prisma.io>",
+  "Dominic Petrick <petrick@prisma.io>",
+]
+description = "An abstraction layer for SQL databases."
+documentation = "https://docs.rs/quaint/"
+edition.workspace = true
+homepage = "https://github.com/prisma/quaint/"
+keywords = ["mysql", "postgresql", "sqlite", "sql"]
+license = "Apache-2.0"
+name = "quaint"
+readme = "README.md"
+repository = "https://github.com/prisma/quaint/"
+version = "0.2.0-alpha.13"
+resolver = "2"
+
+[package.metadata.docs.rs]
+features = ["docs", "all"]
+
+[features]
+docs = []
+# Expose the underlying database drivers when a connector is enabled. This is a
+# way to access database-specific methods when you need extra control.
+expose-drivers = []
+
+all-native = [
+  "postgresql-native",
+  "mysql-native",
+  "mssql-native",
+  "sqlite-native",
+]
+
+vendored-openssl = [
+  "postgres-native-tls/vendored-openssl",
+  "mysql_async/vendored-openssl",
+]
+
+postgresql-native = [
+  "postgresql",
+  "dep:native-tls",
+  "dep:tokio-postgres",
+  "dep:postgres-types",
+  "dep:postgres-native-tls",
+  "dep:bytes",
+  "dep:tokio",
+  "dep:bit-vec",
+  "dep:lru-cache",
+  "dep:byteorder",
+  "dep:tokio-tungstenite",
+]
+postgresql = []
+
+mssql-native = ["mssql", "dep:tiberius", "dep:tokio-util", "tokio/time", "tokio/net"]
+mssql = []
+
+mysql-native = ["mysql", "dep:mysql_async", "tokio/time", "dep:lru-cache"]
+mysql = ["chrono/std"]
+
+pooled = ["dep:mobc"]
+sqlite-native = ["sqlite", "rusqlite/bundled", "tokio/sync"]
+sqlite = []
+
+fmt-sql = ["dep:sqlformat"]
+
+[dependencies]
+bigdecimal.workspace = true
+connection-string.workspace = true
+percent-encoding.workspace = true
+telemetry.workspace = true
+tracing.workspace = true
+tracing-futures.workspace = true
+async-trait.workspace = true
+thiserror.workspace = true
+num_cpus.workspace = true
+prisma-metrics.workspace = true
+futures.workspace = true
+url.workspace = true
+hex.workspace = true
+itertools.workspace = true
+regex.workspace = true
+enumflags2.workspace = true
+pin-project.workspace = true
+
+either.workspace = true
+base64.workspace = true
+chrono.workspace = true
+lru-cache = { workspace = true, optional = true }
+serde_json.workspace = true
+native-tls = { workspace = true, optional = true }
+bit-vec = { workspace = true, optional = true }
+bytes = { workspace = true, optional = true }
+mobc = { workspace = true, optional = true }
+serde.workspace = true
+sqlformat = { workspace = true, optional = true }
+uuid.workspace = true
+crosstarget-utils.workspace = true
+concat-idents.workspace = true
+getrandom = { workspace = true, optional = true }
+
+[dev-dependencies]
+indoc.workspace = true
+names.workspace = true
+paste.workspace = true
+serde = { workspace = true, features = ["derive"] }
+quaint-test-macros = { path = "quaint-test-macros" }
+quaint-test-setup = { path = "quaint-test-setup" }
+tokio = { workspace = true, features = ["macros", "time"] }
+expect-test.workspace = true
+tracing-test.workspace = true
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+getrandom = { workspace = true, features = ["js"] }
+
+[dependencies.tokio-tungstenite]
+workspace = true
+features = ["native-tls"]
+optional = true
+
+[dependencies.byteorder]
+workspace = true
+optional = true
+
+[dependencies.mysql_async]
+workspace = true
+optional = true
+
+[dependencies.rusqlite]
+workspace = true
+features = ["chrono", "column_decltype"]
+optional = true
+
+[target.'cfg(not(any(target_os = "macos", target_os = "ios")))'.dependencies.tiberius]
+workspace = true
+optional = true
+features = [
+  "sql-browser-tokio",
+  "chrono",
+  "tds73",
+  "bigdecimal",
+  "native-tls",
+  "winauth",
+]
+
+[target.'cfg(any(target_os = "macos", target_os = "ios"))'.dependencies.tiberius]
+workspace = true
+optional = true
+features = [
+  "sql-browser-tokio",
+  "vendored-openssl",
+  "chrono",
+  "bigdecimal",
+  "tds73",
+  "winauth",
+]
+
+[dependencies.tokio-postgres]
+workspace = true
+features = [
+  "with-uuid-1",
+  "with-chrono-0_4",
+  "with-serde_json-1",
+  "with-bit-vec-0_6",
+]
+optional = true
+
+[dependencies.postgres-types]
+workspace = true
+features = [
+  "with-uuid-1",
+  "with-chrono-0_4",
+  "with-serde_json-1",
+  "with-bit-vec-0_6",
+]
+optional = true
+
+[dependencies.postgres-native-tls]
+workspace = true
+optional = true
+
+[dependencies.tokio]
+workspace = true
+features = ["rt-multi-thread", "macros", "sync"]
+optional = true
+
+[dependencies.tokio-util]
+workspace = true
+features = ["compat"]
+optional = true
+
+[dependencies.query-template]
+workspace = true
+
+[build-dependencies]
+cfg_aliases.workspace = true

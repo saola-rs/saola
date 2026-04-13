@@ -1,0 +1,50 @@
+[package]
+edition.workspace = true
+name = "sql-schema-describer"
+version = "0.1.0"
+
+[features]
+postgresql = ["psl/postgresql", "quaint/postgresql"]
+postgresql-native = ["postgresql", "quaint/postgresql-native", "quaint/pooled"]
+sqlite = ["psl/sqlite", "quaint/sqlite"]
+sqlite-native = ["sqlite", "quaint/sqlite-native", "quaint/pooled", "quaint/expose-drivers"]
+mysql = ["psl/mysql", "quaint/mysql"]
+mysql-native = ["mysql", "quaint/mysql-native", "quaint/pooled"]
+mssql = ["psl/mssql", "quaint/mssql"]
+mssql-native = ["mssql", "quaint/mssql-native", "quaint/pooled"]
+cockroachdb = ["psl/cockroachdb", "quaint/postgresql"]
+cockroachdb-native = ["cockroachdb", "quaint/postgresql-native", "quaint/pooled"]
+all-native = [
+    "postgresql-native",
+    "sqlite-native",
+    "mysql-native",
+    "mssql-native",
+    "cockroachdb-native",
+]
+
+[dependencies]
+prisma-value.workspace = true
+psl = { workspace = true, features = ["all"] }
+
+either.workspace = true
+async-trait.workspace = true
+bigdecimal.workspace = true
+enumflags2 = { workspace = true, features = ["serde"] }
+indexmap = { workspace = true, features = ["serde"] }
+indoc.workspace = true
+itertools.workspace = true
+regex.workspace = true
+serde.workspace = true
+tracing.workspace = true
+tracing-error.workspace = true
+tracing-futures.workspace = true
+quaint = { workspace = true, features = [
+    "fmt-sql",
+] }
+
+[dev-dependencies]
+expect-test.workspace = true
+pretty_assertions.workspace = true
+test-macros.workspace = true
+test-setup.workspace = true
+tokio.workspace = true

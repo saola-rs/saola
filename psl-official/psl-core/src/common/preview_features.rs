@@ -60,6 +60,7 @@ features!(
     ImprovedQueryRaw,
     InteractiveTransactions,
     JsonProtocol,
+    Metrics,
     MicrosoftSqlServer,
     Middlewares,
     MongoDb,
@@ -72,7 +73,6 @@ features!(
     OrderByAggregateGroup,
     OrderByNulls,
     OrderByRelation,
-    PartialIndexes,
     PostgresqlExtensions,
     PrismaSchemaFolder,
     QueryCompiler,
@@ -157,8 +157,8 @@ impl<'a> FeatureMapWithProvider<'a> {
         // Generator preview features (alphabetically sorted)
         let feature_map: FeatureMap = FeatureMap {
             active: enumflags2::make_bitflags!(PreviewFeature::{
-                 NativeDistinct
-                 | PartialIndexes
+                  Metrics
+                 | NativeDistinct
                  | PostgresqlExtensions
                  | RelationJoins
                  | SchemaEngineDriverAdapters
@@ -188,7 +188,9 @@ impl<'a> FeatureMapWithProvider<'a> {
                     },
                 ),
             ]),
-            deprecated: PreviewFeatures::empty(),
+            deprecated: enumflags2::make_bitflags!(PreviewFeature::{
+                Metrics
+            }),
             stabilized: enumflags2::make_bitflags!(PreviewFeature::{
                 AtomicNumberOperations
                 | AggregateApi

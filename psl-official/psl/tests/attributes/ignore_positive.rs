@@ -197,6 +197,7 @@ fn allow_ignore_on_scalar_fields() {
     let dml = r#"
     datasource test {
         provider = "postgresql"
+        url = "postgresql://"
     }
 
     model ModelA {

@@ -1,5 +1,6 @@
 datasource testds {
     provider = "sqlserver"
+    url = "dummy-url"
     schemas = ["public"]
 }
 

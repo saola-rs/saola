@@ -71,6 +71,7 @@ fn actions_on_mongo() {
             r#"
             datasource db {{
                 provider = "mongodb"
+                url = "mongodb://"
             }}
 
             model A {{
@@ -107,6 +108,7 @@ fn actions_on_mysql_with_prisma_relation_mode() {
     
             datasource db {{
                 provider = "mysql"
+                url = "mysql://"
                 relationMode = "prisma"
             }}
 
@@ -144,6 +146,7 @@ fn actions_on_sqlserver_with_prisma_relation_mode() {
     
             datasource db {{
                 provider = "sqlserver"
+                url = "sqlserver://"
                 relationMode = "prisma"
             }}
 
@@ -181,6 +184,7 @@ fn actions_on_cockroachdb_with_prisma_relation_mode() {
     
             datasource db {{
                 provider = "cockroachdb"
+                url = "sqlserver://"
                 relationMode = "prisma"
             }}
 
@@ -218,6 +222,7 @@ fn actions_on_postgres_with_prisma_relation_mode() {
     
             datasource db {{
                 provider = "postgres"
+                url = "postgres://"
                 relationMode = "prisma"
             }}
 
@@ -255,6 +260,7 @@ fn actions_on_sqlite_with_prisma_relation_mode() {
     
             datasource db {{
                 provider = "sqlite"
+                url = "./dev.db"
                 relationMode = "prisma"
             }}
 
@@ -289,6 +295,7 @@ fn on_delete_actions_should_work_on_prisma_relation_mode() {
             datasource db {{
                 provider = "mysql"
                 relationMode = "prisma"
+                url = "mysql://root:prisma@localhost:3306/mydb"
             }}
 
             generator client {{
@@ -321,6 +328,7 @@ fn on_update_no_action_should_work_on_prisma_relation_mode() {
     let dml = indoc! { r#"
         datasource db {
           provider = "mysql"
+          url = "mysql://"
           relationMode = "prisma"
         }
 
@@ -352,6 +360,7 @@ fn foreign_keys_not_allowed_on_mongo() {
         datasource db {
           provider = "mongodb"
           relationMode = "foreignKeys"
+          url = "mongodb://"
         }
 
         generator client {
@@ -388,6 +397,7 @@ fn prisma_level_integrity_should_be_allowed_on_mongo() {
         datasource db {
           provider = "mongodb"
           relationMode = "prisma"
+          url = "mongodb://"
         }
 
         generator client {
@@ -414,6 +424,7 @@ fn mongo_uses_prisma_relation_mode_by_default() {
     let dml = indoc! {r#"
         datasource db {
           provider = "mongodb"
+          url = "mongodb://"
         }
 
         model A {
@@ -437,6 +448,7 @@ fn sql_databases_use_foreign_keys_relation_mode_by_default() {
         let dml = formatdoc! {r#"
             datasource db {{
               provider = "{db}"
+              url = "{db}://"
             }}
 
             model A {{
@@ -517,6 +529,7 @@ fn restrict_should_not_work_on_sql_server() {
     let dml = indoc! { r#"
         datasource db {
             provider = "sqlserver"
+            url = "sqlserver://"
         }
 
         model A {
@@ -533,16 +546,16 @@ fn restrict_should_not_work_on_sql_server() {
 
     let expected = expect![[r#"
         [1;91merror[0m: [1mError validating: Invalid referential action: `Restrict`. Allowed values: (`Cascade`, `NoAction`, `SetNull`, `SetDefault`)[0m
-          [1;94m-->[0m  [4mschema.prisma:13[0m
+          [1;94m-->[0m  [4mschema.prisma:14[0m
         [1;94m   | [0m
-        [1;94m12 | [0m    aId Int
-        [1;94m13 | [0m    a A @relation(fields: [aId], references: [id], onUpdate: Restrict, [1;91monDelete: Restrict[0m)
+        [1;94m13 | [0m    aId Int
+        [1;94m14 | [0m    a A @relation(fields: [aId], references: [id], onUpdate: Restrict, [1;91monDelete: Restrict[0m)
         [1;94m   | [0m
         [1;91merror[0m: [1mError validating: Invalid referential action: `Restrict`. Allowed values: (`Cascade`, `NoAction`, `SetNull`, `SetDefault`)[0m
-          [1;94m-->[0m  [4mschema.prisma:13[0m
+          [1;94m-->[0m  [4mschema.prisma:14[0m
         [1;94m   | [0m
-        [1;94m12 | [0m    aId Int
-        [1;94m13 | [0m    a A @relation(fields: [aId], references: [id], [1;91monUpdate: Restrict[0m, onDelete: Restrict)
+        [1;94m13 | [0m    aId Int
+        [1;94m14 | [0m    a A @relation(fields: [aId], references: [id], [1;91monUpdate: Restrict[0m, onDelete: Restrict)
         [1;94m   | [0m
     "#]];
 
@@ -558,6 +571,7 @@ fn on_update_no_action_should_not_work_on_postgres_with_prisma_relation_mode() {
 
         datasource db {
             provider = "postgres"
+            url = "postgres://"
             relationMode = "prisma"
         }
 
@@ -575,10 +589,10 @@ fn on_update_no_action_should_not_work_on_postgres_with_prisma_relation_mode() {
 
     let expected = expect![[r#"
         [1;91merror[0m: [1mError validating: Invalid referential action: `NoAction`. Allowed values: (`Cascade`, `Restrict`, `SetNull`). `NoAction` is not implemented for Postgres when using `relationMode = "prisma"`, you could try using `Restrict` instead. Learn more at https://pris.ly/d/relation-mode[0m
-          [1;94m-->[0m  [4mschema.prisma:18[0m
+          [1;94m-->[0m  [4mschema.prisma:19[0m
         [1;94m   | [0m
-        [1;94m17 | [0m    aId Int
-        [1;94m18 | [0m    a A @relation(fields: [aId], references: [id], [1;91monUpdate: NoAction[0m, onDelete: Cascade)
+        [1;94m18 | [0m    aId Int
+        [1;94m19 | [0m    a A @relation(fields: [aId], references: [id], [1;91monUpdate: NoAction[0m, onDelete: Cascade)
         [1;94m   | [0m
     "#]];
 
@@ -594,6 +608,7 @@ fn on_delete_no_action_should_not_work_on_postgres_with_prisma_relation_mode() {
 
         datasource db {
             provider = "postgres"
+            url = "postgres://"
             relationMode = "prisma"
         }
 
@@ -611,10 +626,10 @@ fn on_delete_no_action_should_not_work_on_postgres_with_prisma_relation_mode() {
 
     let expected = expect!([r#"
         [1;91merror[0m: [1mError validating: Invalid referential action: `NoAction`. Allowed values: (`Cascade`, `Restrict`, `SetNull`). `NoAction` is not implemented for Postgres when using `relationMode = "prisma"`, you could try using `Restrict` instead. Learn more at https://pris.ly/d/relation-mode[0m
-          [1;94m-->[0m  [4mschema.prisma:18[0m
+          [1;94m-->[0m  [4mschema.prisma:19[0m
         [1;94m   | [0m
-        [1;94m17 | [0m    aId Int
-        [1;94m18 | [0m    a A @relation(fields: [aId], references: [id], onUpdate: Cascade, [1;91monDelete: NoAction[0m)
+        [1;94m18 | [0m    aId Int
+        [1;94m19 | [0m    a A @relation(fields: [aId], references: [id], onUpdate: Cascade, [1;91monDelete: NoAction[0m)
         [1;94m   | [0m
     "#]);
 
@@ -630,6 +645,7 @@ fn on_update_no_action_should_not_work_on_sqlite_with_prisma_relation_mode() {
 
         datasource db {
             provider = "sqlite"
+            url = "./dev.db"
             relationMode = "prisma"
         }
 
@@ -647,10 +663,10 @@ fn on_update_no_action_should_not_work_on_sqlite_with_prisma_relation_mode() {
 
     let expected = expect![[r#"
         [1;91merror[0m: [1mError validating: Invalid referential action: `NoAction`. Allowed values: (`Cascade`, `Restrict`, `SetNull`). `NoAction` is not implemented for sqlite when using `relationMode = "prisma"`, you could try using `Restrict` instead. Learn more at https://pris.ly/d/relation-mode[0m
-          [1;94m-->[0m  [4mschema.prisma:18[0m
+          [1;94m-->[0m  [4mschema.prisma:19[0m
         [1;94m   | [0m
-        [1;94m17 | [0m    aId Int
-        [1;94m18 | [0m    a A @relation(fields: [aId], references: [id], [1;91monUpdate: NoAction[0m, onDelete: Cascade)
+        [1;94m18 | [0m    aId Int
+        [1;94m19 | [0m    a A @relation(fields: [aId], references: [id], [1;91monUpdate: NoAction[0m, onDelete: Cascade)
         [1;94m   | [0m
     "#]];
 
@@ -666,6 +682,7 @@ fn on_delete_no_action_should_not_work_on_sqlite_with_prisma_relation_mode() {
 
         datasource db {
             provider = "sqlite"
+            url = "./dev.db"
             relationMode = "prisma"
         }
 
@@ -683,10 +700,10 @@ fn on_delete_no_action_should_not_work_on_sqlite_with_prisma_relation_mode() {
 
     let expected = expect!([r#"
         [1;91merror[0m: [1mError validating: Invalid referential action: `NoAction`. Allowed values: (`Cascade`, `Restrict`, `SetNull`). `NoAction` is not implemented for sqlite when using `relationMode = "prisma"`, you could try using `Restrict` instead. Learn more at https://pris.ly/d/relation-mode[0m
-          [1;94m-->[0m  [4mschema.prisma:18[0m
+          [1;94m-->[0m  [4mschema.prisma:19[0m
         [1;94m   | [0m
-        [1;94m17 | [0m    aId Int
-        [1;94m18 | [0m    a A @relation(fields: [aId], references: [id], onUpdate: Cascade, [1;91monDelete: NoAction[0m)
+        [1;94m18 | [0m    aId Int
+        [1;94m19 | [0m    a A @relation(fields: [aId], references: [id], onUpdate: Cascade, [1;91monDelete: NoAction[0m)
         [1;94m   | [0m
     "#]);
 
@@ -698,6 +715,7 @@ fn actions_should_be_defined_only_from_one_side() {
     let dml = indoc! { r#"
         datasource db {
             provider = "sqlserver"
+            url = "sqlserver://"
         }
 
         model A {
@@ -714,18 +732,18 @@ fn actions_should_be_defined_only_from_one_side() {
 
     let expected = expect![[r#"
         [1;91merror[0m: [1mError parsing attribute "@relation": The relation fields `b` on Model `A` and `a` on Model `B` both provide the `onDelete` or `onUpdate` argument in the @relation attribute. You have to provide it only on one of the two fields.[0m
-          [1;94m-->[0m  [4mschema.prisma:7[0m
+          [1;94m-->[0m  [4mschema.prisma:8[0m
         [1;94m   | [0m
-        [1;94m 6 | [0m    id Int @id
-        [1;94m 7 | [0m    [1;91mb B? @relation(onUpdate: NoAction, onDelete: NoAction)[0m
-        [1;94m 8 | [0m}
+        [1;94m 7 | [0m    id Int @id
+        [1;94m 8 | [0m    [1;91mb B? @relation(onUpdate: NoAction, onDelete: NoAction)[0m
+        [1;94m 9 | [0m}
         [1;94m   | [0m
         [1;91merror[0m: [1mError parsing attribute "@relation": The relation fields `a` on Model `B` and `b` on Model `A` both provide the `onDelete` or `onUpdate` argument in the @relation attribute. You have to provide it only on one of the two fields.[0m
-          [1;94m-->[0m  [4mschema.prisma:13[0m
+          [1;94m-->[0m  [4mschema.prisma:14[0m
         [1;94m   | [0m
-        [1;94m12 | [0m    aId Int @unique
-        [1;94m13 | [0m    [1;91ma A @relation(fields: [aId], references: [id], onUpdate: NoAction, onDelete: NoAction)[0m
-        [1;94m14 | [0m}
+        [1;94m13 | [0m    aId Int @unique
+        [1;94m14 | [0m    [1;91ma A @relation(fields: [aId], references: [id], onUpdate: NoAction, onDelete: NoAction)[0m
+        [1;94m15 | [0m}
         [1;94m   | [0m
     "#]];
 
@@ -739,6 +757,7 @@ fn set_default_action_should_not_work_on_prisma_level_relation_mode() {
             datasource db {
                 provider = "mysql"
                 relationMode = "prisma"
+                url = "mysql://root:prisma@localhost:3306/mydb"
             }
 
             generator client {
@@ -760,10 +779,10 @@ fn set_default_action_should_not_work_on_prisma_level_relation_mode() {
 
     let expected = expect![[r#"
         [1;91merror[0m: [1mError validating: Invalid referential action: `SetDefault`. Allowed values: (`Cascade`, `Restrict`, `NoAction`, `SetNull`)[0m
-          [1;94m-->[0m  [4mschema.prisma:18[0m
+          [1;94m-->[0m  [4mschema.prisma:19[0m
         [1;94m   | [0m
-        [1;94m17 | [0m    aId Int
-        [1;94m18 | [0m    a A @relation(fields: [aId], references: [id], [1;91monDelete: SetDefault[0m)
+        [1;94m18 | [0m    aId Int
+        [1;94m19 | [0m    a A @relation(fields: [aId], references: [id], [1;91monDelete: SetDefault[0m)
         [1;94m   | [0m
     "#]];
 
@@ -775,6 +794,7 @@ fn on_delete_cannot_be_defined_on_the_wrong_side_1_n() {
     let dml = indoc! { r#"
         datasource db {
             provider = "mysql"
+            url = "mysql://"
         }
 
         model A {
@@ -791,11 +811,11 @@ fn on_delete_cannot_be_defined_on_the_wrong_side_1_n() {
 
     let expected = expect![[r#"
         [1;91merror[0m: [1mError parsing attribute "@relation": The relation field `bs` on Model `A` must not specify the `onDelete` or `onUpdate` argument in the @relation attribute. You must only specify it on the opposite field `a` on model `B`, or in case of a many to many relation, in an explicit join table.[0m
-          [1;94m-->[0m  [4mschema.prisma:7[0m
+          [1;94m-->[0m  [4mschema.prisma:8[0m
         [1;94m   | [0m
-        [1;94m 6 | [0m    id Int @id
-        [1;94m 7 | [0m    [1;91mbs B[] @relation(onDelete: Restrict)[0m
-        [1;94m 8 | [0m}
+        [1;94m 7 | [0m    id Int @id
+        [1;94m 8 | [0m    [1;91mbs B[] @relation(onDelete: Restrict)[0m
+        [1;94m 9 | [0m}
         [1;94m   | [0m
     "#]];
 
@@ -807,6 +827,7 @@ fn on_update_cannot_be_defined_on_the_wrong_side_1_n() {
     let dml = indoc! { r#"
         datasource db {
             provider = "mysql"
+            url = "mysql://"
         }
 
         model A {
@@ -823,11 +844,11 @@ fn on_update_cannot_be_defined_on_the_wrong_side_1_n() {
 
     let expected = expect![[r#"
         [1;91merror[0m: [1mError parsing attribute "@relation": The relation field `bs` on Model `A` must not specify the `onDelete` or `onUpdate` argument in the @relation attribute. You must only specify it on the opposite field `a` on model `B`, or in case of a many to many relation, in an explicit join table.[0m
-          [1;94m-->[0m  [4mschema.prisma:7[0m
+          [1;94m-->[0m  [4mschema.prisma:8[0m
         [1;94m   | [0m
-        [1;94m 6 | [0m    id Int @id
-        [1;94m 7 | [0m    [1;91mbs B[] @relation(onUpdate: Restrict)[0m
-        [1;94m 8 | [0m}
+        [1;94m 7 | [0m    id Int @id
+        [1;94m 8 | [0m    [1;91mbs B[] @relation(onUpdate: Restrict)[0m
+        [1;94m 9 | [0m}
         [1;94m   | [0m
     "#]];
 
@@ -839,6 +860,7 @@ fn on_delete_cannot_be_defined_on_the_wrong_side_1_1() {
     let dml = indoc! { r#"
         datasource db {
             provider = "mysql"
+            url = "mysql://"
         }
 
         model Chicken {
@@ -851,11 +873,11 @@ fn on_delete_cannot_be_defined_on_the_wrong_side_1_1() {
 
     let expect = expect![[r#"
         [1;91merror[0m: [1mError parsing attribute "@relation": The relation field `cock` on Model `Chicken` must not specify the `onDelete` or `onUpdate` argument in the @relation attribute. You must only specify it on the opposite field `hen` on model `Chicken`.[0m
-          [1;94m-->[0m  [4mschema.prisma:7[0m
+          [1;94m-->[0m  [4mschema.prisma:8[0m
         [1;94m   | [0m
-        [1;94m 6 | [0m    id        Int      @id @default(autoincrement())
-        [1;94m 7 | [0m    [1;91mcock      Chicken? @relation(name: "a_self_relation", onDelete: NoAction)[0m
-        [1;94m 8 | [0m    hen       Chicken? @relation(name: "a_self_relation", fields: [chickenId], references: [id])
+        [1;94m 7 | [0m    id        Int      @id @default(autoincrement())
+        [1;94m 8 | [0m    [1;91mcock      Chicken? @relation(name: "a_self_relation", onDelete: NoAction)[0m
+        [1;94m 9 | [0m    hen       Chicken? @relation(name: "a_self_relation", fields: [chickenId], references: [id])
         [1;94m   | [0m
     "#]];
 
@@ -867,6 +889,7 @@ fn on_update_cannot_be_defined_on_the_wrong_side_1_1() {
     let dml = indoc! { r#"
         datasource db {
             provider = "mysql"
+            url = "mysql://"
         }
 
         model Chicken {
@@ -879,11 +902,11 @@ fn on_update_cannot_be_defined_on_the_wrong_side_1_1() {
 
     let expect = expect![[r#"
         [1;91merror[0m: [1mError parsing attribute "@relation": The relation field `cock` on Model `Chicken` must not specify the `onDelete` or `onUpdate` argument in the @relation attribute. You must only specify it on the opposite field `hen` on model `Chicken`.[0m
-          [1;94m-->[0m  [4mschema.prisma:7[0m
+          [1;94m-->[0m  [4mschema.prisma:8[0m
         [1;94m   | [0m
-        [1;94m 6 | [0m    id        Int      @id @default(autoincrement())
-        [1;94m 7 | [0m    [1;91mcock      Chicken? @relation(name: "a_self_relation", onUpdate: NoAction)[0m
-        [1;94m 8 | [0m    hen       Chicken? @relation(name: "a_self_relation", fields: [chickenId], references: [id])
+        [1;94m 7 | [0m    id        Int      @id @default(autoincrement())
+        [1;94m 8 | [0m    [1;91mcock      Chicken? @relation(name: "a_self_relation", onUpdate: NoAction)[0m
+        [1;94m 9 | [0m    hen       Chicken? @relation(name: "a_self_relation", fields: [chickenId], references: [id])
         [1;94m   | [0m
     "#]];
 

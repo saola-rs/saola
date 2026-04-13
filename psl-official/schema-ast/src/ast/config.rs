@@ -6,8 +6,8 @@ use super::WithIdentifier;
 ///
 /// ```ignore
 /// datasource db {
-///     provider = env("PROVIDER")
-///     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+///     url = env("URL")
+///     ^^^^^^^^^^^^^^^^
 /// }
 /// ```
 #[derive(Debug, Clone)]
@@ -16,8 +16,8 @@ pub struct ConfigBlockProperty {
     ///
     /// ```ignore
     /// datasource db {
-    ///     provider = env("PROVIDER")
-    ///     ^^^^^^^^
+    ///     url = env("URL")
+    ///     ^^^
     /// }
     /// ```
     pub(crate) name: Identifier,
@@ -25,8 +25,8 @@ pub struct ConfigBlockProperty {
     ///
     /// ```ignore
     /// datasource db {
-    ///     provider = env("PROVIDER")
-    ///                ^^^^^^^^^^^^^^^
+    ///     url = env("URL")
+    ///           ^^^^^^^^^^
     /// }
     /// ```
     pub value: Option<Expression>,

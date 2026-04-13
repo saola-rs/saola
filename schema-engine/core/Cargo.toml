@@ -1,0 +1,40 @@
+[package]
+edition.workspace = true
+name = "schema-core"
+version = "0.1.0"
+
+[dependencies]
+crosstarget-utils.workspace = true
+psl = { workspace = true, features = ["all"] }
+schema-connector = { workspace = true, features = [
+    "all-native",
+] }
+mongodb-schema-connector = { workspace = true }
+sql-schema-connector = { workspace = true, features = [
+    "all-native",
+] }
+user-facing-errors = { workspace = true, features = [
+    "quaint",
+] }
+
+commands = { path = "../commands", package = "schema-commands", features = [
+    "all-native",
+] }
+json-rpc = { path = "../json-rpc-api", package = "json-rpc-api" }
+async-trait.workspace = true
+chrono.workspace = true
+enumflags2.workspace = true
+futures.workspace = true
+hashbrown.workspace = true
+jsonrpc-core.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+tracing-futures.workspace = true
+url.workspace = true
+bon.workspace = true
+
+[features]
+vendored-openssl = ["sql-schema-connector/vendored-openssl"]

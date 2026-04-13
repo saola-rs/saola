@@ -1,50 +1,528 @@
 extern crate proc_macro;
 
 use proc_macro::TokenStream;
-use std::env;
+use quote::{format_ident, quote};
+use syn::{parse_macro_input, ItemStruct, Type, GenericArgument, PathArguments};
+use heck::{ToUpperCamelCase, ToSnakeCase};
 
-mod codegen;
-
-/// Generate the Prisma client code from schema.prisma
-///
-/// Usage:
-/// ```rust
-/// prisma_macros::prisma_client!();
-/// ```
-#[proc_macro]
-pub fn prisma_client(_input: TokenStream) -> TokenStream {
-    // 1. Find schema.prisma in the manifest directory
-    let manifest_dir = match env::var("CARGO_MANIFEST_DIR") {
-        Ok(d) => d,
-        Err(_) => {
-            let error = "CARGO_MANIFEST_DIR not set - macro must be used in a crate with Cargo.toml";
-            return syn::Error::new(proc_macro2::Span::call_site(), error)
-                .to_compile_error()
-                .into();
+fn get_inner_type(ty: &Type) -> String {
+    match ty {
+        Type::Path(tp) => {
+            let segment = tp.path.segments.last().unwrap();
+            match &segment.arguments {
+                PathArguments::AngleBracketed(args) => {
+                    if let Some(GenericArgument::Type(inner_ty)) = args.args.first() {
+                        get_inner_type(inner_ty)
+                    } else {
+                        segment.ident.to_string()
+                    }
+                }
+                _ => segment.ident.to_string(),
+            }
         }
-    };
-    let schema_path = format!("{}/schema.prisma", manifest_dir);
-
-    // 2. Parse the schema using the official PSL parser
-    let db = match prisma_schema::parser::parse_schema_file(&schema_path) {
-        Ok(db) => {
-            eprintln!("[PRISMA] Parsed schema from: {}", schema_path);
-            db
-        }
-        Err(e) => {
-            let error_msg = format!("Failed to parse schema.prisma at '{}': {}", schema_path, e);
-            eprintln!("[PRISMA ERROR] {}", error_msg);
-            return syn::Error::new(proc_macro2::Span::call_site(), error_msg)
-                .to_compile_error()
-                .into();
-        }
-    };
-
-    // 3. Generate code from the parsed schema
-    let generated = codegen::generate_client(&db);
-    eprintln!("[PRISMA] Code generation complete");
-
-    // 4. Output as token stream
-    TokenStream::from(generated)
+        _ => "String".to_string(),
+    }
 }
 
+#[proc_macro_attribute]
+pub fn prisma_model(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    let mut input = parse_macro_input!(item as ItemStruct);
+    let model_name = &input.ident;
+    let model_name_str = model_name.to_string();
+    let model_name_snake = format_ident!("{}", model_name_str.to_snake_case());
+
+    let mut filter_methods = Vec::new();
+    let mut select_methods = Vec::new();
+    let mut include_methods = Vec::new();
+    let mut filter_struct_defs = Vec::new();
+    let mut data_methods = Vec::new();
+    
+    let mut unique_enum_variants = Vec::new();
+    let mut unique_enum_arms = Vec::new();
+    
+    let mut create_args = Vec::new();
+    let mut create_args_push = Vec::new();
+    
+    let mut scalar_field_names = Vec::new();
+
+    let where_builder_name = format_ident!("{}WhereBuilder", model_name);
+    let select_builder_name = format_ident!("{}SelectBuilder", model_name);
+    let include_builder_name = format_ident!("{}IncludeBuilder", model_name);
+    let data_builder_name = format_ident!("{}DataBuilder", model_name);
+    let unique_where_enum_name = format_ident!("{}UniqueWhere", model_name);
+
+    for field in &mut input.fields {
+        let rust_field_name = field.ident.as_ref().unwrap();
+        let rust_field_name_str = rust_field_name.to_string();
+        
+        let mut prisma_field_name = rust_field_name_str.clone();
+        let mut is_relation = false;
+        let mut is_unique = false;
+        
+        // Let's assume a field is required if it's not Option<T> and not an ID (IDs usually have defaults)
+        let is_optional = {
+            if let Type::Path(tp) = &field.ty {
+                tp.path.segments.last().unwrap().ident == "Option"
+            } else {
+                false
+            }
+        };
+        let mut is_id = false;
+        
+        field.attrs.retain(|attr| {
+            if attr.path().is_ident("prisma") {
+                let _ = attr.parse_nested_meta(|meta| {
+                    if meta.path.is_ident("name") {
+                        let value = meta.value()?;
+                        let s: syn::LitStr = value.parse()?;
+                        prisma_field_name = s.value();
+                    } else if meta.path.is_ident("relation") {
+                        is_relation = true;
+                    } else if meta.path.is_ident("id") {
+                        is_id = true;
+                        is_unique = true;
+                    } else if meta.path.is_ident("unique") {
+                        is_unique = true;
+                    }
+                    Ok(())
+                });
+                false
+            } else {
+                true
+            }
+        });
+
+        if !is_relation {
+            scalar_field_names.push(prisma_field_name.clone());
+            
+            if !is_optional && !is_id {
+                let ty = &field.ty;
+                create_args.push(quote! { #rust_field_name: #ty });
+                create_args_push.push(quote! {
+                    data_map.insert(#prisma_field_name.to_string(), prisma_core::query_core::ArgumentValue::Scalar(prisma_core::query_structure::PrismaValue::from(#rust_field_name)));
+                });
+            }
+            
+            if is_unique {
+                let variant_name = format_ident!("{}", rust_field_name_str.to_upper_camel_case());
+                let ty = &field.ty;
+                let ty_unwrapped = if is_optional {
+                    if let Type::Path(tp) = ty {
+                        if let PathArguments::AngleBracketed(args) = &tp.path.segments.last().unwrap().arguments {
+                            if let Some(GenericArgument::Type(inner_ty)) = args.args.first() {
+                                inner_ty.clone()
+                            } else {
+                                ty.clone()
+                            }
+                        } else {
+                            ty.clone()
+                        }
+                    } else {
+                        ty.clone()
+                    }
+                } else {
+                    ty.clone()
+                };
+                
+                unique_enum_variants.push(quote! {
+                    #variant_name(#ty_unwrapped)
+                });
+                unique_enum_arms.push(quote! {
+                    #unique_where_enum_name::#variant_name(val) => {
+                        let mut map = prisma_core::IndexMap::new();
+                        map.insert(#prisma_field_name.to_string(), prisma_core::query_core::ArgumentValue::Scalar(prisma_core::query_structure::PrismaValue::from(val)));
+                        prisma_core::query_core::ArgumentValue::Object(map)
+                    }
+                });
+            }
+        }
+
+        let filter_name_str = format!("{}{}Filter", model_name, rust_field_name_str.to_upper_camel_case());
+        let filter_name = format_ident!("{}", filter_name_str);
+
+        if is_relation {
+            let inner_type_str = get_inner_type(&field.ty);
+            let related_select_builder = format_ident!("{}SelectBuilder", inner_type_str);
+            let related_data_builder = format_ident!("{}DataBuilder", inner_type_str);
+
+            include_methods.push(quote! {
+                pub fn #rust_field_name<F>(&mut self, f: F) -> &mut Self 
+                where F: FnOnce(&mut #related_select_builder)
+                {
+                    let mut builder = #related_select_builder::default();
+                    f(&mut builder);
+                    let mut sel = prisma_core::query_core::Selection::with_name(#prisma_field_name.to_string());
+                    let fields: Vec<String> = builder.into();
+                    for field in fields {
+                        sel.push_nested_selection(prisma_core::query_core::Selection::with_name(field));
+                    }
+                    self.includes.push(sel);
+                    self
+                }
+            });
+
+            data_methods.push(quote! {
+                pub fn #rust_field_name<F>(&mut self, f: F) -> &mut Self
+                where F: FnOnce(&mut #related_data_builder)
+                {
+                    let mut builder = #related_data_builder::default();
+                    f(&mut builder);
+                    
+                    let mut create_map = prisma_core::IndexMap::new();
+                    create_map.insert("create".to_string(), prisma_core::query_core::ArgumentValue::Object(builder.data));
+                    
+                    self.data.insert(#prisma_field_name.to_string(), prisma_core::query_core::ArgumentValue::Object(create_map));
+                    self
+                }
+            });
+        } else {
+            filter_struct_defs.push(quote! {
+                pub struct #filter_name<'a, B> {
+                    builder: &'a mut B,
+                    prisma_name: &'static str,
+                }
+                impl<'a, B> #filter_name<'a, B> {
+                    fn add_op<T>(self, op: &str, value: T) -> &'a mut B
+                    where 
+                        T: Into<prisma_core::query_structure::PrismaValue>,
+                        B: prisma_core::FilterBuilder
+                    {
+                        let mut map = prisma_core::IndexMap::new();
+                        map.insert(op.to_string(), prisma_core::query_core::ArgumentValue::Scalar(value.into()));
+                        self.builder.add_arg(self.prisma_name.to_string(), prisma_core::query_core::ArgumentValue::Object(map));
+                        self.builder
+                    }
+
+                    pub fn eq<T>(self, value: T) -> &'a mut B where T: Into<prisma_core::query_structure::PrismaValue>, B: prisma_core::FilterBuilder { self.add_op("equals", value) }
+                    pub fn not<T>(self, value: T) -> &'a mut B where T: Into<prisma_core::query_structure::PrismaValue>, B: prisma_core::FilterBuilder { self.add_op("not", value) }
+                    pub fn gt<T>(self, value: T) -> &'a mut B where T: Into<prisma_core::query_structure::PrismaValue>, B: prisma_core::FilterBuilder { self.add_op("gt", value) }
+                    pub fn gte<T>(self, value: T) -> &'a mut B where T: Into<prisma_core::query_structure::PrismaValue>, B: prisma_core::FilterBuilder { self.add_op("gte", value) }
+                    pub fn lt<T>(self, value: T) -> &'a mut B where T: Into<prisma_core::query_structure::PrismaValue>, B: prisma_core::FilterBuilder { self.add_op("lt", value) }
+                    pub fn lte<T>(self, value: T) -> &'a mut B where T: Into<prisma_core::query_structure::PrismaValue>, B: prisma_core::FilterBuilder { self.add_op("lte", value) }
+                    pub fn contains<T>(self, value: T) -> &'a mut B where T: Into<prisma_core::query_structure::PrismaValue>, B: prisma_core::FilterBuilder { self.add_op("contains", value) }
+                    pub fn starts_with<T>(self, value: T) -> &'a mut B where T: Into<prisma_core::query_structure::PrismaValue>, B: prisma_core::FilterBuilder { self.add_op("startsWith", value) }
+                    pub fn ends_with<T>(self, value: T) -> &'a mut B where T: Into<prisma_core::query_structure::PrismaValue>, B: prisma_core::FilterBuilder { self.add_op("endsWith", value) }
+                }
+            });
+
+            filter_methods.push(quote! {
+                pub fn #rust_field_name(&mut self) -> #filter_name<'_, Self> {
+                    #filter_name {
+                        builder: self,
+                        prisma_name: #prisma_field_name,
+                    }
+                }
+            });
+
+            select_methods.push(quote! {
+                pub fn #rust_field_name(&mut self) -> &mut Self {
+                    self.fields.push(#prisma_field_name.to_string());
+                    self
+                }
+            });
+
+            data_methods.push(quote! {
+                pub fn #rust_field_name<T>(&mut self, value: T) -> &mut Self 
+                where T: Into<prisma_core::query_structure::PrismaValue>
+                {
+                    self.data.insert(#prisma_field_name.to_string(), prisma_core::query_core::ArgumentValue::Scalar(value.into()));
+                    self
+                }
+            });
+        }
+    }
+
+    let query_name = format_ident!("{}Query", model_name);
+    let find_many_builder_name = format_ident!("FindMany{}Builder", model_name);
+    let find_unique_builder_name = format_ident!("FindUnique{}Builder", model_name);
+    let create_builder_name = format_ident!("Create{}Builder", model_name);
+    let update_builder_name = format_ident!("Update{}Builder", model_name);
+    let delete_builder_name = format_ident!("Delete{}Builder", model_name);
+
+    let expanded = quote! {
+        #input
+
+        #[derive(Default)]
+        pub struct #where_builder_name {
+            pub args: Vec<(String, prisma_core::query_core::ArgumentValue)>,
+        }
+        impl prisma_core::FilterBuilder for #where_builder_name {
+            fn add_arg(&mut self, name: String, value: prisma_core::query_core::ArgumentValue) {
+                self.args.push((name, value));
+            }
+        }
+        impl #where_builder_name {
+            #(#filter_methods)*
+        }
+
+        pub enum #unique_where_enum_name {
+            #(#unique_enum_variants),*
+        }
+        impl From<#unique_where_enum_name> for prisma_core::query_core::ArgumentValue {
+            fn from(val: #unique_where_enum_name) -> Self {
+                match val {
+                    #(#unique_enum_arms)*
+                }
+            }
+        }
+
+        #(#filter_struct_defs)*
+
+        #[derive(Default)]
+        pub struct #select_builder_name {
+            pub fields: Vec<String>,
+        }
+        impl #select_builder_name {
+            pub fn all(&mut self) -> &mut Self {
+                self.fields.extend(vec![#(#scalar_field_names.to_string()),*]);
+                self
+            }
+            #(#select_methods)*
+        }
+        impl From<#select_builder_name> for Vec<String> {
+            fn from(b: #select_builder_name) -> Self { b.fields }
+        }
+
+        #[derive(Default)]
+        pub struct #include_builder_name {
+            pub includes: Vec<prisma_core::query_core::Selection>,
+        }
+        impl #include_builder_name {
+            #(#include_methods)*
+        }
+        impl From<#include_builder_name> for Vec<prisma_core::query_core::Selection> {
+            fn from(b: #include_builder_name) -> Self { b.includes }
+        }
+
+        #[derive(Default)]
+        pub struct #data_builder_name {
+            pub data: prisma_core::IndexMap<String, prisma_core::query_core::ArgumentValue>,
+        }
+        impl #data_builder_name {
+            #(#data_methods)*
+        }
+        impl From<#data_builder_name> for prisma_core::query_core::ArgumentValue {
+            fn from(b: #data_builder_name) -> Self {
+                prisma_core::query_core::ArgumentValue::Object(b.data)
+            }
+        }
+
+        pub struct #query_name;
+        
+        pub fn #model_name_snake() -> #query_name {
+            #query_name
+        }
+
+        impl #query_name {
+            pub fn find_many(&self) -> #find_many_builder_name {
+                #find_many_builder_name {
+                    inner: prisma_core::FindManyBuilder::new(#model_name_str.to_string(), vec![#(#scalar_field_names.to_string()),*])
+                }
+            }
+
+            pub fn find_unique(&self, unique: #unique_where_enum_name) -> #find_unique_builder_name {
+                let mut builder = prisma_core::FindUniqueBuilder::new(#model_name_str.to_string(), vec![#(#scalar_field_names.to_string()),*]);
+                builder.add_arg("where".to_string(), unique.into());
+                #find_unique_builder_name { inner: builder }
+            }
+
+            pub fn create(&self, #(#create_args),*) -> #create_builder_name {
+                let builder = prisma_core::CreateBuilder::new(#model_name_str.to_string(), vec![#(#scalar_field_names.to_string()),*]);
+                let mut data_map = prisma_core::IndexMap::new();
+                #(#create_args_push)*
+                #create_builder_name { inner: builder, data: data_map }
+            }
+
+            pub fn update(&self, unique: #unique_where_enum_name) -> #update_builder_name {
+                let mut builder = prisma_core::UpdateBuilder::new(#model_name_str.to_string(), vec![#(#scalar_field_names.to_string()),*]);
+                builder.add_arg("where".to_string(), unique.into());
+                #update_builder_name { inner: builder, data: prisma_core::IndexMap::new() }
+            }
+
+            pub fn delete(&self, unique: #unique_where_enum_name) -> #delete_builder_name {
+                let mut builder = prisma_core::DeleteBuilder::new(#model_name_str.to_string(), vec![#(#scalar_field_names.to_string()),*]);
+                builder.add_arg("where".to_string(), unique.into());
+                #delete_builder_name { inner: builder }
+            }
+        }
+
+        pub struct #find_many_builder_name {
+            inner: prisma_core::FindManyBuilder,
+        }
+
+        impl #find_many_builder_name {
+            pub fn where_clause<F>(mut self, f: F) -> Self 
+            where F: FnOnce(&mut #where_builder_name)
+            {
+                let mut builder = #where_builder_name::default();
+                f(&mut builder);
+                if !builder.args.is_empty() {
+                    let mut map = prisma_core::IndexMap::new();
+                    for (k, v) in builder.args {
+                        map.insert(k, v);
+                    }
+                    self.inner.add_arg("where".to_string(), prisma_core::query_core::ArgumentValue::Object(map));
+                }
+                self
+            }
+
+            pub fn select<F>(mut self, f: F) -> Self
+            where F: FnOnce(&mut #select_builder_name)
+            {
+                self.inner.selection.clear_nested_selections();
+                let mut builder = #select_builder_name::default();
+                f(&mut builder);
+                let fields: Vec<String> = builder.into();
+                for field in fields {
+                    self.inner.add_selection(field);
+                }
+                self
+            }
+
+            pub fn include<F>(mut self, f: F) -> Self
+            where F: FnOnce(&mut #include_builder_name)
+            {
+                let mut builder = #include_builder_name::default();
+                f(&mut builder);
+                let includes: Vec<prisma_core::query_core::Selection> = builder.into();
+                for sel in includes {
+                    self.inner.selection.push_nested_selection(sel);
+                }
+                self
+            }
+
+            pub async fn exec<T: prisma_core::serde::de::DeserializeOwned>(self, client: &prisma_core::PrismaClient) -> Result<T, prisma_core::anyhow::Error> {
+                self.inner.exec(client).await
+            }
+        }
+
+        pub struct #find_unique_builder_name {
+            inner: prisma_core::FindUniqueBuilder,
+        }
+
+        impl #find_unique_builder_name {
+            pub fn select<F>(mut self, f: F) -> Self
+            where F: FnOnce(&mut #select_builder_name)
+            {
+                self.inner.selection.clear_nested_selections();
+                let mut builder = #select_builder_name::default();
+                f(&mut builder);
+                let fields: Vec<String> = builder.into();
+                for field in fields {
+                    self.inner.add_selection(field);
+                }
+                self
+            }
+
+            pub fn include<F>(mut self, f: F) -> Self
+            where F: FnOnce(&mut #include_builder_name)
+            {
+                let mut builder = #include_builder_name::default();
+                f(&mut builder);
+                let includes: Vec<prisma_core::query_core::Selection> = builder.into();
+                for sel in includes {
+                    self.inner.selection.push_nested_selection(sel);
+                }
+                self
+            }
+
+            pub async fn exec<T: prisma_core::serde::de::DeserializeOwned>(self, client: &prisma_core::PrismaClient) -> Result<T, prisma_core::anyhow::Error> {
+                self.inner.exec(client).await
+            }
+        }
+
+        pub struct #create_builder_name {
+            inner: prisma_core::CreateBuilder,
+            data: prisma_core::IndexMap<String, prisma_core::query_core::ArgumentValue>,
+        }
+
+        impl #create_builder_name {
+            pub fn data<F>(mut self, f: F) -> Self 
+            where F: FnOnce(&mut #data_builder_name)
+            {
+                let mut builder = #data_builder_name { data: self.data };
+                f(&mut builder);
+                self.data = builder.data;
+                self
+            }
+
+            pub fn select<F>(mut self, f: F) -> Self
+            where F: FnOnce(&mut #select_builder_name)
+            {
+                self.inner.selection.clear_nested_selections();
+                let mut builder = #select_builder_name::default();
+                f(&mut builder);
+                let fields: Vec<String> = builder.into();
+                for field in fields {
+                    self.inner.add_selection(field);
+                }
+                self
+            }
+
+            pub async fn exec<T: prisma_core::serde::de::DeserializeOwned>(mut self, client: &prisma_core::PrismaClient) -> Result<T, prisma_core::anyhow::Error> {
+                self.inner.add_arg("data".to_string(), prisma_core::query_core::ArgumentValue::Object(self.data));
+                self.inner.exec(client).await
+            }
+        }
+
+        pub struct #update_builder_name {
+            inner: prisma_core::UpdateBuilder,
+            data: prisma_core::IndexMap<String, prisma_core::query_core::ArgumentValue>,
+        }
+
+        impl #update_builder_name {
+            pub fn data<F>(mut self, f: F) -> Self 
+            where F: FnOnce(&mut #data_builder_name)
+            {
+                let mut builder = #data_builder_name { data: self.data };
+                f(&mut builder);
+                self.data = builder.data;
+                self
+            }
+
+            pub fn select<F>(mut self, f: F) -> Self
+            where F: FnOnce(&mut #select_builder_name)
+            {
+                self.inner.selection.clear_nested_selections();
+                let mut builder = #select_builder_name::default();
+                f(&mut builder);
+                let fields: Vec<String> = builder.into();
+                for field in fields {
+                    self.inner.add_selection(field);
+                }
+                self
+            }
+
+            pub async fn exec<T: prisma_core::serde::de::DeserializeOwned>(mut self, client: &prisma_core::PrismaClient) -> Result<T, prisma_core::anyhow::Error> {
+                self.inner.add_arg("data".to_string(), prisma_core::query_core::ArgumentValue::Object(self.data));
+                self.inner.exec(client).await
+            }
+        }
+
+        pub struct #delete_builder_name {
+            inner: prisma_core::DeleteBuilder,
+        }
+
+        impl #delete_builder_name {
+            pub fn select<F>(mut self, f: F) -> Self
+            where F: FnOnce(&mut #select_builder_name)
+            {
+                self.inner.selection.clear_nested_selections();
+                let mut builder = #select_builder_name::default();
+                f(&mut builder);
+                let fields: Vec<String> = builder.into();
+                for field in fields {
+                    self.inner.add_selection(field);
+                }
+                self
+            }
+
+            pub async fn exec<T: prisma_core::serde::de::DeserializeOwned>(self, client: &prisma_core::PrismaClient) -> Result<T, prisma_core::anyhow::Error> {
+                self.inner.exec(client).await
+            }
+        }
+
+    };
+
+    TokenStream::from(expanded)
+}

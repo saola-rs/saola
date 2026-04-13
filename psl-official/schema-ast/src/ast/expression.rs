@@ -1,17 +1,6 @@
 use crate::ast::{self, Span};
 use std::fmt;
 
-/// A key-value pair in an object expression.
-#[derive(Debug, Clone)]
-pub struct ObjectMember {
-    /// The key/field name.
-    pub key: String,
-    /// The value expression.
-    pub value: Expression,
-    /// The span of the entire member.
-    pub span: Span,
-}
-
 /// Represents arbitrary, even nested, expressions.
 #[derive(Debug, Clone)]
 pub enum Expression {
@@ -26,8 +15,6 @@ pub enum Expression {
     Function(String, ast::ArgumentsList, Span),
     /// An array of other values.
     Array(Vec<Expression>, Span),
-    /// An object literal with key-value pairs like `{ field: value }`.
-    Object(Vec<ObjectMember>, Span),
 }
 
 impl fmt::Display for Expression {
@@ -43,14 +30,6 @@ impl fmt::Display for Expression {
             Expression::Array(vals, _) => {
                 let vals = vals.iter().map(ToString::to_string).collect::<Vec<_>>().join(",");
                 write!(f, "[{vals}]")
-            }
-            Expression::Object(members, _) => {
-                let members = members
-                    .iter()
-                    .map(|m| format!("{}: {}", m.key, m.value))
-                    .collect::<Vec<_>>()
-                    .join(", ");
-                write!(f, "{{ {members} }}")
             }
         }
     }
@@ -92,13 +71,6 @@ impl Expression {
         }
     }
 
-    pub fn as_object(&self) -> Option<(&[ObjectMember], Span)> {
-        match self {
-            Expression::Object(members, span) => Some((members, *span)),
-            _ => None,
-        }
-    }
-
     pub fn span(&self) -> Span {
         match &self {
             Self::NumericValue(_, span) => *span,
@@ -106,7 +78,6 @@ impl Expression {
             Self::ConstantValue(_, span) => *span,
             Self::Function(_, _, span) => *span,
             Self::Array(_, span) => *span,
-            Self::Object(_, span) => *span,
         }
     }
 
@@ -125,7 +96,6 @@ impl Expression {
             Expression::ConstantValue(_, _) => "literal",
             Expression::Function(_, _, _) => "functional",
             Expression::Array(_, _) => "array",
-            Expression::Object(_, _) => "object",
         }
     }
 
@@ -139,9 +109,5 @@ impl Expression {
 
     pub fn is_string(&self) -> bool {
         matches!(self, Expression::StringValue(_, _))
-    }
-
-    pub fn is_object(&self) -> bool {
-        matches!(self, Expression::Object(_, _))
     }
 }

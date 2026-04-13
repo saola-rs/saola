@@ -4,8 +4,7 @@ use psl_core::{builtin_connectors, parser_database::NoExtensionTypes};
 
 /// Parse a schema from a file path
 pub fn parse_schema_file(path: &str) -> Result<ParserDatabase, String> {
-    let content = std::fs::read_to_string(path)
-        .map_err(|e| format!("Cannot read schema file '{}': {}", path, e))?;
+    let content = std::fs::read_to_string(path).map_err(|e| format!("Cannot read schema file '{}': {}", path, e))?;
     parse_schema_str(&content)
 }
 

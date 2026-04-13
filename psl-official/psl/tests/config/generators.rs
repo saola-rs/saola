@@ -256,7 +256,7 @@ fn nice_error_for_unknown_generator_preview_feature() {
         .unwrap_err();
 
     let expectation = expect![[r#"
-        [1;91merror[0m: [1mThe preview feature "foo" is not known. Expected one of: nativeDistinct, partialIndexes, postgresqlExtensions, relationJoins, schemaEngineDriverAdapters, shardKeys, strictUndefinedChecks, views[0m
+        [1;91merror[0m: [1mThe preview feature "foo" is not known. Expected one of: metrics, nativeDistinct, postgresqlExtensions, relationJoins, schemaEngineDriverAdapters, shardKeys, strictUndefinedChecks, views[0m
           [1;94m-->[0m  [4mschema.prisma:3[0m
         [1;94m   | [0m
         [1;94m 2 | [0m  provider = "prisma-client"
@@ -272,6 +272,7 @@ fn binary_targets_from_env_var_should_work() {
     let schema = indoc! {r#"
         datasource db {
           provider = "mysql"
+          url      = env("DATABASE_URL")
         }
 
         generator client {
@@ -386,6 +387,7 @@ fn empty_preview_features_array_should_work() {
     let schema = r#"
         datasource db {
             provider = "postgresql"
+            url = env("DBURL")
         }
 
         generator js {
@@ -403,6 +405,7 @@ fn empty_preview_features_array_with_empty_space_should_work() {
     let schema = r#"
         datasource db {
             provider = "postgresql"
+            url = env("DBURL")
         }
 
         generator js {

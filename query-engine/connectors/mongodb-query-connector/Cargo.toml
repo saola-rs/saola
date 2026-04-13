@@ -1,0 +1,57 @@
+[package]
+edition.workspace = true
+name = "mongodb-query-connector"
+version = "0.1.0"
+
+[dependencies]
+anyhow.workspace = true
+async-trait.workspace = true
+bigdecimal.workspace = true
+futures.workspace = true
+itertools.workspace = true
+mongodb.workspace = true
+bson = { workspace = true, features = ["chrono-0_4", "uuid-1"] }
+rand.workspace = true
+regex.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tracing-futures.workspace = true
+uuid.workspace = true
+indexmap.workspace = true
+prisma-metrics.workspace = true
+derive_more.workspace = true
+
+[dependencies.query-structure]
+workspace = true
+
+[dependencies.mongodb-client]
+workspace = true
+
+[dependencies.connector-interface]
+package = "query-connector"
+path = "../query-connector"
+
+[dependencies.prisma-value]
+workspace = true
+
+[dependencies.telemetry]
+workspace = true
+
+[dependencies.chrono]
+workspace = true
+features = ["serde"]
+
+[dependencies.psl]
+workspace = true
+
+[dependencies.serde]
+workspace = true
+
+[dependencies.user-facing-errors]
+features = ["sql"]
+workspace = true
+
+[dev-dependencies]
+pretty_assertions.workspace = true

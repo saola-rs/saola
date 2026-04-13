@@ -167,8 +167,4 @@ impl Connector for MongoDbDatamodelConnector {
     fn flavour(&self) -> Flavour {
         Flavour::Mongo
     }
-
-    fn can_assume_strict_equality_in_joins(&self) -> bool {
-        true
-    }
 }

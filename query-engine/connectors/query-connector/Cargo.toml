@@ -1,0 +1,20 @@
+[package]
+edition.workspace = true
+name = "query-connector"
+version = "0.1.0"
+
+[dependencies]
+anyhow.workspace = true
+async-trait.workspace = true
+chrono.workspace = true
+futures.workspace = true
+itertools.workspace = true
+query-structure.workspace = true
+prisma-value.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+user-facing-errors = { workspace = true, features = ["sql"] }
+uuid.workspace = true
+indexmap.workspace = true
+telemetry.workspace = true

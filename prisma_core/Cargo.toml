@@ -1,0 +1,22 @@
+[package]
+name = "prisma_core"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+indexmap = { workspace = true }
+schema = { workspace = true }
+query-core = { workspace = true }
+query-connector = { workspace = true }
+sql-query-connector = { workspace = true, features = ["postgresql-native", "mysql-native", "sqlite-native", "mssql-native"] }
+schema-core = { workspace = true }
+quaint = { workspace = true, features = ["all-native"] }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+psl = { workspace = true }
+query-structure = { workspace = true }
