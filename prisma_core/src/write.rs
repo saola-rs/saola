@@ -4,7 +4,7 @@ use query_core::{ArgumentValue, Selection};
 
 /// Generic Write builder - base for all create/update/delete operations
 pub struct WriteBuilder {
-    state: BuilderState,
+    pub state: BuilderState,
     is_write: bool,
 }
 
@@ -66,14 +66,8 @@ impl Selectable for WriteBuilder {
 }
 
 impl Executable for WriteBuilder {
-    async fn exec<T: serde::de::DeserializeOwned>(mut self, client: &crate::client::PrismaClient) -> crate::Result<T> {
+    async fn exec<T: serde::de::DeserializeOwned>(self, client: &crate::client::PrismaClient) -> crate::Result<T> {
         let operation = self.state.into_operation(true);
         execute(operation, client).await
     }
 }
-
-// Public type aliases for convenience
-pub type CreateManyBuilder = WriteBuilder;
-pub type UpdateManyBuilder = WriteBuilder;
-pub type DeleteManyBuilder = WriteBuilder;
-pub type UpsertBuilder = WriteBuilder;

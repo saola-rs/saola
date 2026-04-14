@@ -29,7 +29,7 @@ impl Selectable for CountBuilder {
 }
 
 impl Executable for CountBuilder {
-    async fn exec<T: serde::de::DeserializeOwned>(mut self, client: &crate::client::PrismaClient) -> crate::Result<T> {
+    async fn exec<T: serde::de::DeserializeOwned>(self, client: &crate::client::PrismaClient) -> crate::Result<T> {
         let operation = self.state.into_operation(false);
         execute(operation, client).await
     }
@@ -62,7 +62,7 @@ impl Selectable for AggregateBuilder {
 }
 
 impl Executable for AggregateBuilder {
-    async fn exec<T: serde::de::DeserializeOwned>(mut self, client: &crate::client::PrismaClient) -> crate::Result<T> {
+    async fn exec<T: serde::de::DeserializeOwned>(self, client: &crate::client::PrismaClient) -> crate::Result<T> {
         let operation = self.state.into_operation(false);
         execute(operation, client).await
     }
@@ -95,7 +95,7 @@ impl Selectable for GroupByBuilder {
 }
 
 impl Executable for GroupByBuilder {
-    async fn exec<T: serde::de::DeserializeOwned>(mut self, client: &crate::client::PrismaClient) -> crate::Result<T> {
+    async fn exec<T: serde::de::DeserializeOwned>(self, client: &crate::client::PrismaClient) -> crate::Result<T> {
         let operation = self.state.into_operation(false);
         execute(operation, client).await
     }
