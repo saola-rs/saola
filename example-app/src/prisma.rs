@@ -13,7 +13,7 @@ pub mod client {
         Hash,
         ::prisma_core::serde::Serialize,
         ::prisma_core::serde::Deserialize,
-        Default
+        Default,
     )]
     #[serde(crate = "::prisma_core::serde", rename_all = "UPPERCASE")]
     pub enum Role {
@@ -24,9 +24,7 @@ pub mod client {
     }
     impl From<Role> for ::prisma_core::query_structure::PrismaValue {
         fn from(val: Role) -> Self {
-            ::prisma_core::query_structure::PrismaValue::Enum(
-                format!("{:?}", val).to_uppercase(),
-            )
+            ::prisma_core::query_structure::PrismaValue::Enum(format!("{:?}", val).to_uppercase())
         }
     }
     #[derive(
@@ -38,7 +36,7 @@ pub mod client {
         Hash,
         ::prisma_core::serde::Serialize,
         ::prisma_core::serde::Deserialize,
-        Default
+        Default,
     )]
     #[serde(crate = "::prisma_core::serde", rename_all = "UPPERCASE")]
     pub enum PostStatus {
@@ -49,9 +47,7 @@ pub mod client {
     }
     impl From<PostStatus> for ::prisma_core::query_structure::PrismaValue {
         fn from(val: PostStatus) -> Self {
-            ::prisma_core::query_structure::PrismaValue::Enum(
-                format!("{:?}", val).to_uppercase(),
-            )
+            ::prisma_core::query_structure::PrismaValue::Enum(format!("{:?}", val).to_uppercase())
         }
     }
     #[derive(Debug, ::prisma_core::serde::Deserialize, Default)]

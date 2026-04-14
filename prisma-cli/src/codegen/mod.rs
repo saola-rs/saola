@@ -1,7 +1,7 @@
+use heck::ToSnakeCase;
 use parser_database::ParserDatabase;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
-use heck::ToSnakeCase;
 
 pub fn generate_client(db: &ParserDatabase) -> TokenStream {
     let mut enums = Vec::new();
@@ -11,7 +11,7 @@ pub fn generate_client(db: &ParserDatabase) -> TokenStream {
     for walker in db.walk_enums() {
         let enum_name = format_ident!("{}", walker.name());
         let mut variants = Vec::new();
-        
+
         for (i, val) in walker.values().enumerate() {
             let variant_name = format_ident!("{}", val.name());
             if i == 0 {
@@ -25,7 +25,7 @@ pub fn generate_client(db: &ParserDatabase) -> TokenStream {
                 });
             }
         }
-        
+
         enums.push(quote! {
             #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, ::prisma_core::serde::Serialize, ::prisma_core::serde::Deserialize, Default)]
             #[serde(crate = "::prisma_core::serde", rename_all = "UPPERCASE")]
@@ -49,21 +49,19 @@ pub fn generate_client(db: &ParserDatabase) -> TokenStream {
         for field in walker.scalar_fields() {
             let prisma_field_name = field.name();
             let rust_field_name = format_ident!("{}", prisma_field_name.to_snake_case());
-            
+
             let field_type = match field.scalar_field_type() {
-                parser_database::ScalarFieldType::BuiltInScalar(builtin) => {
-                    match builtin {
-                        parser_database::ScalarType::String => quote! { String },
-                        parser_database::ScalarType::Int => quote! { i32 },
-                        parser_database::ScalarType::Float => quote! { f64 },
-                        parser_database::ScalarType::Boolean => quote! { bool },
-                        parser_database::ScalarType::DateTime => quote! { chrono::DateTime<chrono::Utc> },
-                        parser_database::ScalarType::Json => quote! { serde_json::Value },
-                        parser_database::ScalarType::Decimal => quote! { bigdecimal::BigDecimal },
-                        parser_database::ScalarType::BigInt => quote! { i64 },
-                        parser_database::ScalarType::Bytes => quote! { Vec<u8> },
-                    }
-                }
+                parser_database::ScalarFieldType::BuiltInScalar(builtin) => match builtin {
+                    parser_database::ScalarType::String => quote! { String },
+                    parser_database::ScalarType::Int => quote! { i32 },
+                    parser_database::ScalarType::Float => quote! { f64 },
+                    parser_database::ScalarType::Boolean => quote! { bool },
+                    parser_database::ScalarType::DateTime => quote! { chrono::DateTime<chrono::Utc> },
+                    parser_database::ScalarType::Json => quote! { serde_json::Value },
+                    parser_database::ScalarType::Decimal => quote! { bigdecimal::BigDecimal },
+                    parser_database::ScalarType::BigInt => quote! { i64 },
+                    parser_database::ScalarType::Bytes => quote! { Vec<u8> },
+                },
                 parser_database::ScalarFieldType::Enum(enum_id) => {
                     let enum_name = format_ident!("{}", db.walk(enum_id).name());
                     quote! { #enum_name }
@@ -74,7 +72,7 @@ pub fn generate_client(db: &ParserDatabase) -> TokenStream {
                 }
                 _ => quote! { serde_json::Value },
             };
-            
+
             let final_type = if field.is_optional() {
                 quote! { Option<#field_type> }
             } else {
@@ -83,9 +81,9 @@ pub fn generate_client(db: &ParserDatabase) -> TokenStream {
 
             let mut attrs = Vec::new();
             let mut prisma_meta = Vec::new();
-            
+
             prisma_meta.push(quote! { name = #prisma_field_name });
-            
+
             if field.is_single_pk() {
                 prisma_meta.push(quote! { id });
             }
@@ -106,7 +104,7 @@ pub fn generate_client(db: &ParserDatabase) -> TokenStream {
             let prisma_field_name = relation.name();
             let rust_field_name = format_ident!("{}", prisma_field_name.to_snake_case());
             let related_model = format_ident!("{}", relation.related_model().name());
-            
+
             let final_type = if relation.ast_field().arity.is_list() {
                 quote! { Vec<#related_model> }
             } else if !relation.is_required() {
@@ -136,13 +134,13 @@ pub fn generate_client(db: &ParserDatabase) -> TokenStream {
         pub mod client {
             use super::*;
             use ::prisma_core as _prisma_core;
-            
+
             pub fn client() -> _prisma_core::PrismaClient {
                 todo!("Initialize client")
             }
-            
+
             #(#enums)*
-            
+
             #(#models)*
         }
     }

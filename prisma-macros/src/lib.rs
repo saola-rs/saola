@@ -1,9 +1,9 @@
 extern crate proc_macro;
 
+use heck::{ToSnakeCase, ToUpperCamelCase};
 use proc_macro::TokenStream;
 use quote::{format_ident, quote};
-use syn::{parse_macro_input, ItemStruct, Type, GenericArgument, PathArguments};
-use heck::{ToUpperCamelCase, ToSnakeCase};
+use syn::{GenericArgument, ItemStruct, PathArguments, Type, parse_macro_input};
 
 fn get_inner_type(ty: &Type) -> String {
     match ty {
@@ -32,34 +32,31 @@ pub fn prisma_model(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let model_name_snake = format_ident!("{}", model_name_str.to_snake_case());
 
     let mut filter_methods = Vec::new();
+    let mut unique_filter_methods = Vec::new();
     let mut select_methods = Vec::new();
     let mut include_methods = Vec::new();
     let mut filter_struct_defs = Vec::new();
     let mut data_methods = Vec::new();
-    
-    let mut unique_enum_variants = Vec::new();
-    let mut unique_enum_arms = Vec::new();
-    
+
     let mut create_args = Vec::new();
     let mut create_args_push = Vec::new();
-    
+
     let mut scalar_field_names = Vec::new();
 
     let where_builder_name = format_ident!("{}WhereBuilder", model_name);
+    let unique_where_builder_name = format_ident!("{}UniqueWhereBuilder", model_name);
     let select_builder_name = format_ident!("{}SelectBuilder", model_name);
     let include_builder_name = format_ident!("{}IncludeBuilder", model_name);
     let data_builder_name = format_ident!("{}DataBuilder", model_name);
-    let unique_where_enum_name = format_ident!("{}UniqueWhere", model_name);
 
     for field in &mut input.fields {
         let rust_field_name = field.ident.as_ref().unwrap();
         let rust_field_name_str = rust_field_name.to_string();
-        
+
         let mut prisma_field_name = rust_field_name_str.clone();
         let mut is_relation = false;
         let mut is_unique = false;
-        
-        // Let's assume a field is required if it's not Option<T> and not an ID (IDs usually have defaults)
+
         let is_optional = {
             if let Type::Path(tp) = &field.ty {
                 tp.path.segments.last().unwrap().ident == "Option"
@@ -68,7 +65,7 @@ pub fn prisma_model(_attr: TokenStream, item: TokenStream) -> TokenStream {
             }
         };
         let mut is_id = false;
-        
+
         field.attrs.retain(|attr| {
             if attr.path().is_ident("prisma") {
                 let _ = attr.parse_nested_meta(|meta| {
@@ -94,7 +91,7 @@ pub fn prisma_model(_attr: TokenStream, item: TokenStream) -> TokenStream {
 
         if !is_relation {
             scalar_field_names.push(prisma_field_name.clone());
-            
+
             if !is_optional && !is_id {
                 let ty = &field.ty;
                 create_args.push(quote! { #rust_field_name: #ty });
@@ -102,36 +99,15 @@ pub fn prisma_model(_attr: TokenStream, item: TokenStream) -> TokenStream {
                     data_map.insert(#prisma_field_name.to_string(), prisma_core::query_core::ArgumentValue::Scalar(prisma_core::query_structure::PrismaValue::from(#rust_field_name)));
                 });
             }
-            
+
             if is_unique {
-                let variant_name = format_ident!("{}", rust_field_name_str.to_upper_camel_case());
-                let ty = &field.ty;
-                let ty_unwrapped = if is_optional {
-                    if let Type::Path(tp) = ty {
-                        if let PathArguments::AngleBracketed(args) = &tp.path.segments.last().unwrap().arguments {
-                            if let Some(GenericArgument::Type(inner_ty)) = args.args.first() {
-                                inner_ty.clone()
-                            } else {
-                                ty.clone()
-                            }
-                        } else {
-                            ty.clone()
-                        }
-                    } else {
-                        ty.clone()
-                    }
-                } else {
-                    ty.clone()
-                };
-                
-                unique_enum_variants.push(quote! {
-                    #variant_name(#ty_unwrapped)
-                });
-                unique_enum_arms.push(quote! {
-                    #unique_where_enum_name::#variant_name(val) => {
-                        let mut map = prisma_core::IndexMap::new();
-                        map.insert(#prisma_field_name.to_string(), prisma_core::query_core::ArgumentValue::Scalar(prisma_core::query_structure::PrismaValue::from(val)));
-                        prisma_core::query_core::ArgumentValue::Object(map)
+                unique_filter_methods.push(quote! {
+                    pub fn #rust_field_name<T>(&mut self, value: T) -> &mut Self 
+                    where T: Into<prisma_core::query_structure::PrismaValue>
+                    {
+                        use prisma_core::FilterBuilder;
+                        self.add_arg(#prisma_field_name.to_string(), prisma_core::query_core::ArgumentValue::Scalar(value.into()));
+                        self
                     }
                 });
             }
@@ -146,7 +122,7 @@ pub fn prisma_model(_attr: TokenStream, item: TokenStream) -> TokenStream {
             let related_data_builder = format_ident!("{}DataBuilder", inner_type_str);
 
             include_methods.push(quote! {
-                pub fn #rust_field_name<F>(&mut self, f: F) -> &mut Self 
+                pub fn #rust_field_name<F>(&mut self, f: F) -> &mut Self
                 where F: FnOnce(&mut #related_select_builder)
                 {
                     let mut builder = #related_select_builder::default();
@@ -252,18 +228,65 @@ pub fn prisma_model(_attr: TokenStream, item: TokenStream) -> TokenStream {
             }
         }
         impl #where_builder_name {
+            pub fn and<F>(&mut self, f: F) -> &mut Self
+            where F: FnOnce(&mut Self)
+            {
+                let mut builder = Self::default();
+                f(&mut builder);
+                if !builder.args.is_empty() {
+                    let mut map = prisma_core::IndexMap::new();
+                    for (k, v) in builder.args {
+                        map.insert(k, v);
+                    }
+                    self.args.push(("AND".to_string(), prisma_core::query_core::ArgumentValue::Object(map)));
+                }
+                self
+            }
+
+            pub fn or<F>(&mut self, f: F) -> &mut Self
+            where F: FnOnce(&mut Self)
+            {
+                let mut builder = Self::default();
+                f(&mut builder);
+                if !builder.args.is_empty() {
+                    let mut map = prisma_core::IndexMap::new();
+                    for (k, v) in builder.args {
+                        map.insert(k, v);
+                    }
+                    self.args.push(("OR".to_string(), prisma_core::query_core::ArgumentValue::List(vec![prisma_core::query_core::ArgumentValue::Object(map)])));
+                }
+                self
+            }
+
+            pub fn not<F>(&mut self, f: F) -> &mut Self
+            where F: FnOnce(&mut Self)
+            {
+                let mut builder = Self::default();
+                f(&mut builder);
+                if !builder.args.is_empty() {
+                    let mut map = prisma_core::IndexMap::new();
+                    for (k, v) in builder.args {
+                        map.insert(k, v);
+                    }
+                    self.args.push(("NOT".to_string(), prisma_core::query_core::ArgumentValue::Object(map)));
+                }
+                self
+            }
+
             #(#filter_methods)*
         }
 
-        pub enum #unique_where_enum_name {
-            #(#unique_enum_variants),*
+        #[derive(Default)]
+        pub struct #unique_where_builder_name {
+            pub args: Vec<(String, prisma_core::query_core::ArgumentValue)>,
         }
-        impl From<#unique_where_enum_name> for prisma_core::query_core::ArgumentValue {
-            fn from(val: #unique_where_enum_name) -> Self {
-                match val {
-                    #(#unique_enum_arms)*
-                }
+        impl prisma_core::FilterBuilder for #unique_where_builder_name {
+            fn add_arg(&mut self, name: String, value: prisma_core::query_core::ArgumentValue) {
+                self.args.push((name, value));
             }
+        }
+        impl #unique_where_builder_name {
+            #(#unique_filter_methods)*
         }
 
         #(#filter_struct_defs)*
@@ -308,7 +331,7 @@ pub fn prisma_model(_attr: TokenStream, item: TokenStream) -> TokenStream {
         }
 
         pub struct #query_name;
-        
+
         pub fn #model_name_snake() -> #query_name {
             #query_name
         }
@@ -320,9 +343,8 @@ pub fn prisma_model(_attr: TokenStream, item: TokenStream) -> TokenStream {
                 }
             }
 
-            pub fn find_unique(&self, unique: #unique_where_enum_name) -> #find_unique_builder_name {
-                let mut builder = prisma_core::FindUniqueBuilder::new(#model_name_str.to_string(), vec![#(#scalar_field_names.to_string()),*]);
-                builder.add_arg("where".to_string(), unique.into());
+            pub fn find_unique(&self) -> #find_unique_builder_name {
+                let builder = prisma_core::FindUniqueBuilder::new(#model_name_str.to_string(), vec![#(#scalar_field_names.to_string()),*]);
                 #find_unique_builder_name { inner: builder }
             }
 
@@ -333,15 +355,13 @@ pub fn prisma_model(_attr: TokenStream, item: TokenStream) -> TokenStream {
                 #create_builder_name { inner: builder, data: data_map }
             }
 
-            pub fn update(&self, unique: #unique_where_enum_name) -> #update_builder_name {
-                let mut builder = prisma_core::UpdateBuilder::new(#model_name_str.to_string(), vec![#(#scalar_field_names.to_string()),*]);
-                builder.add_arg("where".to_string(), unique.into());
+            pub fn update(&self) -> #update_builder_name {
+                let builder = prisma_core::UpdateBuilder::new(#model_name_str.to_string(), vec![#(#scalar_field_names.to_string()),*]);
                 #update_builder_name { inner: builder, data: prisma_core::IndexMap::new() }
             }
 
-            pub fn delete(&self, unique: #unique_where_enum_name) -> #delete_builder_name {
-                let mut builder = prisma_core::DeleteBuilder::new(#model_name_str.to_string(), vec![#(#scalar_field_names.to_string()),*]);
-                builder.add_arg("where".to_string(), unique.into());
+            pub fn delete(&self) -> #delete_builder_name {
+                let builder = prisma_core::DeleteBuilder::new(#model_name_str.to_string(), vec![#(#scalar_field_names.to_string()),*]);
                 #delete_builder_name { inner: builder }
             }
         }
@@ -351,7 +371,7 @@ pub fn prisma_model(_attr: TokenStream, item: TokenStream) -> TokenStream {
         }
 
         impl #find_many_builder_name {
-            pub fn where_clause<F>(mut self, f: F) -> Self 
+            pub fn where_clause<F>(mut self, f: F) -> Self
             where F: FnOnce(&mut #where_builder_name)
             {
                 let mut builder = #where_builder_name::default();
@@ -401,6 +421,21 @@ pub fn prisma_model(_attr: TokenStream, item: TokenStream) -> TokenStream {
         }
 
         impl #find_unique_builder_name {
+            pub fn where_clause<F>(mut self, f: F) -> Self
+            where F: FnOnce(&mut #unique_where_builder_name)
+            {
+                let mut builder = #unique_where_builder_name::default();
+                f(&mut builder);
+                if !builder.args.is_empty() {
+                    let mut map = prisma_core::IndexMap::new();
+                    for (k, v) in builder.args {
+                        map.insert(k, v);
+                    }
+                    self.inner.add_arg("where".to_string(), prisma_core::query_core::ArgumentValue::Object(map));
+                }
+                self
+            }
+
             pub fn select<F>(mut self, f: F) -> Self
             where F: FnOnce(&mut #select_builder_name)
             {
@@ -437,7 +472,7 @@ pub fn prisma_model(_attr: TokenStream, item: TokenStream) -> TokenStream {
         }
 
         impl #create_builder_name {
-            pub fn data<F>(mut self, f: F) -> Self 
+            pub fn data<F>(mut self, f: F) -> Self
             where F: FnOnce(&mut #data_builder_name)
             {
                 let mut builder = #data_builder_name { data: self.data };
@@ -471,12 +506,27 @@ pub fn prisma_model(_attr: TokenStream, item: TokenStream) -> TokenStream {
         }
 
         impl #update_builder_name {
-            pub fn data<F>(mut self, f: F) -> Self 
+            pub fn data<F>(mut self, f: F) -> Self
             where F: FnOnce(&mut #data_builder_name)
             {
                 let mut builder = #data_builder_name { data: self.data };
                 f(&mut builder);
                 self.data = builder.data;
+                self
+            }
+
+            pub fn where_clause<F>(mut self, f: F) -> Self
+            where F: FnOnce(&mut #unique_where_builder_name)
+            {
+                let mut builder = #unique_where_builder_name::default();
+                f(&mut builder);
+                if !builder.args.is_empty() {
+                    let mut map = prisma_core::IndexMap::new();
+                    for (k, v) in builder.args {
+                        map.insert(k, v);
+                    }
+                    self.inner.add_arg("where".to_string(), prisma_core::query_core::ArgumentValue::Object(map));
+                }
                 self
             }
 
@@ -504,6 +554,21 @@ pub fn prisma_model(_attr: TokenStream, item: TokenStream) -> TokenStream {
         }
 
         impl #delete_builder_name {
+            pub fn where_clause<F>(mut self, f: F) -> Self
+            where F: FnOnce(&mut #unique_where_builder_name)
+            {
+                let mut builder = #unique_where_builder_name::default();
+                f(&mut builder);
+                if !builder.args.is_empty() {
+                    let mut map = prisma_core::IndexMap::new();
+                    for (k, v) in builder.args {
+                        map.insert(k, v);
+                    }
+                    self.inner.add_arg("where".to_string(), prisma_core::query_core::ArgumentValue::Object(map));
+                }
+                self
+            }
+
             pub fn select<F>(mut self, f: F) -> Self
             where F: FnOnce(&mut #select_builder_name)
             {

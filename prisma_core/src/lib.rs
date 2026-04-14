@@ -1,15 +1,15 @@
-pub use query_structure;
-pub use query_core;
-pub use schema;
-pub use indexmap::IndexMap;
-pub use serde_json;
-pub use serde;
 pub use anyhow;
+pub use indexmap::IndexMap;
+pub use query_core;
+pub use query_structure;
+pub use schema;
+pub use serde;
+pub use serde_json;
 
-use query_core::{QueryExecutor, executor::InterpretingExecutor, protocol::EngineProtocol, Operation, Selection};
-use sql_query_connector::{FromSource, PostgreSql, Mysql, Sqlite};
-use std::sync::Arc;
 use psl::parser_database::NoExtensionTypes;
+use query_core::{Operation, QueryExecutor, Selection, executor::InterpretingExecutor, protocol::EngineProtocol};
+use sql_query_connector::{FromSource, Mysql, PostgreSql, Sqlite};
+use std::sync::Arc;
 
 pub struct PrismaClient {
     executor: Arc<dyn QueryExecutor + Send + Sync>,
@@ -24,13 +24,16 @@ impl PrismaClient {
     pub async fn new(schema_str: &str, url: &str) -> Result<Self, anyhow::Error> {
         let source_file = psl::SourceFile::from(schema_str);
         let validated = psl::validate(source_file, &NoExtensionTypes);
-        
+
         if !validated.diagnostics.errors().is_empty() {
             anyhow::bail!("Schema validation failed");
         }
 
         let validated = Arc::new(validated);
-        let datasource = validated.configuration.datasources.first()
+        let datasource = validated
+            .configuration
+            .datasources
+            .first()
             .ok_or_else(|| anyhow::anyhow!("No datasource found in schema"))?;
 
         let query_schema = Arc::new(schema::build(validated.clone(), true));
@@ -51,10 +54,7 @@ impl PrismaClient {
             _ => anyhow::bail!("Unsupported provider: {}", datasource.active_provider),
         };
 
-        Ok(PrismaClient {
-            executor,
-            query_schema,
-        })
+        Ok(PrismaClient { executor, query_schema })
     }
 
     pub fn executor(&self) -> Arc<dyn QueryExecutor + Send + Sync> {
@@ -97,14 +97,11 @@ impl FindManyBuilder {
             }
         }
         let operation = Operation::Read(self.selection);
-        
-        let response = client.executor().execute(
-            None,
-            operation,
-            client.query_schema(),
-            None,
-            EngineProtocol::Json,
-        ).await?;
+
+        let response = client
+            .executor()
+            .execute(None, operation, client.query_schema(), None, EngineProtocol::Json)
+            .await?;
 
         Ok(serde_json::from_value(serde_json::to_value(&response.data)?)?)
     }
@@ -141,14 +138,11 @@ impl FindUniqueBuilder {
             }
         }
         let operation = Operation::Read(self.selection);
-        
-        let response = client.executor().execute(
-            None,
-            operation,
-            client.query_schema(),
-            None,
-            EngineProtocol::Json,
-        ).await?;
+
+        let response = client
+            .executor()
+            .execute(None, operation, client.query_schema(), None, EngineProtocol::Json)
+            .await?;
 
         Ok(serde_json::from_value(serde_json::to_value(&response.data)?)?)
     }
@@ -185,14 +179,11 @@ impl CreateBuilder {
             }
         }
         let operation = Operation::Write(self.selection);
-        
-        let response = client.executor().execute(
-            None,
-            operation,
-            client.query_schema(),
-            None,
-            EngineProtocol::Json,
-        ).await?;
+
+        let response = client
+            .executor()
+            .execute(None, operation, client.query_schema(), None, EngineProtocol::Json)
+            .await?;
 
         Ok(serde_json::from_value(serde_json::to_value(&response.data)?)?)
     }
@@ -229,14 +220,11 @@ impl UpdateBuilder {
             }
         }
         let operation = Operation::Write(self.selection);
-        
-        let response = client.executor().execute(
-            None,
-            operation,
-            client.query_schema(),
-            None,
-            EngineProtocol::Json,
-        ).await?;
+
+        let response = client
+            .executor()
+            .execute(None, operation, client.query_schema(), None, EngineProtocol::Json)
+            .await?;
 
         Ok(serde_json::from_value(serde_json::to_value(&response.data)?)?)
     }
@@ -273,14 +261,11 @@ impl DeleteBuilder {
             }
         }
         let operation = Operation::Write(self.selection);
-        
-        let response = client.executor().execute(
-            None,
-            operation,
-            client.query_schema(),
-            None,
-            EngineProtocol::Json,
-        ).await?;
+
+        let response = client
+            .executor()
+            .execute(None, operation, client.query_schema(), None, EngineProtocol::Json)
+            .await?;
 
         Ok(serde_json::from_value(serde_json::to_value(&response.data)?)?)
     }
