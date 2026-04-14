@@ -5,7 +5,6 @@ use query_core::{ArgumentValue, Selection};
 /// Generic Write builder - base for all create/update/delete operations
 pub struct WriteBuilder {
     pub state: BuilderState,
-    is_write: bool,
 }
 
 impl WriteBuilder {
@@ -13,7 +12,6 @@ impl WriteBuilder {
     pub fn new(model_name: String, operation: &str, default_selections: Vec<String>) -> Self {
         Self {
             state: BuilderState::write(model_name, operation, default_selections),
-            is_write: true,
         }
     }
 

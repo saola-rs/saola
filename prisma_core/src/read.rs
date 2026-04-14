@@ -5,7 +5,6 @@ use query_core::{ArgumentValue, Selection};
 /// Generic Read builder - base for all find operations
 pub struct ReadBuilder {
     pub state: BuilderState,
-    is_write: bool,
 }
 
 impl ReadBuilder {
@@ -13,7 +12,6 @@ impl ReadBuilder {
     pub fn new(model_name: String, operation: &str, default_selections: Vec<String>) -> Self {
         Self {
             state: BuilderState::read(model_name, operation, default_selections),
-            is_write: false,
         }
     }
 

@@ -15,6 +15,7 @@ pub mod write;
 pub mod aggregate;
 pub mod filters;
 pub mod filter_builders;
+pub mod prelude;
 
 // Re-export main types
 pub use builder::{Executable, Filterable, Selectable, FilterBuilder};

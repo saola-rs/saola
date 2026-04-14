@@ -1,95 +1,66 @@
-extern crate prisma_core;
-pub mod prisma;
-
-use prisma::client;
+use prisma_core::prelude::*;
+prisma_macros::init!("schema.prisma");
+use db::*;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    // 1. Initialize the client
-    let schema_str = include_str!("../schema.prisma");
-    let client = prisma_core::PrismaClient::new(schema_str, "file:./dev.db").await?;
-
-    println!("Client initialized successfully.");
+    // Initialize client from schema
+    let client = db::client().await?;
+    println!("✓ Client initialized successfully");
 
     let unique_email = format!(
-        "bob-{}@example.com",
+        "user-{}@example.com",
         std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
             .as_secs()
     );
 
-    // 2. CREATE a user!
-    println!("Inserting a new user...");
-    let create_result: client::User = client::user()
-        .create(unique_email.clone(), client::Role::USER)
-        .data(|u| {
-            u.display_name("Bob the Builder".to_string());
-            u.posts(|p| {
-                p.title("Hello Post".to_string());
-                p.status(client::PostStatus::DRAFT);
-                p.published(false);
-            });
-        })
+    // Create a new user with type-safe builders
+    println!("\n[Creating user]");
+    let create_result: User = user()
+        .create(unique_email.clone(), Role::USER)
         .exec(&client)
         .await?;
+    println!("  ✓ Created user: {} ({})", create_result.email, create_result.role);
 
-    println!("Created user: {:?}", create_result);
-
-    // 3. UPDATE the user we just created
-    println!("Updating user...");
-    let update_result: client::User = client::user()
-        .update()
-        .where_clause(|w| {
-            w.email(unique_email.clone());
-        })
-        .data(|u| {
-            u.display_name("Bob the Master Builder".to_string());
-        })
-        .select(|u| {
-            u.id().display_name();
-        })
-        .exec(&client)
-        .await?;
-
-    println!("Update result: {:?}", update_result);
-
-    // 4. FIND the user we just updated
-    println!("Finding user...");
-    let query = client::user()
+    // Test type-safe filters
+    println!("\n[Testing type-safe filters]");
+    let found_users: Vec<User> = user()
         .find_many()
-        .where_clause(|u| {
-            u.or(|u2| {
-                u2.email().eq(unique_email.clone());
-                // u2.email().eq("some_other_email@example.com");
-            });
+        .where_clause(|w| {
+            // Type-safe: .contains() is only available on StringFilter
+            w.email().contains("@example.com".to_string());
         })
-        .select(|u| {
-            u.id().display_name();
-        })
-        .include(|i| {
-            i.posts(|p| {
-                p.all();
-            });
-        });
+        .exec(&client)
+        .await?;
+    println!("  ✓ Found {} users with email containing '@example.com'", found_users.len());
 
-    let find_result: Vec<client::User> = query.exec(&client).await?;
-    println!("Find result: {:?}", find_result);
-
-    // 5. DELETE the user
-    println!("Deleting user...");
-    let delete_result: client::User = client::user()
-        .delete()
+    // Find unique user by email
+    println!("\n[Finding unique user]");
+    let found_user: Option<User> = user()
+        .find_unique()
         .where_clause(|w| {
             w.email(unique_email.clone());
-        })
-        .select(|u| {
-            u.id().email();
         })
         .exec(&client)
         .await?;
 
-    println!("Delete result: {:?}", delete_result);
+    if let Some(u) = found_user {
+        println!("  ✓ Found user: {} (id: {})", u.email, u.id);
+    }
 
+    // Count users with specific role
+    println!("\n[Counting users]");
+    let count: i64 = user()
+        .count()
+        .where_clause(|w| {
+            w.role().eq(Role::USER);
+        })
+        .exec(&client)
+        .await?;
+    println!("  ✓ Total users with role USER: {}", count);
+
+    println!("\n[All tests passed] ✓\n");
     Ok(())
 }

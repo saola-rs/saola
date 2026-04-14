@@ -9,6 +9,7 @@ license.workspace = true
 proc-macro = true
 
 [dependencies]
+psl = { workspace = true }
 prisma_core = { path = "../prisma_core" }
 prisma-schema = { path = "../prisma-schema" }
 proc-macro2 = { workspace = true }
