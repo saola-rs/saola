@@ -73,9 +73,6 @@ impl Executable for WriteBuilder {
 }
 
 // Public type aliases for convenience
-pub type CreateBuilder = WriteBuilder;
-pub type UpdateBuilder = WriteBuilder;
-pub type DeleteBuilder = WriteBuilder;
 pub type CreateManyBuilder = WriteBuilder;
 pub type UpdateManyBuilder = WriteBuilder;
 pub type DeleteManyBuilder = WriteBuilder;

@@ -63,8 +63,6 @@ impl Executable for ReadBuilder {
 }
 
 // Public type aliases for convenience and backward compatibility
-pub type FindManyBuilder = ReadBuilder;
-pub type FindUniqueBuilder = ReadBuilder;
 pub type FindFirstBuilder = ReadBuilder;
 pub type FindFirstOrThrowBuilder = ReadBuilder;
 pub type FindUniqueOrThrowBuilder = ReadBuilder;

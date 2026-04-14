@@ -20,6 +20,11 @@ pub trait Selectable {
     fn add_nested_selection(&mut self, selection: Selection);
 }
 
+/// Backward compatibility trait - alias for FilterBuilder used by generated macros
+pub trait FilterBuilder {
+    fn add_arg(&mut self, name: String, value: ArgumentValue);
+}
+
 /// Base builder state - common to all operations
 pub struct BuilderState {
     pub model_name: String,
