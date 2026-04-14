@@ -13,6 +13,8 @@ pub mod client;
 pub mod read;
 pub mod write;
 pub mod aggregate;
+pub mod filters;
+pub mod filter_builders;
 
 // Re-export main types
 pub use builder::{Executable, Filterable, Selectable, FilterBuilder};
@@ -20,6 +22,8 @@ pub use client::PrismaClient;
 pub use read::ReadBuilder;
 pub use write::WriteBuilder;
 pub use aggregate::{CountBuilder, AggregateBuilder, GroupByBuilder};
+pub use filters::{StringFieldOps, IntFieldOps, BoolFieldOps, EnumFieldOps, FloatFieldOps, DateTimeFieldOps, RelationFilterOps};
+pub use filter_builders::{StringFilter, IntFilter, BoolFilter, EnumFilter, FloatFilter, DateTimeFilter};
 
 // Standard Result type using anyhow::Error
 pub type Result<T> = anyhow::Result<T>;
