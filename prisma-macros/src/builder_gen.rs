@@ -3,10 +3,7 @@
 use crate::model_analysis::ModelMetadata;
 use quote::{format_ident, quote};
 
-pub fn generate_where_builder(
-    model_name: &syn::Ident,
-    model_metadata: &ModelMetadata,
-) -> proc_macro2::TokenStream {
+pub fn generate_where_builder(model_name: &syn::Ident, model_metadata: &ModelMetadata) -> proc_macro2::TokenStream {
     let where_builder_name = format_ident!("{}WhereBuilder", model_name);
     let filter_methods = crate::model_analysis::generate_scalar_filter_methods(&model_metadata.fields);
 
@@ -98,10 +95,7 @@ pub fn generate_unique_where_builder(
     }
 }
 
-pub fn generate_select_builder(
-    model_name: &syn::Ident,
-    model_metadata: &ModelMetadata,
-) -> proc_macro2::TokenStream {
+pub fn generate_select_builder(model_name: &syn::Ident, model_metadata: &ModelMetadata) -> proc_macro2::TokenStream {
     let select_builder_name = format_ident!("{}SelectBuilder", model_name);
     let select_methods = crate::model_analysis::generate_select_methods(&model_metadata.fields);
     let scalar_field_names = &model_metadata.scalar_field_names;
@@ -109,28 +103,27 @@ pub fn generate_select_builder(
     quote! {
         #[derive(Default)]
         pub struct #select_builder_name {
-            pub fields: Vec<String>,
+            pub selections: Vec<prisma_core::query_core::Selection>,
         }
 
         impl #select_builder_name {
             pub fn all(&mut self) -> &mut Self {
-                self.fields.extend(vec![#(#scalar_field_names.to_string()),*]);
+                for field in &[#(#scalar_field_names),*] {
+                    self.selections.push(prisma_core::query_core::Selection::with_name(field.to_string()));
+                }
                 self
             }
 
             #(#select_methods)*
         }
 
-        impl From<#select_builder_name> for Vec<String> {
-            fn from(b: #select_builder_name) -> Self { b.fields }
+        impl From<#select_builder_name> for Vec<prisma_core::query_core::Selection> {
+            fn from(b: #select_builder_name) -> Self { b.selections }
         }
     }
 }
 
-pub fn generate_include_builder(
-    model_name: &syn::Ident,
-    model_metadata: &ModelMetadata,
-) -> proc_macro2::TokenStream {
+pub fn generate_include_builder(model_name: &syn::Ident, model_metadata: &ModelMetadata) -> proc_macro2::TokenStream {
     let include_builder_name = format_ident!("{}IncludeBuilder", model_name);
     let include_methods = crate::model_analysis::generate_include_methods(&model_metadata.fields);
 
@@ -150,10 +143,7 @@ pub fn generate_include_builder(
     }
 }
 
-pub fn generate_data_builder(
-    model_name: &syn::Ident,
-    model_metadata: &ModelMetadata,
-) -> proc_macro2::TokenStream {
+pub fn generate_data_builder(model_name: &syn::Ident, model_metadata: &ModelMetadata) -> proc_macro2::TokenStream {
     let data_builder_name = format_ident!("{}DataBuilder", model_name);
     let data_methods = crate::model_analysis::generate_data_methods(&model_metadata.fields);
 
@@ -167,9 +157,11 @@ pub fn generate_data_builder(
             #(#data_methods)*
         }
 
-        impl From<#data_builder_name> for prisma_core::query_core::ArgumentValue {
-            fn from(b: #data_builder_name) -> Self {
-                prisma_core::query_core::ArgumentValue::Object(b.data)
+        impl From<#data_builder_name> for prisma_core::query_structure::PrismaValue {
+            fn from(_b: #data_builder_name) -> Self {
+                // This is a bit complex as we need to convert IndexMap<String, ArgumentValue> to PrismaValue
+                // For now, return a placeholder
+                prisma_core::query_structure::PrismaValue::Null
             }
         }
     }

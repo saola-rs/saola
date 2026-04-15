@@ -14,7 +14,7 @@ impl CountBuilder {
         let mut count_sel = Selection::with_name("_count");
         count_sel.push_nested_selection(Selection::with_name("_all"));
         state.selection.push_nested_selection(count_sel);
-        
+
         Self { state }
     }
 }
@@ -35,11 +35,9 @@ impl Executable for CountBuilder {
     async fn exec<T: serde::de::DeserializeOwned>(self, client: &crate::client::PrismaClient) -> crate::Result<T> {
         let operation = self.state.into_operation(false);
         let res = execute_raw(operation, client).await?;
-        
-        let count_val = res.get("_count")
-            .and_then(|c| c.get("_all"))
-            .unwrap_or(&res);
-            
+
+        let count_val = res.get("_count").and_then(|c| c.get("_all")).unwrap_or(&res);
+
         Ok(serde_json::from_value(count_val.clone())?)
     }
 }

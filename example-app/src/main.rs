@@ -1,10 +1,10 @@
-use prisma_core::prelude::*;
 prisma_macros::init!("schema.prisma");
 use db::*;
+use prisma_core::prelude::*;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    // Initialize client from schema
+    // 1. Client Initialization
     let client = db::client().await?;
     println!("✓ Client initialized successfully");
 
@@ -16,98 +16,131 @@ async fn main() -> anyhow::Result<()> {
             .as_secs()
     );
 
-    // Create a new user with type-safe builders
-    println!("\n[Creating user]");
-    let create_result: User = user()
-        .create(unique_email.clone(), Role::USER)
+    // 2. CREATE Operation (Auto-inferred return type: db::User)
+    println!("\n[1. Creating User]");
+    // Rename local variable to avoid shadowing the user() factory function
+    let created_user = user().create(unique_email.clone(), Role::USER).exec(&client).await?;
+    println!("  ✓ Created: {} (id: {})", created_user.email, created_user.id);
+
+    // 3. CREATE Nested Relationships
+    println!("\n[2. Creating Posts for User]");
+    let post1 = post()
+        .create(
+            "Rust ORM is awesome".to_string(),
+            PostStatus::PUBLISHED,
+            true,
+            created_user.id.clone(),
+        )
         .exec(&client)
         .await?;
-    println!("  ✓ Created user: {} ({})", create_result.email, create_result.role);
 
-    // Test type-safe filters
-    println!("\n[Testing type-safe filters]");
-    let found_users: Vec<User> = user()
+    let post2 = post()
+        .create(
+            "Native Engines in Rust".to_string(),
+            PostStatus::DRAFT,
+            false,
+            created_user.id.clone(),
+        )
+        .exec(&client)
+        .await?;
+    println!("  ✓ Created 2 posts: '{}' and '{}'", post1.title, post2.title);
+
+    // 4. FIND MANY with Complex Filters
+    println!("\n[3. Find Many with Logical Operators]");
+    let users = user()
         .find_many()
         .where_clause(|w| {
-            // Type-safe: .contains() is only available on StringFilter
-            w.email().contains("@example.com".to_string());
+            w.or(|w| {
+                w.email().contains("example.com".to_string());
+                w.role().eq(Role::USER);
+            });
+            w.not(|w| {
+                w.id().eq("non-existent-id".to_string());
+            });
         })
         .exec(&client)
         .await?;
-    println!("  ✓ Found {} users with email containing '@example.com'", found_users.len());
+    println!("  ✓ Found {} users matching criteria", users.len());
 
-    // Find unique user by email
-    println!("\n[Finding unique user]");
-    let found_user: Option<User> = user()
+    // 5. FIND UNIQUE with Automatic Relationship Inclusion
+    println!("\n[4. Find Unique + Automatic Include Inference]");
+    // .posts() transitions return type from Option<User> to Option<UserWithPosts>
+    let user_with_posts = user()
         .find_unique()
         .where_clause(|w| {
             w.email(unique_email.clone());
         })
+        .posts()
         .exec(&client)
-        .await?;
+        .await?
+        .expect("User should exist");
 
-    let found_user_email = if let Some(ref u) = found_user {
-        println!("  ✓ Found user: {} (id: {})", u.email, u.id);
-        u.id.clone()
-    } else {
-        "".to_string()
-    };
-
-    // Create some posts if we have a user
-    if !found_user_email.is_empty() {
-        println!("\n[Creating posts for user]");
-        for i in 1..=3 {
-            let _post: db::Post = db::post()
-                .create(
-                    format!("Post {} Title", i),
-                    db::PostStatus::PUBLISHED,
-                    false,
-                    found_user_email.clone(),
-                )
-                .exec(&client)
-                .await?;
-        }
-        println!("  ✓ Created 3 posts");
+    println!("  ✓ Retrieved UserWithPosts: {}", user_with_posts.email);
+    println!("    Total Posts: {}", user_with_posts.posts.len());
+    for p in user_with_posts.posts {
+        println!("      - {} ({:?})", p.title, p.status);
     }
 
-    // Count users with specific role
-    println!("\n[Counting users]");
-    let count: i64 = user()
+    // 6. Ad-hoc selection with select_as! macro (TypeScript-like syntax)
+    println!("\n[5. Ad-hoc selection with select_as! macro]");
+    let partial_data = db::select_as!(
+        user()
+            .find_unique()
+            .where_clause(|w| {w.email(unique_email.clone());}),
+        {
+            id: String,
+            email: String,
+            posts: {
+                title: String,
+                status: PostStatus
+            }[]
+        }
+    )
+    .exec(&client)
+    .await?
+    .expect("User should exist");
+
+    println!("  ✓ Zero-boilerplate selection successful!");
+    println!("    Selected ID: {}", partial_data.id);
+    println!("    Selected Email: {}", partial_data.email);
+    println!("    Nested Posts: {:?}", partial_data.posts);
+
+    // 7. COUNT Operation
+    println!("\n[6. Count Users]");
+    let count = user()
         .count()
         .where_clause(|w| {
             w.role().eq(Role::USER);
         })
         .exec(&client)
         .await?;
-    println!("  ✓ Total users with role USER: {}", count);
+    println!("  ✓ Total USERs in database: {}", count);
 
-    // Test relation type generation
-    println!("\n[Testing relation types]");
-    // This should compile - relation types should be available
-    let _: std::marker::PhantomData<db::UserWithPosts> = std::marker::PhantomData;
-    println!("  ✓ UserWithPosts type is available");
+    // 8. UPDATE Operation (using Unique Filter)
+    println!("\n[7. Update User Display Name]");
+    let updated_user = user()
+        .update()
+        .where_clause(|w| {
+            w.email(unique_email.clone());
+        })
+        .data(|d| {
+            d.display_name("Prisma User".to_string());
+        })
+        .exec(&client)
+        .await?;
+    println!("  ✓ Updated: {} -> {:?}", updated_user.email, updated_user.display_name);
 
-    // Test include with typed return
-    println!("\n[Testing include with typed return]");
-    if !found_user_email.is_empty() {
-        let user_with_posts: db::UserWithPosts = user()
-            .find_unique()
-            .where_clause(|w| {
-                w.id(found_user_email.clone());
-            })
-            .include(|i| {
-                i.posts();
-            })
-            .exec(&client)
-            .await?;
-        println!("  ✓ Retrieved UserWithPosts: {}", user_with_posts.email);
-        println!("    Posts count: {}", user_with_posts.posts.len());
-        for (idx, post) in user_with_posts.posts.iter().enumerate() {
-            println!("      Post {}: {} ({})", idx + 1, post.title, post.status);
-            println!("        User in post: {} (id: {})", post.user.email, post.user.id);
-        }
-    }
+    // 9. DELETE Operation
+    println!("\n[8. Delete User]");
+    let deleted_user = user()
+        .delete()
+        .where_clause(|w| {
+            w.email(unique_email.clone());
+        })
+        .exec(&client)
+        .await?;
+    println!("  ✓ Deleted User: {}", deleted_user.email);
 
-    println!("\n[All tests passed] ✓\n");
+    println!("\n[All supported features demonstrated] ✓\n");
     Ok(())
 }

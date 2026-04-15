@@ -1,9 +1,8 @@
-/// Type-safe filter operators per field type
-/// This module provides trait-based operator constraints to catch invalid operations at compile time
-
-use query_core::ArgumentValue;
 use crate::IndexMap;
 use crate::query_structure::PrismaValue;
+/// Type-safe filter operators per field type
+/// This module provides trait-based operator constraints to catch invalid operations at compile time
+use query_core::ArgumentValue;
 
 /// Base filter trait - all filters implement this
 pub trait FilterOp: Sized {
@@ -78,11 +77,7 @@ pub trait RelationFilterOps {
 // ============ HELPER FUNCTIONS ============
 
 /// Helper to create a filter argument with operator
-pub fn create_filter_arg<T: Into<PrismaValue>>(
-    field_name: &str,
-    op: &str,
-    value: T,
-) -> (String, ArgumentValue) {
+pub fn create_filter_arg<T: Into<PrismaValue>>(field_name: &str, op: &str, value: T) -> (String, ArgumentValue) {
     let mut map = IndexMap::new();
     map.insert(op.to_string(), ArgumentValue::Scalar(value.into()));
     (field_name.to_string(), ArgumentValue::Object(map))
@@ -94,10 +89,7 @@ pub fn create_list_filter_arg<T: Into<PrismaValue>>(
     op: &str,
     values: Vec<T>,
 ) -> (String, ArgumentValue) {
-    let list: Vec<ArgumentValue> = values
-        .into_iter()
-        .map(|v| ArgumentValue::Scalar(v.into()))
-        .collect();
+    let list: Vec<ArgumentValue> = values.into_iter().map(|v| ArgumentValue::Scalar(v.into())).collect();
 
     let mut map = IndexMap::new();
     map.insert(op.to_string(), ArgumentValue::List(list));

@@ -1,7 +1,7 @@
 //! Orchestrate all code generation for unified init! macro
 
-use quote::quote;
 use crate::model_gen;
+use quote::quote;
 
 /// Generate the complete module structure
 pub fn generate_module(schema: &psl::ValidatedSchema, schema_path: &str) -> proc_macro2::TokenStream {
@@ -23,10 +23,15 @@ pub fn generate_module(schema: &psl::ValidatedSchema, schema_path: &str) -> proc
     }
 
     // Extract datasource info
-    let datasource = schema.configuration.datasources.first().expect("No datasource found in schema");
-    let datasource_url = &datasource.url.as_literal().unwrap_or_else(|| {
-        datasource.url.as_env_var().unwrap_or("")
-    });
+    let datasource = schema
+        .configuration
+        .datasources
+        .first()
+        .expect("No datasource found in schema");
+    let datasource_url = &datasource
+        .url
+        .as_literal()
+        .unwrap_or_else(|| datasource.url.as_env_var().unwrap_or(""));
     // For runtime evaluation, we either use literal or env! macro if it's an env var
     let url_tokens = if let Some(env_var) = datasource.url.as_env_var() {
         quote! { std::env::var(#env_var).unwrap_or_else(|_| String::new()).as_str() }
@@ -38,6 +43,9 @@ pub fn generate_module(schema: &psl::ValidatedSchema, schema_path: &str) -> proc
         pub mod db {
             // Re-export prelude for generated code
             use ::prisma_core::prelude::*;
+
+            // Re-export select_as macro
+            pub use ::prisma_macros::select_as;
 
             // ============ ENUMS ============
             #(#enum_code)*

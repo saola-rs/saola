@@ -1,8 +1,11 @@
-use psl::parser_database::{ParserDatabase, ScalarType, ScalarFieldType};
-use quote::{format_ident, quote};
 use heck::ToSnakeCase;
+use psl::parser_database::{ParserDatabase, ScalarFieldType, ScalarType};
+use quote::{format_ident, quote};
 
-pub fn generate_model_struct(db: &ParserDatabase, walker: psl::parser_database::walkers::ModelWalker<'_>) -> proc_macro2::TokenStream {
+pub fn generate_model_struct(
+    db: &ParserDatabase,
+    walker: psl::parser_database::walkers::ModelWalker<'_>,
+) -> proc_macro2::TokenStream {
     let model_name = format_ident!("{}", walker.name());
 
     let mut fields = Vec::new();
@@ -91,7 +94,10 @@ pub fn generate_model_struct(db: &ParserDatabase, walker: psl::parser_database::
     }
 }
 
-pub fn generate_enum(db: &ParserDatabase, walker: psl::parser_database::walkers::EnumWalker<'_>) -> proc_macro2::TokenStream {
+pub fn generate_enum(
+    db: &ParserDatabase,
+    walker: psl::parser_database::walkers::EnumWalker<'_>,
+) -> proc_macro2::TokenStream {
     let enum_name = format_ident!("{}", walker.name());
     let mut variants = Vec::new();
 
@@ -100,7 +106,7 @@ pub fn generate_enum(db: &ParserDatabase, walker: psl::parser_database::walkers:
     for (i, val) in walker.values().enumerate() {
         let variant_name = format_ident!("{}", val.name());
         let s = val.name();
-        
+
         match_arms_display.push(quote! {
             #enum_name::#variant_name => write!(f, #s)
         });
@@ -142,7 +148,10 @@ pub fn generate_enum(db: &ParserDatabase, walker: psl::parser_database::walkers:
 
 /// Generate relation combination types for a model
 /// E.g., UserWithPosts, UserWithPostsAndComments
-pub fn generate_relation_types(db: &ParserDatabase, walker: psl::parser_database::walkers::ModelWalker<'_>) -> proc_macro2::TokenStream {
+pub fn generate_relation_types(
+    db: &ParserDatabase,
+    walker: psl::parser_database::walkers::ModelWalker<'_>,
+) -> proc_macro2::TokenStream {
     let model_name = walker.name();
     let mut types = Vec::new();
 
@@ -228,9 +237,7 @@ fn pascal_case(s: &str) -> String {
             let mut chars = part.chars();
             match chars.next() {
                 None => String::new(),
-                Some(first) => {
-                    first.to_uppercase().collect::<String>() + chars.as_str()
-                }
+                Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
             }
         })
         .collect()
