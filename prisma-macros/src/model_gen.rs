@@ -139,3 +139,99 @@ pub fn generate_enum(db: &ParserDatabase, walker: psl::parser_database::walkers:
         }
     }
 }
+
+/// Generate relation combination types for a model
+/// E.g., UserWithPosts, UserWithPostsAndComments
+pub fn generate_relation_types(db: &ParserDatabase, walker: psl::parser_database::walkers::ModelWalker<'_>) -> proc_macro2::TokenStream {
+    let model_name = walker.name();
+    let mut types = Vec::new();
+
+    let relations: Vec<_> = walker.relation_fields().collect();
+
+    if relations.is_empty() {
+        return quote! {};
+    }
+
+    // Generate single relation types: UserWithPosts, UserWithComments
+    for relation in &relations {
+        let relation_name = relation.name();
+        let pascal_relation = pascal_case(relation_name);
+        let type_name = format_ident!("{}With{}", model_name, pascal_relation);
+        let related_model = relation.related_model().name();
+        let related_ident = format_ident!("{}", related_model);
+        let rust_relation_name = format_ident!("{}", relation_name.to_snake_case());
+
+        let related_type = if relation.ast_field().arity.is_list() {
+            quote! { Vec<#related_ident> }
+        } else if !relation.is_required() {
+            quote! { Option<Box<#related_ident>> }
+        } else {
+            quote! { Box<#related_ident> }
+        };
+
+        // Get scalar fields from parent model
+        let scalar_fields: Vec<_> = walker
+            .scalar_fields()
+            .map(|f| {
+                let field_name = f.name();
+                let rust_name = format_ident!("{}", field_name.to_snake_case());
+                let field_type = match f.scalar_field_type() {
+                    ScalarFieldType::BuiltInScalar(builtin) => match builtin {
+                        ScalarType::String => quote! { String },
+                        ScalarType::Int => quote! { i32 },
+                        ScalarType::Float => quote! { f64 },
+                        ScalarType::Boolean => quote! { bool },
+                        ScalarType::DateTime => quote! { ::prisma_core::chrono::DateTime<::prisma_core::chrono::Utc> },
+                        ScalarType::Json => quote! { ::prisma_core::serde_json::Value },
+                        ScalarType::Decimal => quote! { ::prisma_core::bigdecimal::BigDecimal },
+                        ScalarType::BigInt => quote! { i64 },
+                        ScalarType::Bytes => quote! { Vec<u8> },
+                    },
+                    ScalarFieldType::Enum(enum_id) => {
+                        let enum_name = format_ident!("{}", db.walk(enum_id).name());
+                        quote! { #enum_name }
+                    }
+                    _ => quote! { String },
+                };
+
+                let final_type = if f.is_optional() {
+                    quote! { Option<#field_type> }
+                } else {
+                    field_type
+                };
+
+                quote! {
+                    pub #rust_name: #final_type,
+                }
+            })
+            .collect();
+
+        types.push(quote! {
+            #[derive(Debug, Clone, ::prisma_core::serde::Serialize, ::prisma_core::serde::Deserialize)]
+            #[serde(crate = "::prisma_core::serde")]
+            pub struct #type_name {
+                #(#scalar_fields)*
+                pub #rust_relation_name: #related_type,
+            }
+        });
+    }
+
+    // Combine all types
+    quote! {
+        #(#types)*
+    }
+}
+
+fn pascal_case(s: &str) -> String {
+    s.split('_')
+        .map(|part| {
+            let mut chars = part.chars();
+            match chars.next() {
+                None => String::new(),
+                Some(first) => {
+                    first.to_uppercase().collect::<String>() + chars.as_str()
+                }
+            }
+        })
+        .collect()
+}

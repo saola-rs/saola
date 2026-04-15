@@ -212,13 +212,28 @@ pub fn generate_include_methods(fields: &[FieldMetadata]) -> Vec<proc_macro2::To
             }
 
             let rust_name = syn::Ident::new(&field.rust_name, proc_macro2::Span::call_site());
+            let with_suffix_name = syn::Ident::new(&format!("{}_with", field.rust_name), proc_macro2::Span::call_site());
             let prisma_name = &field.prisma_name;
             let inner_type_str = get_inner_type(&field.field_type);
             let related_select_builder =
                 syn::Ident::new(&format!("{}SelectBuilder", inner_type_str), proc_macro2::Span::call_site());
 
             Some(quote! {
-                pub fn #rust_name<F>(&mut self, f: F) -> &mut Self
+                // Include all fields of this relation
+                pub fn #rust_name(&mut self) -> &mut Self {
+                    let mut builder = #related_select_builder::default();
+                    builder.all();
+                    let mut sel = prisma_core::query_core::Selection::with_name(#prisma_name.to_string());
+                    let fields: Vec<String> = builder.into();
+                    for field in fields {
+                        sel.push_nested_selection(prisma_core::query_core::Selection::with_name(field));
+                    }
+                    self.includes.push(sel);
+                    self
+                }
+
+                // Include specific fields of this relation via closure
+                pub fn #with_suffix_name<F>(&mut self, f: F) -> &mut Self
                 where F: FnOnce(&mut #related_select_builder)
                 {
                     let mut builder = #related_select_builder::default();

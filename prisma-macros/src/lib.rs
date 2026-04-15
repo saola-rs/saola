@@ -13,6 +13,7 @@ mod wrapper_gen;
 mod query_gen;
 mod codegen_orchestrator;
 mod model_gen;
+mod relation_gen;
 
 use model_analysis::{FieldMetadata, ModelMetadata};
 
@@ -95,8 +96,8 @@ pub fn prisma_model(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let include_builder = builder_gen::generate_include_builder(&model_name, &model_metadata);
     let data_builder = builder_gen::generate_data_builder(&model_name, &model_metadata);
 
-    let read_wrapper = wrapper_gen::generate_read_wrapper(&model_name);
-    let unique_read_wrapper = wrapper_gen::generate_unique_read_wrapper(&model_name);
+    let read_wrapper = wrapper_gen::generate_read_wrapper(&model_name, &model_metadata);
+    let unique_read_wrapper = wrapper_gen::generate_unique_read_wrapper(&model_name, &model_metadata);
     let write_wrapper = wrapper_gen::generate_write_wrapper(&model_name);
     let count_wrapper = wrapper_gen::generate_count_wrapper(&model_name);
     let aggregate_wrapper = wrapper_gen::generate_aggregate_wrapper(&model_name);

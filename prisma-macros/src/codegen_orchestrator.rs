@@ -17,6 +17,9 @@ pub fn generate_module(schema: &psl::ValidatedSchema, schema_path: &str) -> proc
     let mut model_code = Vec::new();
     for walker in db.walk_models() {
         model_code.push(model_gen::generate_model_struct(db, walker));
+        // Also generate relation types for this model
+        let rel_types = model_gen::generate_relation_types(db, walker);
+        model_code.push(rel_types);
     }
 
     // Extract datasource info

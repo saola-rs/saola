@@ -46,8 +46,28 @@ async fn main() -> anyhow::Result<()> {
         .exec(&client)
         .await?;
 
-    if let Some(u) = found_user {
+    let found_user_email = if let Some(ref u) = found_user {
         println!("  ✓ Found user: {} (id: {})", u.email, u.id);
+        u.id.clone()
+    } else {
+        "".to_string()
+    };
+
+    // Create some posts if we have a user
+    if !found_user_email.is_empty() {
+        println!("\n[Creating posts for user]");
+        for i in 1..=3 {
+            let _post: db::Post = db::post()
+                .create(
+                    format!("Post {} Title", i),
+                    db::PostStatus::PUBLISHED,
+                    false,
+                    found_user_email.clone(),
+                )
+                .exec(&client)
+                .await?;
+        }
+        println!("  ✓ Created 3 posts");
     }
 
     // Count users with specific role
@@ -60,6 +80,32 @@ async fn main() -> anyhow::Result<()> {
         .exec(&client)
         .await?;
     println!("  ✓ Total users with role USER: {}", count);
+
+    // Test relation type generation
+    println!("\n[Testing relation types]");
+    // This should compile - relation types should be available
+    let _: std::marker::PhantomData<db::UserWithPosts> = std::marker::PhantomData;
+    println!("  ✓ UserWithPosts type is available");
+
+    // Test include with typed return
+    println!("\n[Testing include with typed return]");
+    if !found_user_email.is_empty() {
+        let user_with_posts: db::UserWithPosts = user()
+            .find_unique()
+            .where_clause(|w| {
+                w.id(found_user_email.clone());
+            })
+            .include(|i| {
+                i.posts();
+            })
+            .exec(&client)
+            .await?;
+        println!("  ✓ Retrieved UserWithPosts: {}", user_with_posts.email);
+        println!("    Posts count: {}", user_with_posts.posts.len());
+        for (idx, post) in user_with_posts.posts.iter().enumerate() {
+            println!("      Post {}: {} ({})", idx + 1, post.title, post.status);
+        }
+    }
 
     println!("\n[All tests passed] ✓\n");
     Ok(())

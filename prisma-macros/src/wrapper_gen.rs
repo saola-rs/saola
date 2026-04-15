@@ -1,12 +1,17 @@
 //! Thin wrapper builders for composability (ReadBuilder, WriteBuilder, CountBuilder, etc.)
 
+use crate::model_analysis::ModelMetadata;
 use quote::{format_ident, quote};
 
-pub fn generate_read_wrapper(model_name: &syn::Ident) -> proc_macro2::TokenStream {
+pub fn generate_read_wrapper(
+    model_name: &syn::Ident,
+    model_metadata: &ModelMetadata,
+) -> proc_macro2::TokenStream {
     let read_wrapper_name = format_ident!("{}ReadBuilder", model_name);
     let where_builder_name = format_ident!("{}WhereBuilder", model_name);
     let select_builder_name = format_ident!("{}SelectBuilder", model_name);
     let include_builder_name = format_ident!("{}IncludeBuilder", model_name);
+    let scalar_field_names = &model_metadata.scalar_field_names;
 
     quote! {
         pub struct #read_wrapper_name {
@@ -48,8 +53,15 @@ pub fn generate_read_wrapper(model_name: &syn::Ident) -> proc_macro2::TokenStrea
             {
                 let mut builder = #include_builder_name::default();
                 f(&mut builder);
-                let includes: Vec<prisma_core::query_core::Selection> = builder.into();
+
+                // When including relations, automatically select all scalar fields
                 use prisma_core::Selectable;
+                for scalar_field in &[#(#scalar_field_names),*] {
+                    self.inner.add_nested_selection(prisma_core::query_core::Selection::with_name(scalar_field.to_string()));
+                }
+
+                // Then add the relation selections
+                let includes: Vec<prisma_core::query_core::Selection> = builder.into();
                 for sel in includes {
                     self.inner.add_nested_selection(sel);
                 }
@@ -64,11 +76,15 @@ pub fn generate_read_wrapper(model_name: &syn::Ident) -> proc_macro2::TokenStrea
     }
 }
 
-pub fn generate_unique_read_wrapper(model_name: &syn::Ident) -> proc_macro2::TokenStream {
+pub fn generate_unique_read_wrapper(
+    model_name: &syn::Ident,
+    model_metadata: &ModelMetadata,
+) -> proc_macro2::TokenStream {
     let unique_read_wrapper_name = format_ident!("{}UniqueReadBuilder", model_name);
     let unique_where_builder_name = format_ident!("{}UniqueWhereBuilder", model_name);
     let select_builder_name = format_ident!("{}SelectBuilder", model_name);
     let include_builder_name = format_ident!("{}IncludeBuilder", model_name);
+    let scalar_field_names = &model_metadata.scalar_field_names;
 
     quote! {
         pub struct #unique_read_wrapper_name {
@@ -110,8 +126,15 @@ pub fn generate_unique_read_wrapper(model_name: &syn::Ident) -> proc_macro2::Tok
             {
                 let mut builder = #include_builder_name::default();
                 f(&mut builder);
-                let includes: Vec<prisma_core::query_core::Selection> = builder.into();
+
+                // When including relations, automatically select all scalar fields
                 use prisma_core::Selectable;
+                for scalar_field in &[#(#scalar_field_names),*] {
+                    self.inner.add_nested_selection(prisma_core::query_core::Selection::with_name(scalar_field.to_string()));
+                }
+
+                // Then add the relation selections
+                let includes: Vec<prisma_core::query_core::Selection> = builder.into();
                 for sel in includes {
                     self.inner.add_nested_selection(sel);
                 }
