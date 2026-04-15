@@ -104,6 +104,7 @@ async fn main() -> anyhow::Result<()> {
         println!("    Posts count: {}", user_with_posts.posts.len());
         for (idx, post) in user_with_posts.posts.iter().enumerate() {
             println!("      Post {}: {} ({})", idx + 1, post.title, post.status);
+            println!("        User in post: {} (id: {})", post.user.email, post.user.id);
         }
     }
 
