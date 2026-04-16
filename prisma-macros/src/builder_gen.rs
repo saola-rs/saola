@@ -152,10 +152,10 @@ pub fn generate_data_builder(
 ) -> proc_macro2::TokenStream {
     let data_builder_name = format_ident!("{}DataBuilder", model_name);
     let scalar_data_builder_name = format_ident!("{}ScalarDataBuilder", model_name);
-    
+
     let full_data_methods = crate::model_analysis::generate_data_methods(model_name, &model_metadata.fields, false);
     let scalar_data_methods = crate::model_analysis::generate_data_methods(model_name, &model_metadata.fields, true);
-    
+
     let rel_write_builders = generate_relation_write_builders(model_name, model_metadata, all_metadata);
 
     quote! {
@@ -494,4 +494,146 @@ pub fn generate_relation_write_builders(
             }
         })
         .collect()
+}
+
+pub fn generate_aggregate_select_builders(
+    model_name: &syn::Ident,
+    model_metadata: &ModelMetadata,
+) -> proc_macro2::TokenStream {
+    let count_builder = format_ident!("{}CountAggregateSelectBuilder", model_name);
+    let sum_builder = format_ident!("{}SumAggregateSelectBuilder", model_name);
+    let avg_builder = format_ident!("{}AvgAggregateSelectBuilder", model_name);
+    let min_builder = format_ident!("{}MinAggregateSelectBuilder", model_name);
+    let max_builder = format_ident!("{}MaxAggregateSelectBuilder", model_name);
+
+    let mut count_methods = Vec::new();
+    let mut sum_methods = Vec::new();
+    let mut avg_methods = Vec::new();
+    let mut min_methods = Vec::new();
+    let mut max_methods = Vec::new();
+
+    count_methods.push(quote! {
+        pub fn _all(&mut self) -> &mut Self {
+            self.selections.push(::prisma_core::query_core::Selection::with_name("_all"));
+            self
+        }
+    });
+
+    for field in &model_metadata.fields {
+        if field.is_relation {
+            continue;
+        }
+        let rust_name = format_ident!("{}", field.rust_name);
+        let prisma_name = &field.prisma_name;
+
+        count_methods.push(quote! {
+            pub fn #rust_name(&mut self) -> &mut Self {
+                self.selections.push(::prisma_core::query_core::Selection::with_name(#prisma_name));
+                self
+            }
+        });
+
+        let type_name = crate::utils::get_inner_type(&field.field_type);
+        let is_numeric = match type_name.as_str() {
+            "i32" | "i64" | "f32" | "f64" | "BigDecimal" => true,
+            _ => false,
+        };
+
+        if is_numeric {
+            sum_methods.push(quote! {
+                pub fn #rust_name(&mut self) -> &mut Self {
+                    self.selections.push(::prisma_core::query_core::Selection::with_name(#prisma_name));
+                    self
+                }
+            });
+            avg_methods.push(quote! {
+                pub fn #rust_name(&mut self) -> &mut Self {
+                    self.selections.push(::prisma_core::query_core::Selection::with_name(#prisma_name));
+                    self
+                }
+            });
+        }
+
+        min_methods.push(quote! {
+            pub fn #rust_name(&mut self) -> &mut Self {
+                self.selections.push(::prisma_core::query_core::Selection::with_name(#prisma_name));
+                self
+            }
+        });
+        max_methods.push(quote! {
+            pub fn #rust_name(&mut self) -> &mut Self {
+                self.selections.push(::prisma_core::query_core::Selection::with_name(#prisma_name));
+                self
+            }
+        });
+    }
+
+    quote! {
+        #[derive(Default)]
+        pub struct #count_builder { pub selections: Vec<::prisma_core::query_core::Selection> }
+        impl #count_builder { #(#count_methods)* }
+
+        #[derive(Default)]
+        pub struct #sum_builder { pub selections: Vec<::prisma_core::query_core::Selection> }
+        impl #sum_builder { #(#sum_methods)* }
+
+        #[derive(Default)]
+        pub struct #avg_builder { pub selections: Vec<::prisma_core::query_core::Selection> }
+        impl #avg_builder { #(#avg_methods)* }
+
+        #[derive(Default)]
+        pub struct #min_builder { pub selections: Vec<::prisma_core::query_core::Selection> }
+        impl #min_builder { #(#min_methods)* }
+
+        #[derive(Default)]
+        pub struct #max_builder { pub selections: Vec<::prisma_core::query_core::Selection> }
+        impl #max_builder { #(#max_methods)* }
+    }
+}
+
+pub fn generate_group_by_builder(model_name: &syn::Ident, model_metadata: &ModelMetadata) -> proc_macro2::TokenStream {
+    let builder_name = format_ident!("{}GroupBySelectBuilder", model_name);
+    let mut methods = Vec::new();
+
+    for field in &model_metadata.fields {
+        if field.is_relation {
+            continue;
+        }
+        let rust_name = format_ident!("{}", field.rust_name);
+        let prisma_name = &field.prisma_name;
+
+        methods.push(quote! {
+            pub fn #rust_name(&mut self) -> &mut Self {
+                self.fields.push(#prisma_name.to_string());
+                self
+            }
+        });
+    }
+
+    quote! {
+        #[derive(Default)]
+        pub struct #builder_name {
+            pub fields: Vec<String>,
+        }
+
+        impl #builder_name {
+            #(#methods)*
+        }
+    }
+}
+
+pub fn generate_order_by_builder(model_name: &syn::Ident, model_metadata: &ModelMetadata) -> proc_macro2::TokenStream {
+    let order_by_builder_name = format_ident!("{}OrderByBuilder", model_name);
+    let order_by_methods = crate::model_analysis::generate_order_by_methods(&model_metadata.fields);
+
+    quote! {
+        #[derive(Default)]
+        pub struct #order_by_builder_name {
+            pub args: Vec<prisma_core::ArgumentValue>,
+        }
+
+        impl #order_by_builder_name {
+            #(#order_by_methods)*
+        }
+    }
 }

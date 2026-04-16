@@ -95,25 +95,39 @@ pub fn generate_module(schema: &psl::ValidatedSchema, schema_path: &str) -> proc
         // 1. Struct and Relation Types
         model_code.push(model_gen::generate_model_struct(db, walker, &model_metadata_map));
         model_code.push(model_gen::generate_relation_types(db, walker));
+        model_code.push(model_gen::generate_aggregation_structs(db, walker));
+        model_code.push(model_gen::generate_group_by_struct(db, walker));
 
         // 2. Builders
         model_code.push(builder_gen::generate_where_builder(&model_name, model_metadata));
         model_code.push(builder_gen::generate_unique_where_builder(&model_name, model_metadata));
+        model_code.push(builder_gen::generate_order_by_builder(&model_name, model_metadata));
         model_code.push(builder_gen::generate_select_builder(&model_name, model_metadata));
         model_code.push(builder_gen::generate_data_builder(
             &model_name,
             model_metadata,
             Some(&model_metadata_map),
         ));
+        model_code.push(builder_gen::generate_aggregate_select_builders(
+            &model_name,
+            model_metadata,
+        ));
+        model_code.push(builder_gen::generate_group_by_builder(&model_name, model_metadata));
 
         // 3. Wrappers
         model_code.push(wrapper_gen::generate_read_wrappers(&model_name, model_metadata));
         model_code.push(wrapper_gen::generate_write_wrapper(&model_name, model_metadata));
         model_code.push(wrapper_gen::generate_upsert_wrapper(&model_name, model_metadata));
         model_code.push(wrapper_gen::generate_create_many_wrapper(&model_name, model_metadata));
-        model_code.push(wrapper_gen::generate_create_many_and_return_wrapper(&model_name, model_metadata));
+        model_code.push(wrapper_gen::generate_create_many_and_return_wrapper(
+            &model_name,
+            model_metadata,
+        ));
         model_code.push(wrapper_gen::generate_update_many_wrapper(&model_name, model_metadata));
-        model_code.push(wrapper_gen::generate_update_many_and_return_wrapper(&model_name, model_metadata));
+        model_code.push(wrapper_gen::generate_update_many_and_return_wrapper(
+            &model_name,
+            model_metadata,
+        ));
         model_code.push(wrapper_gen::generate_delete_many_wrapper(&model_name, model_metadata));
         model_code.push(wrapper_gen::generate_count_wrapper(&model_name));
         model_code.push(wrapper_gen::generate_aggregate_wrapper(&model_name));

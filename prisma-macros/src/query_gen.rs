@@ -27,6 +27,8 @@ pub fn generate_query_factory(
     let count_wrapper_name = format_ident!("{}CountBuilder", model_name);
     let aggregate_wrapper_name = format_ident!("{}AggregateBuilder", model_name);
     let group_by_wrapper_name = format_ident!("{}GroupByBuilder", model_name);
+    let aggregate_result_name = format_ident!("{}AggregateResult", model_name);
+    let group_by_result_name = format_ident!("{}GroupByResult", model_name);
 
     let scalar_field_names = &model_metadata.scalar_field_names;
     let create_params = model_metadata.create_params();
@@ -153,13 +155,13 @@ pub fn generate_query_factory(
 
             pub fn aggregate(&self) -> #aggregate_wrapper_name {
                 #aggregate_wrapper_name {
-                    inner: ::prisma_core::AggregateBuilder::new(#model_name_str.to_string(), vec![])
+                    inner: ::prisma_core::AggregateBuilder::<#aggregate_result_name>::new(#model_name_str.to_string(), vec![])
                 }
             }
 
             pub fn group_by(&self) -> #group_by_wrapper_name {
                 #group_by_wrapper_name {
-                    inner: ::prisma_core::GroupByBuilder::new(#model_name_str.to_string(), vec![])
+                    inner: ::prisma_core::GroupByBuilder::<#group_by_result_name>::new(#model_name_str.to_string(), vec![])
                 }
             }
         }

@@ -21,8 +21,6 @@ pub struct FieldMetadata {
     pub field_type: Type,
 }
 
-use std::collections::HashMap;
-
 /// Metadata about the model being processed
 pub struct ModelMetadata {
     pub name: String,
@@ -244,7 +242,11 @@ pub fn generate_select_methods(fields: &[FieldMetadata]) -> Vec<proc_macro2::Tok
 }
 
 /// Generate data builder methods for scalar and relation fields
-pub fn generate_data_methods(model_name: &syn::Ident, fields: &[FieldMetadata], scalar_only: bool) -> Vec<proc_macro2::TokenStream> {
+pub fn generate_data_methods(
+    model_name: &syn::Ident,
+    fields: &[FieldMetadata],
+    scalar_only: bool,
+) -> Vec<proc_macro2::TokenStream> {
     fields
         .iter()
         .filter_map(|field| {
@@ -284,6 +286,27 @@ pub fn generate_data_methods(model_name: &syn::Ident, fields: &[FieldMetadata], 
                         self
                     }
                 })
+            }
+        })
+        .collect()
+}
+
+/// Generate order by methods for OrderByBuilder
+pub fn generate_order_by_methods(fields: &[FieldMetadata]) -> Vec<proc_macro2::TokenStream> {
+    fields
+        .iter()
+        .filter(|f| !f.is_relation)
+        .map(|field| {
+            let rust_name = syn::Ident::new(&field.rust_name, proc_macro2::Span::call_site());
+            let prisma_name = &field.prisma_name;
+
+            quote! {
+                pub fn #rust_name(&mut self, order: prisma_core::SortOrder) -> &mut Self {
+                    let mut map = prisma_core::IndexMap::new();
+                    map.insert(#prisma_name.to_string(), prisma_core::ArgumentValue::from(order));
+                    self.args.push(prisma_core::ArgumentValue::Object(map));
+                    self
+                }
             }
         })
         .collect()

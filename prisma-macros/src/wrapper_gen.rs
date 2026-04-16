@@ -1,7 +1,6 @@
 //! Thin wrapper builders for composability (ReadBuilder, WriteBuilder, CountBuilder, etc.)
 
 use crate::model_analysis::ModelMetadata;
-use heck::ToUpperCamelCase;
 use quote::{format_ident, quote};
 
 fn pascal_case(s: &str) -> String {
@@ -25,7 +24,7 @@ pub fn generate_read_wrappers(model_name: &syn::Ident, model_metadata: &ModelMet
 
     let where_name = format_ident!("{}WhereBuilder", model_name);
     let unique_where_name = format_ident!("{}UniqueWhereBuilder", model_name);
-    let select_name = format_ident!("{}SelectBuilder", model_name);
+    let order_by_name = format_ident!("{}OrderByBuilder", model_name);
     let include_name = format_ident!("{}IncludeBuilder", model_name);
     let scalar_field_names = &model_metadata.scalar_field_names;
 
@@ -65,8 +64,8 @@ pub fn generate_read_wrappers(model_name: &syn::Ident, model_metadata: &ModelMet
             impl #include_marker_trait for #pascal_name {
                 fn into_selection(self) -> Option<::prisma_core::query_core::Selection> { Some(self.selection) }
             }
-            
-            pub struct #pascal_name_with<M> { 
+
+            pub struct #pascal_name_with<M> {
                 pub selection: ::prisma_core::query_core::Selection,
                 pub _phantom: std::marker::PhantomData<M>
             }
@@ -74,7 +73,7 @@ pub fn generate_read_wrappers(model_name: &syn::Ident, model_metadata: &ModelMet
                 fn into_selection(self) -> Option<::prisma_core::query_core::Selection> { Some(self.selection) }
             }
 
-            pub struct #pascal_name_as<U> { 
+            pub struct #pascal_name_as<U> {
                 pub selection: ::prisma_core::query_core::Selection,
                 pub _phantom: std::marker::PhantomData<U>
             }
@@ -140,7 +139,7 @@ pub fn generate_read_wrappers(model_name: &syn::Ident, model_metadata: &ModelMet
     for subset in powerset {
         let mut sorted_subset = subset.clone();
         sorted_subset.sort_by_key(|r| &r.prisma_name);
-        
+
         let combined_name = if sorted_subset.is_empty() {
             format_ident!("{}", model_name)
         } else {
@@ -153,11 +152,21 @@ pub fn generate_read_wrappers(model_name: &syn::Ident, model_metadata: &ModelMet
             let g = format_ident!("T{}", pascal_case(&r.prisma_name));
             current_generics_params.push(g);
         }
-        let current_generics_decl = if current_generics_params.is_empty() { quote!{} } else { quote!{ <#(#current_generics_params),*> } };
+        let current_generics_decl = if current_generics_params.is_empty() {
+            quote! {}
+        } else {
+            quote! { <#(#current_generics_params),*> }
+        };
 
         let mut impl_generics_base_list = Vec::new();
-        for g in &current_generics_params { impl_generics_base_list.push(quote!{#g: ::prisma_core::serde::de::DeserializeOwned + Send + Sync}); }
-        let impl_generics_base = if impl_generics_base_list.is_empty() { quote!{} } else { quote!{ <#(#impl_generics_base_list),*> } };
+        for g in &current_generics_params {
+            impl_generics_base_list.push(quote! {#g: ::prisma_core::serde::de::DeserializeOwned + Send + Sync});
+        }
+        let impl_generics_base = if impl_generics_base_list.is_empty() {
+            quote! {}
+        } else {
+            quote! { <#(#impl_generics_base_list),*> }
+        };
 
         // Empty transition for this type
         transitions.push(quote! {
@@ -179,7 +188,7 @@ pub fn generate_read_wrappers(model_name: &syn::Ident, model_metadata: &ModelMet
                 next_subset.push(*relation);
             }
             next_subset.sort_by_key(|r| &r.prisma_name);
-            
+
             let next_combined_name = if next_subset.is_empty() {
                 format_ident!("{}", model_name)
             } else {
@@ -196,18 +205,27 @@ pub fn generate_read_wrappers(model_name: &syn::Ident, model_metadata: &ModelMet
                     next_generics_base.push(quote! { #g });
                 }
             }
-            let next_generics_base_tokens = if next_generics_base.is_empty() { quote!{} } else { quote!{ <#(#next_generics_base),*> } };
+            let next_generics_base_tokens = if next_generics_base.is_empty() {
+                quote! {}
+            } else {
+                quote! { <#(#next_generics_base),*> }
+            };
 
             let mut next_generics_with = Vec::new();
             for r in &next_subset {
                 if r.prisma_name == relation.prisma_name {
-                    next_generics_with.push(quote! { <#related_model as #related_include_transition_trait<M>>::Output });
+                    next_generics_with
+                        .push(quote! { <#related_model as #related_include_transition_trait<M>>::Output });
                 } else {
                     let g = format_ident!("T{}", pascal_case(&r.prisma_name));
                     next_generics_with.push(quote! { #g });
                 }
             }
-            let next_generics_with_tokens = if next_generics_with.is_empty() { quote!{} } else { quote!{ <#(#next_generics_with),*> } };
+            let next_generics_with_tokens = if next_generics_with.is_empty() {
+                quote! {}
+            } else {
+                quote! { <#(#next_generics_with),*> }
+            };
 
             let mut next_generics_as = Vec::new();
             for r in &next_subset {
@@ -218,14 +236,22 @@ pub fn generate_read_wrappers(model_name: &syn::Ident, model_metadata: &ModelMet
                     next_generics_as.push(quote! { #g });
                 }
             }
-            let next_generics_as_tokens = if next_generics_as.is_empty() { quote!{} } else { quote!{ <#(#next_generics_as),*> } };
+            let next_generics_as_tokens = if next_generics_as.is_empty() {
+                quote! {}
+            } else {
+                quote! { <#(#next_generics_as),*> }
+            };
 
-            let mut impl_generics_with_list = vec![quote!{M}];
-            for g in &current_generics_params { impl_generics_with_list.push(quote!{#g: ::prisma_core::serde::de::DeserializeOwned + Send + Sync}); }
+            let mut impl_generics_with_list = vec![quote! {M}];
+            for g in &current_generics_params {
+                impl_generics_with_list.push(quote! {#g: ::prisma_core::serde::de::DeserializeOwned + Send + Sync});
+            }
             let impl_generics_with = quote! { <#(#impl_generics_with_list),*> };
 
-            let mut impl_generics_as_list = vec![quote!{U: ::prisma_core::serde::de::DeserializeOwned + Send + Sync}];
-            for g in &current_generics_params { impl_generics_as_list.push(quote!{#g: ::prisma_core::serde::de::DeserializeOwned + Send + Sync}); }
+            let mut impl_generics_as_list = vec![quote! {U: ::prisma_core::serde::de::DeserializeOwned + Send + Sync}];
+            for g in &current_generics_params {
+                impl_generics_as_list.push(quote! {#g: ::prisma_core::serde::de::DeserializeOwned + Send + Sync});
+            }
             let impl_generics_as = quote! { <#(#impl_generics_as_list),*> };
 
             transitions.push(quote! {
@@ -243,7 +269,7 @@ pub fn generate_read_wrappers(model_name: &syn::Ident, model_metadata: &ModelMet
             });
         }
     }
-    
+
     // Empty transition for Value
     transitions.push(quote! {
         impl #include_transition_trait<#empty_marker_name> for ::prisma_core::serde_json::Value { type Output = ::prisma_core::serde_json::Value; }
@@ -272,6 +298,46 @@ pub fn generate_read_wrappers(model_name: &syn::Ident, model_metadata: &ModelMet
 
     for (w_name, w_where, r_type) in wrappers {
         let select_name = format_ident!("{}SelectBuilder", model_name);
+
+        let pagination_methods = if w_name == &many_name || w_name == &first_name || w_name == &first_throw_name {
+            quote! {
+                pub fn order_by<F>(mut self, f: F) -> Self where F: FnOnce(&mut #order_by_name) {
+                    let mut builder = #order_by_name::default();
+                    f(&mut builder);
+                    if !builder.args.is_empty() {
+                        use ::prisma_core::Filterable;
+                        self.inner.add_filter_arg("orderBy".to_string(), ::prisma_core::query_core::ArgumentValue::List(builder.args));
+                    }
+                    self
+                }
+
+                pub fn skip(mut self, skip: i64) -> Self {
+                    use ::prisma_core::Filterable;
+                    self.inner.add_filter_arg("skip".to_string(), ::prisma_core::query_core::ArgumentValue::Scalar(::prisma_core::query_structure::PrismaValue::Int(skip)));
+                    self
+                }
+
+                pub fn take(mut self, take: i64) -> Self {
+                    use ::prisma_core::Filterable;
+                    self.inner.add_filter_arg("take".to_string(), ::prisma_core::query_core::ArgumentValue::Scalar(::prisma_core::query_structure::PrismaValue::Int(take)));
+                    self
+                }
+
+                pub fn cursor<F>(mut self, f: F) -> Self where F: FnOnce(&mut #unique_where_name) {
+                    let mut builder = #unique_where_name::default();
+                    f(&mut builder);
+                    let map = builder.build();
+                    if !map.is_empty() {
+                        use ::prisma_core::Filterable;
+                        self.inner.add_filter_arg("cursor".to_string(), ::prisma_core::query_core::ArgumentValue::Object(map));
+                    }
+                    self
+                }
+            }
+        } else {
+            quote! {}
+        };
+
         wrapper_impls.push(quote! {
             pub struct #w_name<T = #model_name> {
                 pub inner: ::prisma_core::ReadBuilder<#r_type>,
@@ -289,6 +355,8 @@ pub fn generate_read_wrappers(model_name: &syn::Ident, model_metadata: &ModelMet
                     }
                     self
                 }
+
+                #pagination_methods
 
                 pub fn select<F>(mut self, f: F) -> #w_name<::prisma_core::serde_json::Value> where F: FnOnce(&mut #select_name) {
                     let mut builder = #select_name::default();
@@ -344,8 +412,8 @@ pub fn generate_read_wrappers(model_name: &syn::Ident, model_metadata: &ModelMet
                     #w_name { inner: self.inner.with_type(), _phantom: std::marker::PhantomData }
                 }
 
-                pub async fn exec(self, client: &::prisma_core::client::PrismaClient) -> ::prisma_core::Result<#r_type> {
-                    self.inner.exec_inferred(client).await
+                pub async fn exec(self, provider: &(dyn ::prisma_core::transaction::QueryExecutorProvider + '_)) -> ::prisma_core::Result<#r_type> {
+                    self.inner.exec_inferred(provider).await
                 }
             }
         });
@@ -379,8 +447,8 @@ pub fn generate_read_wrappers(model_name: &syn::Ident, model_metadata: &ModelMet
                 ]
             }
 
-            pub fn where_clause<F>(&mut self, f: F) -> &mut Self 
-            where F: FnOnce(&mut #where_name) 
+            pub fn where_clause<F>(&mut self, f: F) -> &mut Self
+            where F: FnOnce(&mut #where_name)
             {
                 let mut builder = #where_name::default();
                 f(&mut builder);
@@ -398,6 +466,25 @@ pub fn generate_read_wrappers(model_name: &syn::Ident, model_metadata: &ModelMet
 
             pub fn skip(&mut self, skip: i64) -> &mut Self {
                 self.args.insert("skip".to_string(), ::prisma_core::query_core::ArgumentValue::Scalar(::prisma_core::query_structure::PrismaValue::Int(skip)));
+                self
+            }
+
+            pub fn order_by<F>(&mut self, f: F) -> &mut Self where F: FnOnce(&mut #order_by_name) {
+                let mut builder = #order_by_name::default();
+                f(&mut builder);
+                if !builder.args.is_empty() {
+                    self.args.insert("orderBy".to_string(), ::prisma_core::query_core::ArgumentValue::List(builder.args));
+                }
+                self
+            }
+
+            pub fn cursor<F>(&mut self, f: F) -> &mut Self where F: FnOnce(&mut #unique_where_name) {
+                let mut builder = #unique_where_name::default();
+                f(&mut builder);
+                let map = builder.build();
+                if !map.is_empty() {
+                    self.args.insert("cursor".to_string(), ::prisma_core::query_core::ArgumentValue::Object(map));
+                }
                 self
             }
 
@@ -454,7 +541,7 @@ pub fn generate_write_wrapper(model_name: &syn::Ident, model_metadata: &ModelMet
             {
                 let mut builder = #data_builder_name::default();
                 f(&mut builder);
-                
+
                 // Find existing data arg and merge if it exists
                 let mut merged_data = std::mem::take(&mut builder.data);
                 if let Some(::prisma_core::query_core::ArgumentValue::Object(existing_map)) = self.inner.state.arguments.get("data") {
@@ -533,8 +620,8 @@ pub fn generate_write_wrapper(model_name: &syn::Ident, model_metadata: &ModelMet
                 }
             }
 
-            pub async fn exec(self, client: &::prisma_core::client::PrismaClient) -> ::prisma_core::Result<T> {
-                self.inner.exec_inferred(client).await
+            pub async fn exec(self, provider: &(dyn ::prisma_core::transaction::QueryExecutorProvider + '_)) -> ::prisma_core::Result<T> {
+                self.inner.exec_inferred(provider).await
             }
         }
     }
@@ -585,14 +672,17 @@ pub fn generate_upsert_wrapper(model_name: &syn::Ident, model_metadata: &ModelMe
                 self
             }
 
-            pub async fn exec(self, client: &::prisma_core::client::PrismaClient) -> ::prisma_core::Result<#model_name> {
-                self.inner.exec_inferred(client).await
+            pub async fn exec(self, provider: &(dyn ::prisma_core::transaction::QueryExecutorProvider + '_)) -> ::prisma_core::Result<#model_name> {
+                self.inner.exec_inferred(provider).await
             }
         }
     }
 }
 
-pub fn generate_create_many_wrapper(model_name: &syn::Ident, _model_metadata: &ModelMetadata) -> proc_macro2::TokenStream {
+pub fn generate_create_many_wrapper(
+    model_name: &syn::Ident,
+    _model_metadata: &ModelMetadata,
+) -> proc_macro2::TokenStream {
     let wrapper_name = format_ident!("{}CreateManyBuilder", model_name);
     let scalar_data_builder_name = format_ident!("{}ScalarDataBuilder", model_name);
 
@@ -607,7 +697,7 @@ pub fn generate_create_many_wrapper(model_name: &syn::Ident, _model_metadata: &M
             {
                 let mut builder = #scalar_data_builder_name::default();
                 f(&mut builder);
-                
+
                 let mut list = match self.inner.state.arguments.get("data") {
                     Some(::prisma_core::query_core::ArgumentValue::List(l)) => l.clone(),
                     _ => Vec::new(),
@@ -624,14 +714,17 @@ pub fn generate_create_many_wrapper(model_name: &syn::Ident, _model_metadata: &M
                 self
             }
 
-            pub async fn exec(self, client: &::prisma_core::client::PrismaClient) -> ::prisma_core::Result<i64> {
-                self.inner.exec(client).await
+            pub async fn exec(self, provider: &(dyn ::prisma_core::transaction::QueryExecutorProvider + '_)) -> ::prisma_core::Result<i64> {
+                self.inner.exec(provider).await
             }
         }
     }
 }
 
-pub fn generate_create_many_and_return_wrapper(model_name: &syn::Ident, model_metadata: &ModelMetadata) -> proc_macro2::TokenStream {
+pub fn generate_create_many_and_return_wrapper(
+    model_name: &syn::Ident,
+    model_metadata: &ModelMetadata,
+) -> proc_macro2::TokenStream {
     let wrapper_name = format_ident!("{}CreateManyAndReturnBuilder", model_name);
     let scalar_data_builder_name = format_ident!("{}ScalarDataBuilder", model_name);
     let select_builder_name = format_ident!("{}SelectBuilder", model_name);
@@ -648,7 +741,7 @@ pub fn generate_create_many_and_return_wrapper(model_name: &syn::Ident, model_me
             {
                 let mut builder = #scalar_data_builder_name::default();
                 f(&mut builder);
-                
+
                 let mut list = match self.inner.state.arguments.get("data") {
                     Some(::prisma_core::query_core::ArgumentValue::List(l)) => l.clone(),
                     _ => Vec::new(),
@@ -675,7 +768,7 @@ pub fn generate_create_many_and_return_wrapper(model_name: &syn::Ident, model_me
                 self
             }
 
-            pub async fn exec(self, client: &::prisma_core::client::PrismaClient) -> ::prisma_core::Result<Vec<#model_name>> {
+            pub async fn exec(self, provider: &(dyn ::prisma_core::transaction::QueryExecutorProvider + '_)) -> ::prisma_core::Result<Vec<#model_name>> {
                 let mut builder = self;
                 if builder.inner.state.selection.nested_selections().is_empty() {
                     for field in &[#(#scalar_field_names),*] {
@@ -683,13 +776,16 @@ pub fn generate_create_many_and_return_wrapper(model_name: &syn::Ident, model_me
                         builder.inner.add_nested_selection(::prisma_core::query_core::Selection::with_name(field.to_string()));
                     }
                 }
-                builder.inner.exec(client).await
+                builder.inner.exec(provider).await
             }
         }
     }
 }
 
-pub fn generate_update_many_wrapper(model_name: &syn::Ident, _model_metadata: &ModelMetadata) -> proc_macro2::TokenStream {
+pub fn generate_update_many_wrapper(
+    model_name: &syn::Ident,
+    _model_metadata: &ModelMetadata,
+) -> proc_macro2::TokenStream {
     let wrapper_name = format_ident!("{}UpdateManyBuilder", model_name);
     let where_builder_name = format_ident!("{}WhereBuilder", model_name);
     let scalar_data_builder_name = format_ident!("{}ScalarDataBuilder", model_name);
@@ -723,14 +819,17 @@ pub fn generate_update_many_wrapper(model_name: &syn::Ident, _model_metadata: &M
                 self
             }
 
-            pub async fn exec(self, client: &::prisma_core::client::PrismaClient) -> ::prisma_core::Result<i64> {
-                self.inner.exec(client).await
+            pub async fn exec(self, provider: &(dyn ::prisma_core::transaction::QueryExecutorProvider + '_)) -> ::prisma_core::Result<i64> {
+                self.inner.exec(provider).await
             }
         }
     }
 }
 
-pub fn generate_update_many_and_return_wrapper(model_name: &syn::Ident, model_metadata: &ModelMetadata) -> proc_macro2::TokenStream {
+pub fn generate_update_many_and_return_wrapper(
+    model_name: &syn::Ident,
+    model_metadata: &ModelMetadata,
+) -> proc_macro2::TokenStream {
     let wrapper_name = format_ident!("{}UpdateManyAndReturnBuilder", model_name);
     let where_builder_name = format_ident!("{}WhereBuilder", model_name);
     let scalar_data_builder_name = format_ident!("{}ScalarDataBuilder", model_name);
@@ -776,7 +875,7 @@ pub fn generate_update_many_and_return_wrapper(model_name: &syn::Ident, model_me
                 self
             }
 
-            pub async fn exec(self, client: &::prisma_core::client::PrismaClient) -> ::prisma_core::Result<Vec<#model_name>> {
+            pub async fn exec(self, provider: &(dyn ::prisma_core::transaction::QueryExecutorProvider + '_)) -> ::prisma_core::Result<Vec<#model_name>> {
                 let mut builder = self;
                 if builder.inner.state.selection.nested_selections().is_empty() {
                     for field in &[#(#scalar_field_names),*] {
@@ -784,13 +883,16 @@ pub fn generate_update_many_and_return_wrapper(model_name: &syn::Ident, model_me
                         builder.inner.add_nested_selection(::prisma_core::query_core::Selection::with_name(field.to_string()));
                     }
                 }
-                builder.inner.exec(client).await
+                builder.inner.exec(provider).await
             }
         }
     }
 }
 
-pub fn generate_delete_many_wrapper(model_name: &syn::Ident, _model_metadata: &ModelMetadata) -> proc_macro2::TokenStream {
+pub fn generate_delete_many_wrapper(
+    model_name: &syn::Ident,
+    _model_metadata: &ModelMetadata,
+) -> proc_macro2::TokenStream {
     let wrapper_name = format_ident!("{}DeleteManyBuilder", model_name);
     let where_builder_name = format_ident!("{}WhereBuilder", model_name);
 
@@ -813,8 +915,8 @@ pub fn generate_delete_many_wrapper(model_name: &syn::Ident, _model_metadata: &M
                 self
             }
 
-            pub async fn exec(self, client: &::prisma_core::client::PrismaClient) -> ::prisma_core::Result<i64> {
-                self.inner.exec(client).await
+            pub async fn exec(self, provider: &(dyn ::prisma_core::transaction::QueryExecutorProvider + '_)) -> ::prisma_core::Result<i64> {
+                self.inner.exec(provider).await
             }
         }
     }
@@ -843,9 +945,9 @@ pub fn generate_count_wrapper(model_name: &syn::Ident) -> proc_macro2::TokenStre
                 self
             }
 
-            pub async fn exec(self, client: &::prisma_core::client::PrismaClient) -> ::prisma_core::Result<i64> {
+            pub async fn exec(self, provider: &(dyn ::prisma_core::transaction::QueryExecutorProvider + '_)) -> ::prisma_core::Result<i64> {
                 use ::prisma_core::Executable;
-                self.inner.exec(client).await
+                self.inner.exec(provider).await
             }
         }
     }
@@ -854,10 +956,17 @@ pub fn generate_count_wrapper(model_name: &syn::Ident) -> proc_macro2::TokenStre
 pub fn generate_aggregate_wrapper(model_name: &syn::Ident) -> proc_macro2::TokenStream {
     let aggregate_wrapper_name = format_ident!("{}AggregateBuilder", model_name);
     let where_builder_name = format_ident!("{}WhereBuilder", model_name);
+    let aggregate_result_name = format_ident!("{}AggregateResult", model_name);
+
+    let count_builder = format_ident!("{}CountAggregateSelectBuilder", model_name);
+    let sum_builder = format_ident!("{}SumAggregateSelectBuilder", model_name);
+    let avg_builder = format_ident!("{}AvgAggregateSelectBuilder", model_name);
+    let min_builder = format_ident!("{}MinAggregateSelectBuilder", model_name);
+    let max_builder = format_ident!("{}MaxAggregateSelectBuilder", model_name);
 
     quote! {
         pub struct #aggregate_wrapper_name {
-            pub inner: ::prisma_core::AggregateBuilder,
+            pub inner: ::prisma_core::AggregateBuilder<#aggregate_result_name>,
         }
 
         impl #aggregate_wrapper_name {
@@ -874,9 +983,78 @@ pub fn generate_aggregate_wrapper(model_name: &syn::Ident) -> proc_macro2::Token
                 self
             }
 
-            pub async fn exec<T: ::prisma_core::serde::de::DeserializeOwned>(self, client: &::prisma_core::client::PrismaClient) -> ::prisma_core::Result<T> {
-                use ::prisma_core::Executable;
-                self.inner.exec(client).await
+            pub fn count<F>(mut self, f: F) -> Self
+            where F: FnOnce(&mut #count_builder)
+            {
+                let mut builder = #count_builder::default();
+                f(&mut builder);
+                let mut sel = ::prisma_core::query_core::Selection::with_name("_count");
+                for s in builder.selections {
+                    sel.push_nested_selection(s);
+                }
+                use ::prisma_core::Selectable;
+                self.inner.add_nested_selection(sel);
+                self
+            }
+
+            pub fn sum<F>(mut self, f: F) -> Self
+            where F: FnOnce(&mut #sum_builder)
+            {
+                let mut builder = #sum_builder::default();
+                f(&mut builder);
+                let mut sel = ::prisma_core::query_core::Selection::with_name("_sum");
+                for s in builder.selections {
+                    sel.push_nested_selection(s);
+                }
+                use ::prisma_core::Selectable;
+                self.inner.add_nested_selection(sel);
+                self
+            }
+
+            pub fn avg<F>(mut self, f: F) -> Self
+            where F: FnOnce(&mut #avg_builder)
+            {
+                let mut builder = #avg_builder::default();
+                f(&mut builder);
+                let mut sel = ::prisma_core::query_core::Selection::with_name("_avg");
+                for s in builder.selections {
+                    sel.push_nested_selection(s);
+                }
+                use ::prisma_core::Selectable;
+                self.inner.add_nested_selection(sel);
+                self
+            }
+
+            pub fn min<F>(mut self, f: F) -> Self
+            where F: FnOnce(&mut #min_builder)
+            {
+                let mut builder = #min_builder::default();
+                f(&mut builder);
+                let mut sel = ::prisma_core::query_core::Selection::with_name("_min");
+                for s in builder.selections {
+                    sel.push_nested_selection(s);
+                }
+                use ::prisma_core::Selectable;
+                self.inner.add_nested_selection(sel);
+                self
+            }
+
+            pub fn max<F>(mut self, f: F) -> Self
+            where F: FnOnce(&mut #max_builder)
+            {
+                let mut builder = #max_builder::default();
+                f(&mut builder);
+                let mut sel = ::prisma_core::query_core::Selection::with_name("_max");
+                for s in builder.selections {
+                    sel.push_nested_selection(s);
+                }
+                use ::prisma_core::Selectable;
+                self.inner.add_nested_selection(sel);
+                self
+            }
+
+            pub async fn exec(self, provider: &(dyn ::prisma_core::transaction::QueryExecutorProvider + '_)) -> ::prisma_core::Result<#aggregate_result_name> {
+                self.inner.exec_inferred(provider).await
             }
         }
     }
@@ -885,10 +1063,19 @@ pub fn generate_aggregate_wrapper(model_name: &syn::Ident) -> proc_macro2::Token
 pub fn generate_group_by_wrapper(model_name: &syn::Ident) -> proc_macro2::TokenStream {
     let group_by_wrapper_name = format_ident!("{}GroupByBuilder", model_name);
     let where_builder_name = format_ident!("{}WhereBuilder", model_name);
+    let group_by_select_builder = format_ident!("{}GroupBySelectBuilder", model_name);
+    let group_by_result_name = format_ident!("{}GroupByResult", model_name);
+
+    let count_builder = format_ident!("{}CountAggregateSelectBuilder", model_name);
+    let sum_builder = format_ident!("{}SumAggregateSelectBuilder", model_name);
+    let avg_builder = format_ident!("{}AvgAggregateSelectBuilder", model_name);
+    let min_builder = format_ident!("{}MinAggregateSelectBuilder", model_name);
+    let max_builder = format_ident!("{}MaxAggregateSelectBuilder", model_name);
+    let order_by_name = format_ident!("{}OrderByBuilder", model_name);
 
     quote! {
         pub struct #group_by_wrapper_name {
-            pub inner: ::prisma_core::GroupByBuilder,
+            pub inner: ::prisma_core::GroupByBuilder<#group_by_result_name>,
         }
 
         impl #group_by_wrapper_name {
@@ -905,9 +1092,137 @@ pub fn generate_group_by_wrapper(model_name: &syn::Ident) -> proc_macro2::TokenS
                 self
             }
 
-            pub async fn exec<T: ::prisma_core::serde::de::DeserializeOwned>(self, client: &::prisma_core::client::PrismaClient) -> ::prisma_core::Result<T> {
-                use ::prisma_core::Executable;
-                self.inner.exec(client).await
+            pub fn having<F>(mut self, f: F) -> Self
+            where F: FnOnce(&mut #where_builder_name)
+            {
+                let mut builder = #where_builder_name::default();
+                f(&mut builder);
+                let map = builder.build();
+                if !map.is_empty() {
+                    use ::prisma_core::Filterable;
+                    self.inner.add_filter_arg("having".to_string(), ::prisma_core::query_core::ArgumentValue::Object(map));
+                }
+                self
+            }
+
+            pub fn take(mut self, take: i64) -> Self {
+                use ::prisma_core::Filterable;
+                self.inner.add_filter_arg("take".to_string(), ::prisma_core::query_core::ArgumentValue::Scalar(::prisma_core::query_structure::PrismaValue::Int(take)));
+                self
+            }
+
+            pub fn skip(mut self, skip: i64) -> Self {
+                use ::prisma_core::Filterable;
+                self.inner.add_filter_arg("skip".to_string(), ::prisma_core::query_core::ArgumentValue::Scalar(::prisma_core::query_structure::PrismaValue::Int(skip)));
+                self
+            }
+
+            pub fn order_by<F>(mut self, f: F) -> Self 
+            where F: FnOnce(&mut #order_by_name)
+            {
+                let mut builder = #order_by_name::default();
+                f(&mut builder);
+                if !builder.args.is_empty() {
+                    use ::prisma_core::Filterable;
+                    self.inner.add_filter_arg("orderBy".to_string(), ::prisma_core::query_core::ArgumentValue::List(builder.args));
+                }
+                self
+            }
+
+            pub fn by<F>(mut self, f: F) -> Self
+            where F: FnOnce(&mut #group_by_select_builder)
+            {
+                let mut builder = #group_by_select_builder::default();
+                f(&mut builder);
+
+                let fields = builder.fields.clone();
+
+                use ::prisma_core::Filterable;
+                self.inner.add_filter_arg("by".to_string(), ::prisma_core::query_core::ArgumentValue::List(
+                    fields.iter().map(|f| ::prisma_core::query_core::ArgumentValue::Scalar(::prisma_core::query_structure::PrismaValue::String(f.clone()))).collect()
+                ));
+
+                // ALSO add to selection so they are returned
+                use ::prisma_core::Selectable;
+                for f in fields {
+                    self.inner.add_nested_selection(::prisma_core::query_core::Selection::with_name(f));
+                }
+
+                self
+            }
+
+            pub fn count<F>(mut self, f: F) -> Self
+            where F: FnOnce(&mut #count_builder)
+            {
+                let mut builder = #count_builder::default();
+                f(&mut builder);
+                let mut sel = ::prisma_core::query_core::Selection::with_name("_count");
+                for s in builder.selections {
+                    sel.push_nested_selection(s);
+                }
+                use ::prisma_core::Selectable;
+                self.inner.add_nested_selection(sel);
+                self
+            }
+
+            pub fn sum<F>(mut self, f: F) -> Self
+            where F: FnOnce(&mut #sum_builder)
+            {
+                let mut builder = #sum_builder::default();
+                f(&mut builder);
+                let mut sel = ::prisma_core::query_core::Selection::with_name("_sum");
+                for s in builder.selections {
+                    sel.push_nested_selection(s);
+                }
+                use ::prisma_core::Selectable;
+                self.inner.add_nested_selection(sel);
+                self
+            }
+
+            pub fn avg<F>(mut self, f: F) -> Self
+            where F: FnOnce(&mut #avg_builder)
+            {
+                let mut builder = #avg_builder::default();
+                f(&mut builder);
+                let mut sel = ::prisma_core::query_core::Selection::with_name("_avg");
+                for s in builder.selections {
+                    sel.push_nested_selection(s);
+                }
+                use ::prisma_core::Selectable;
+                self.inner.add_nested_selection(sel);
+                self
+            }
+
+            pub fn min<F>(mut self, f: F) -> Self
+            where F: FnOnce(&mut #min_builder)
+            {
+                let mut builder = #min_builder::default();
+                f(&mut builder);
+                let mut sel = ::prisma_core::query_core::Selection::with_name("_min");
+                for s in builder.selections {
+                    sel.push_nested_selection(s);
+                }
+                use ::prisma_core::Selectable;
+                self.inner.add_nested_selection(sel);
+                self
+            }
+
+            pub fn max<F>(mut self, f: F) -> Self
+            where F: FnOnce(&mut #max_builder)
+            {
+                let mut builder = #max_builder::default();
+                f(&mut builder);
+                let mut sel = ::prisma_core::query_core::Selection::with_name("_max");
+                for s in builder.selections {
+                    sel.push_nested_selection(s);
+                }
+                use ::prisma_core::Selectable;
+                self.inner.add_nested_selection(sel);
+                self
+            }
+
+            pub async fn exec(self, provider: &(dyn ::prisma_core::transaction::QueryExecutorProvider + '_)) -> ::prisma_core::Result<Vec<#group_by_result_name>> {
+                self.inner.exec_inferred(provider).await
             }
         }
     }

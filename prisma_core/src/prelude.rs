@@ -16,7 +16,9 @@ pub use crate::filter_builders::{BoolFilter, DateTimeFilter, EnumFilter, FloatFi
 pub use crate::builder::{Executable, FilterBuilder, Filterable, Selectable};
 
 // Re-export common operation types
-pub use crate::{AggregateBuilder, CountBuilder, GroupByBuilder, ReadBuilder, WriteBuilder};
+pub use crate::{AggregateBuilder, CountBuilder, GroupByBuilder, ReadBuilder, WriteBuilder, SortOrder};
 
 // Re-export result type
 pub use crate::Result;
+
+pub use crate::transaction::IsolationLevel;

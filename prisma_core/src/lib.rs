@@ -15,6 +15,7 @@ pub mod filter_builders;
 pub mod filters;
 pub mod prelude;
 pub mod read;
+pub mod transaction;
 pub mod write;
 
 // Re-export main types
@@ -28,10 +29,28 @@ pub use filters::{
     BoolFieldOps, DateTimeFieldOps, EnumFieldOps, FloatFieldOps, IntFieldOps, RelationFilterOps, StringFieldOps,
 };
 pub use read::ReadBuilder;
+pub use transaction::{QueryExecutorProvider, Transaction, TransactionConfig};
 pub use write::{
-    CreateManyAndReturnBuilder, CreateManyBuilder, DeleteManyBuilder, UpdateManyAndReturnBuilder,
-    UpdateManyBuilder, WriteBuilder,
+    CreateManyAndReturnBuilder, CreateManyBuilder, DeleteManyBuilder, UpdateManyAndReturnBuilder, UpdateManyBuilder,
+    WriteBuilder,
 };
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub enum SortOrder {
+    #[serde(rename = "asc")]
+    Asc,
+    #[serde(rename = "desc")]
+    Desc,
+}
+
+impl From<SortOrder> for ArgumentValue {
+    fn from(order: SortOrder) -> Self {
+        ArgumentValue::Scalar(match order {
+            SortOrder::Asc => query_structure::PrismaValue::Enum("asc".to_string()),
+            SortOrder::Desc => query_structure::PrismaValue::Enum("desc".to_string()),
+        })
+    }
+}
 
 // Standard Result type using anyhow::Error
 pub type Result<T> = anyhow::Result<T>;

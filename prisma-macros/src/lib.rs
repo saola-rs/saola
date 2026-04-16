@@ -190,11 +190,11 @@ pub fn as_type(input: TokenStream) -> TokenStream {
 
 /// The `select_as!` macro generates an ad-hoc struct and applies it to a query.
 ///
-/// Usage: `select_as!(user().find_many(), { id: String, email: String })`
+/// Usage: `select_as!({ id: String, email: String })`
 #[proc_macro]
 pub fn select_as(input: TokenStream) -> TokenStream {
     let input2 = proc_macro2::TokenStream::from(input);
     let shape = syn::parse2::<select_macro::SelectShape>(input2)
-        .expect("Failed to parse select_as! input. Ensure syntax is select_as!(query, { ... })");
+        .expect("Failed to parse select_as! input. Ensure syntax is select_as!({ ... })");
     select_macro::select_macro_impl(shape).into()
 }

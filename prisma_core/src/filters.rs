@@ -79,11 +79,7 @@ pub fn build_filter_map(op: &str, value: impl Into<PrismaValue>) -> (String, Arg
     (op.to_string(), ArgumentValue::Object(map))
 }
 
-pub fn build_list_filter(
-    field_name: &str,
-    op: &str,
-    values: Vec<impl Into<PrismaValue>>,
-) -> (String, ArgumentValue) {
+pub fn build_list_filter(field_name: &str, op: &str, values: Vec<impl Into<PrismaValue>>) -> (String, ArgumentValue) {
     let list: Vec<ArgumentValue> = values.into_iter().map(|v| ArgumentValue::Scalar(v.into())).collect();
 
     let mut map = IndexMap::new();

@@ -17,35 +17,40 @@ impl<'a, B: FilterBuilder> StringFieldOps for StringFilter<'a, B> {
     fn eq<T: Into<PrismaValue>>(self, value: T) -> Self {
         let mut map = IndexMap::new();
         map.insert("equals".to_string(), ArgumentValue::Scalar(value.into()));
-        self.builder.add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
+        self.builder
+            .add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
         self
     }
 
     fn not<T: Into<PrismaValue>>(self, value: T) -> Self {
         let mut map = IndexMap::new();
         map.insert("not".to_string(), ArgumentValue::Scalar(value.into()));
-        self.builder.add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
+        self.builder
+            .add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
         self
     }
 
     fn contains<T: Into<PrismaValue>>(self, value: T) -> Self {
         let mut map = IndexMap::new();
         map.insert("contains".to_string(), ArgumentValue::Scalar(value.into()));
-        self.builder.add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
+        self.builder
+            .add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
         self
     }
 
     fn starts_with<T: Into<PrismaValue>>(self, value: T) -> Self {
         let mut map = IndexMap::new();
         map.insert("startsWith".to_string(), ArgumentValue::Scalar(value.into()));
-        self.builder.add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
+        self.builder
+            .add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
         self
     }
 
     fn ends_with<T: Into<PrismaValue>>(self, value: T) -> Self {
         let mut map = IndexMap::new();
         map.insert("endsWith".to_string(), ArgumentValue::Scalar(value.into()));
-        self.builder.add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
+        self.builder
+            .add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
         self
     }
 
@@ -53,7 +58,8 @@ impl<'a, B: FilterBuilder> StringFieldOps for StringFilter<'a, B> {
         let list: Vec<ArgumentValue> = values.into_iter().map(|v| ArgumentValue::Scalar(v.into())).collect();
         let mut map = IndexMap::new();
         map.insert("in".to_string(), ArgumentValue::List(list));
-        self.builder.add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
+        self.builder
+            .add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
         self
     }
 
@@ -61,35 +67,40 @@ impl<'a, B: FilterBuilder> StringFieldOps for StringFilter<'a, B> {
         let list: Vec<ArgumentValue> = values.into_iter().map(|v| ArgumentValue::Scalar(v.into())).collect();
         let mut map = IndexMap::new();
         map.insert("notIn".to_string(), ArgumentValue::List(list));
-        self.builder.add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
+        self.builder
+            .add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
         self
     }
 
     fn gt<T: Into<PrismaValue>>(self, value: T) -> Self {
         let mut map = IndexMap::new();
         map.insert("gt".to_string(), ArgumentValue::Scalar(value.into()));
-        self.builder.add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
+        self.builder
+            .add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
         self
     }
 
     fn gte<T: Into<PrismaValue>>(self, value: T) -> Self {
         let mut map = IndexMap::new();
         map.insert("gte".to_string(), ArgumentValue::Scalar(value.into()));
-        self.builder.add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
+        self.builder
+            .add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
         self
     }
 
     fn lt<T: Into<PrismaValue>>(self, value: T) -> Self {
         let mut map = IndexMap::new();
         map.insert("lt".to_string(), ArgumentValue::Scalar(value.into()));
-        self.builder.add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
+        self.builder
+            .add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
         self
     }
 
     fn lte<T: Into<PrismaValue>>(self, value: T) -> Self {
         let mut map = IndexMap::new();
         map.insert("lte".to_string(), ArgumentValue::Scalar(value.into()));
-        self.builder.add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
+        self.builder
+            .add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
         self
     }
 }
@@ -104,42 +115,48 @@ impl<'a, B: FilterBuilder> IntFieldOps for IntFilter<'a, B> {
     fn eq<T: Into<PrismaValue>>(self, value: T) -> Self {
         let mut map = IndexMap::new();
         map.insert("equals".to_string(), ArgumentValue::Scalar(value.into()));
-        self.builder.add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
+        self.builder
+            .add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
         self
     }
 
     fn not<T: Into<PrismaValue>>(self, value: T) -> Self {
         let mut map = IndexMap::new();
         map.insert("not".to_string(), ArgumentValue::Scalar(value.into()));
-        self.builder.add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
+        self.builder
+            .add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
         self
     }
 
     fn gt<T: Into<PrismaValue>>(self, value: T) -> Self {
         let mut map = IndexMap::new();
         map.insert("gt".to_string(), ArgumentValue::Scalar(value.into()));
-        self.builder.add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
+        self.builder
+            .add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
         self
     }
 
     fn gte<T: Into<PrismaValue>>(self, value: T) -> Self {
         let mut map = IndexMap::new();
         map.insert("gte".to_string(), ArgumentValue::Scalar(value.into()));
-        self.builder.add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
+        self.builder
+            .add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
         self
     }
 
     fn lt<T: Into<PrismaValue>>(self, value: T) -> Self {
         let mut map = IndexMap::new();
         map.insert("lt".to_string(), ArgumentValue::Scalar(value.into()));
-        self.builder.add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
+        self.builder
+            .add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
         self
     }
 
     fn lte<T: Into<PrismaValue>>(self, value: T) -> Self {
         let mut map = IndexMap::new();
         map.insert("lte".to_string(), ArgumentValue::Scalar(value.into()));
-        self.builder.add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
+        self.builder
+            .add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
         self
     }
 
@@ -147,7 +164,8 @@ impl<'a, B: FilterBuilder> IntFieldOps for IntFilter<'a, B> {
         let list: Vec<ArgumentValue> = values.into_iter().map(|v| ArgumentValue::Scalar(v.into())).collect();
         let mut map = IndexMap::new();
         map.insert("in".to_string(), ArgumentValue::List(list));
-        self.builder.add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
+        self.builder
+            .add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
         self
     }
 
@@ -155,7 +173,8 @@ impl<'a, B: FilterBuilder> IntFieldOps for IntFilter<'a, B> {
         let list: Vec<ArgumentValue> = values.into_iter().map(|v| ArgumentValue::Scalar(v.into())).collect();
         let mut map = IndexMap::new();
         map.insert("notIn".to_string(), ArgumentValue::List(list));
-        self.builder.add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
+        self.builder
+            .add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
         self
     }
 }
@@ -170,14 +189,16 @@ impl<'a, B: FilterBuilder> BoolFieldOps for BoolFilter<'a, B> {
     fn eq<T: Into<PrismaValue>>(self, value: T) -> Self {
         let mut map = IndexMap::new();
         map.insert("equals".to_string(), ArgumentValue::Scalar(value.into()));
-        self.builder.add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
+        self.builder
+            .add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
         self
     }
 
     fn not<T: Into<PrismaValue>>(self, value: T) -> Self {
         let mut map = IndexMap::new();
         map.insert("not".to_string(), ArgumentValue::Scalar(value.into()));
-        self.builder.add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
+        self.builder
+            .add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
         self
     }
 }
@@ -192,14 +213,16 @@ impl<'a, B: FilterBuilder> EnumFieldOps for EnumFilter<'a, B> {
     fn eq<T: Into<PrismaValue>>(self, value: T) -> Self {
         let mut map = IndexMap::new();
         map.insert("equals".to_string(), ArgumentValue::Scalar(value.into()));
-        self.builder.add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
+        self.builder
+            .add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
         self
     }
 
     fn not<T: Into<PrismaValue>>(self, value: T) -> Self {
         let mut map = IndexMap::new();
         map.insert("not".to_string(), ArgumentValue::Scalar(value.into()));
-        self.builder.add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
+        self.builder
+            .add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
         self
     }
 
@@ -207,7 +230,8 @@ impl<'a, B: FilterBuilder> EnumFieldOps for EnumFilter<'a, B> {
         let list: Vec<ArgumentValue> = values.into_iter().map(|v| ArgumentValue::Scalar(v.into())).collect();
         let mut map = IndexMap::new();
         map.insert("in".to_string(), ArgumentValue::List(list));
-        self.builder.add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
+        self.builder
+            .add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
         self
     }
 
@@ -215,7 +239,8 @@ impl<'a, B: FilterBuilder> EnumFieldOps for EnumFilter<'a, B> {
         let list: Vec<ArgumentValue> = values.into_iter().map(|v| ArgumentValue::Scalar(v.into())).collect();
         let mut map = IndexMap::new();
         map.insert("notIn".to_string(), ArgumentValue::List(list));
-        self.builder.add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
+        self.builder
+            .add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
         self
     }
 }
@@ -230,42 +255,48 @@ impl<'a, B: FilterBuilder> FloatFieldOps for FloatFilter<'a, B> {
     fn eq<T: Into<PrismaValue>>(self, value: T) -> Self {
         let mut map = IndexMap::new();
         map.insert("equals".to_string(), ArgumentValue::Scalar(value.into()));
-        self.builder.add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
+        self.builder
+            .add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
         self
     }
 
     fn not<T: Into<PrismaValue>>(self, value: T) -> Self {
         let mut map = IndexMap::new();
         map.insert("not".to_string(), ArgumentValue::Scalar(value.into()));
-        self.builder.add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
+        self.builder
+            .add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
         self
     }
 
     fn gt<T: Into<PrismaValue>>(self, value: T) -> Self {
         let mut map = IndexMap::new();
         map.insert("gt".to_string(), ArgumentValue::Scalar(value.into()));
-        self.builder.add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
+        self.builder
+            .add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
         self
     }
 
     fn gte<T: Into<PrismaValue>>(self, value: T) -> Self {
         let mut map = IndexMap::new();
         map.insert("gte".to_string(), ArgumentValue::Scalar(value.into()));
-        self.builder.add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
+        self.builder
+            .add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
         self
     }
 
     fn lt<T: Into<PrismaValue>>(self, value: T) -> Self {
         let mut map = IndexMap::new();
         map.insert("lt".to_string(), ArgumentValue::Scalar(value.into()));
-        self.builder.add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
+        self.builder
+            .add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
         self
     }
 
     fn lte<T: Into<PrismaValue>>(self, value: T) -> Self {
         let mut map = IndexMap::new();
         map.insert("lte".to_string(), ArgumentValue::Scalar(value.into()));
-        self.builder.add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
+        self.builder
+            .add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
         self
     }
 
@@ -273,7 +304,8 @@ impl<'a, B: FilterBuilder> FloatFieldOps for FloatFilter<'a, B> {
         let list: Vec<ArgumentValue> = values.into_iter().map(|v| ArgumentValue::Scalar(v.into())).collect();
         let mut map = IndexMap::new();
         map.insert("in".to_string(), ArgumentValue::List(list));
-        self.builder.add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
+        self.builder
+            .add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
         self
     }
 
@@ -281,7 +313,8 @@ impl<'a, B: FilterBuilder> FloatFieldOps for FloatFilter<'a, B> {
         let list: Vec<ArgumentValue> = values.into_iter().map(|v| ArgumentValue::Scalar(v.into())).collect();
         let mut map = IndexMap::new();
         map.insert("notIn".to_string(), ArgumentValue::List(list));
-        self.builder.add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
+        self.builder
+            .add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
         self
     }
 }
@@ -296,42 +329,48 @@ impl<'a, B: FilterBuilder> DateTimeFieldOps for DateTimeFilter<'a, B> {
     fn eq<T: Into<PrismaValue>>(self, value: T) -> Self {
         let mut map = IndexMap::new();
         map.insert("equals".to_string(), ArgumentValue::Scalar(value.into()));
-        self.builder.add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
+        self.builder
+            .add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
         self
     }
 
     fn not<T: Into<PrismaValue>>(self, value: T) -> Self {
         let mut map = IndexMap::new();
         map.insert("not".to_string(), ArgumentValue::Scalar(value.into()));
-        self.builder.add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
+        self.builder
+            .add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
         self
     }
 
     fn gt<T: Into<PrismaValue>>(self, value: T) -> Self {
         let mut map = IndexMap::new();
         map.insert("gt".to_string(), ArgumentValue::Scalar(value.into()));
-        self.builder.add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
+        self.builder
+            .add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
         self
     }
 
     fn gte<T: Into<PrismaValue>>(self, value: T) -> Self {
         let mut map = IndexMap::new();
         map.insert("gte".to_string(), ArgumentValue::Scalar(value.into()));
-        self.builder.add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
+        self.builder
+            .add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
         self
     }
 
     fn lt<T: Into<PrismaValue>>(self, value: T) -> Self {
         let mut map = IndexMap::new();
         map.insert("lt".to_string(), ArgumentValue::Scalar(value.into()));
-        self.builder.add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
+        self.builder
+            .add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
         self
     }
 
     fn lte<T: Into<PrismaValue>>(self, value: T) -> Self {
         let mut map = IndexMap::new();
         map.insert("lte".to_string(), ArgumentValue::Scalar(value.into()));
-        self.builder.add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
+        self.builder
+            .add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
         self
     }
 
@@ -339,7 +378,8 @@ impl<'a, B: FilterBuilder> DateTimeFieldOps for DateTimeFilter<'a, B> {
         let list: Vec<ArgumentValue> = values.into_iter().map(|v| ArgumentValue::Scalar(v.into())).collect();
         let mut map = IndexMap::new();
         map.insert("in".to_string(), ArgumentValue::List(list));
-        self.builder.add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
+        self.builder
+            .add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
         self
     }
 
@@ -347,7 +387,8 @@ impl<'a, B: FilterBuilder> DateTimeFieldOps for DateTimeFilter<'a, B> {
         let list: Vec<ArgumentValue> = values.into_iter().map(|v| ArgumentValue::Scalar(v.into())).collect();
         let mut map = IndexMap::new();
         map.insert("notIn".to_string(), ArgumentValue::List(list));
-        self.builder.add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
+        self.builder
+            .add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
         self
     }
 }
@@ -361,7 +402,9 @@ pub struct RelationFilter<'a, B, WB> {
 
 impl<'a, B: FilterBuilder, WB: Default + FilterBuilder> RelationFilter<'a, B, WB> {
     pub fn some<F>(mut self, f: F) -> Self
-    where F: FnOnce(&mut WB) {
+    where
+        F: FnOnce(&mut WB),
+    {
         let mut nested = WB::default();
         f(&mut nested);
         self.add_nested_op("some", nested);
@@ -369,7 +412,9 @@ impl<'a, B: FilterBuilder, WB: Default + FilterBuilder> RelationFilter<'a, B, WB
     }
 
     pub fn every<F>(mut self, f: F) -> Self
-    where F: FnOnce(&mut WB) {
+    where
+        F: FnOnce(&mut WB),
+    {
         let mut nested = WB::default();
         f(&mut nested);
         self.add_nested_op("every", nested);
@@ -377,7 +422,9 @@ impl<'a, B: FilterBuilder, WB: Default + FilterBuilder> RelationFilter<'a, B, WB
     }
 
     pub fn none<F>(mut self, f: F) -> Self
-    where F: FnOnce(&mut WB) {
+    where
+        F: FnOnce(&mut WB),
+    {
         let mut nested = WB::default();
         f(&mut nested);
         self.add_nested_op("none", nested);
@@ -385,7 +432,9 @@ impl<'a, B: FilterBuilder, WB: Default + FilterBuilder> RelationFilter<'a, B, WB
     }
 
     pub fn is<F>(mut self, f: F) -> Self
-    where F: FnOnce(&mut WB) {
+    where
+        F: FnOnce(&mut WB),
+    {
         let mut nested = WB::default();
         f(&mut nested);
         self.add_nested_op("is", nested);
@@ -393,7 +442,9 @@ impl<'a, B: FilterBuilder, WB: Default + FilterBuilder> RelationFilter<'a, B, WB
     }
 
     pub fn is_not<F>(mut self, f: F) -> Self
-    where F: FnOnce(&mut WB) {
+    where
+        F: FnOnce(&mut WB),
+    {
         let mut nested = WB::default();
         f(&mut nested);
         self.add_nested_op("isNot", nested);
@@ -405,7 +456,8 @@ impl<'a, B: FilterBuilder, WB: Default + FilterBuilder> RelationFilter<'a, B, WB
         if !args.is_empty() {
             let mut map = IndexMap::new();
             map.insert(op.to_string(), ArgumentValue::Object(args));
-            self.builder.add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
+            self.builder
+                .add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
         }
     }
 }
