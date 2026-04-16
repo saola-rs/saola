@@ -244,7 +244,7 @@ pub fn generate_select_methods(fields: &[FieldMetadata]) -> Vec<proc_macro2::Tok
 }
 
 /// Generate data builder methods for scalar and relation fields
-pub fn generate_data_methods(model_name: &syn::Ident, fields: &[FieldMetadata]) -> Vec<proc_macro2::TokenStream> {
+pub fn generate_data_methods(model_name: &syn::Ident, fields: &[FieldMetadata], scalar_only: bool) -> Vec<proc_macro2::TokenStream> {
     fields
         .iter()
         .filter_map(|field| {
@@ -252,7 +252,9 @@ pub fn generate_data_methods(model_name: &syn::Ident, fields: &[FieldMetadata]) 
             let prisma_name = &field.prisma_name;
 
             if field.is_relation {
-                let _inner_type = get_inner_type(&field.field_type);
+                if scalar_only {
+                    return None;
+                }
                 let rel_write_builder = syn::Ident::new(
                     &format!("{}{}RelationWriteBuilder", model_name, field.rust_name.to_upper_camel_case()),
                     proc_macro2::Span::call_site(),
@@ -267,7 +269,7 @@ pub fn generate_data_methods(model_name: &syn::Ident, fields: &[FieldMetadata]) 
                         if !builder.data.is_empty() {
                             // The RelationWriteBuilder already has the "create" or "connect" key!
                             // So we just need to insert its internal map as the value for this field.
-                            self.data.insert(#prisma_name.to_string(), prisma_core::query_core::ArgumentValue::Object(builder.data));
+                            self.data.insert(#prisma_name.to_string(), prisma_core::query_core::ArgumentValue::Object(std::mem::take(&mut builder.data)));
                         }
                         self
                     }

@@ -20,9 +20,9 @@ pub fn generate_where_builder(model_name: &syn::Ident, model_metadata: &ModelMet
                 self.args.push((name, value));
             }
 
-            fn build(self) -> prisma_core::IndexMap<String, prisma_core::query_core::ArgumentValue> {
+            fn build(mut self) -> prisma_core::IndexMap<String, prisma_core::query_core::ArgumentValue> {
                 let mut map = prisma_core::IndexMap::new();
-                for (k, v) in self.args {
+                for (k, v) in std::mem::take(&mut self.args) {
                     map.insert(k, v);
                 }
                 map
@@ -37,7 +37,7 @@ pub fn generate_where_builder(model_name: &syn::Ident, model_metadata: &ModelMet
                 f(&mut builder);
                 if !builder.args.is_empty() {
                     let mut map = prisma_core::IndexMap::new();
-                    for (k, v) in builder.args {
+                    for (k, v) in std::mem::take(&mut builder.args) {
                         map.insert(k, v);
                     }
                     self.args.push(("AND".to_string(), prisma_core::query_core::ArgumentValue::Object(map)));
@@ -52,7 +52,7 @@ pub fn generate_where_builder(model_name: &syn::Ident, model_metadata: &ModelMet
                 f(&mut builder);
                 if !builder.args.is_empty() {
                     let mut map = prisma_core::IndexMap::new();
-                    for (k, v) in builder.args {
+                    for (k, v) in std::mem::take(&mut builder.args) {
                         map.insert(k, v);
                     }
                     self.args.push(("OR".to_string(), prisma_core::query_core::ArgumentValue::List(vec![prisma_core::query_core::ArgumentValue::Object(map)])));
@@ -67,7 +67,7 @@ pub fn generate_where_builder(model_name: &syn::Ident, model_metadata: &ModelMet
                 f(&mut builder);
                 if !builder.args.is_empty() {
                     let mut map = prisma_core::IndexMap::new();
-                    for (k, v) in builder.args {
+                    for (k, v) in std::mem::take(&mut builder.args) {
                         map.insert(k, v);
                     }
                     self.args.push(("NOT".to_string(), prisma_core::query_core::ArgumentValue::Object(map)));
@@ -98,9 +98,9 @@ pub fn generate_unique_where_builder(
                 self.args.push((name, value));
             }
 
-            fn build(self) -> prisma_core::IndexMap<String, prisma_core::query_core::ArgumentValue> {
+            fn build(mut self) -> prisma_core::IndexMap<String, prisma_core::query_core::ArgumentValue> {
                 let mut map = prisma_core::IndexMap::new();
-                for (k, v) in self.args {
+                for (k, v) in std::mem::take(&mut self.args) {
                     map.insert(k, v);
                 }
                 map
@@ -151,7 +151,11 @@ pub fn generate_data_builder(
     all_metadata: Option<&HashMap<String, ModelMetadata>>,
 ) -> proc_macro2::TokenStream {
     let data_builder_name = format_ident!("{}DataBuilder", model_name);
-    let data_methods = crate::model_analysis::generate_data_methods(model_name, &model_metadata.fields);
+    let scalar_data_builder_name = format_ident!("{}ScalarDataBuilder", model_name);
+    
+    let full_data_methods = crate::model_analysis::generate_data_methods(model_name, &model_metadata.fields, false);
+    let scalar_data_methods = crate::model_analysis::generate_data_methods(model_name, &model_metadata.fields, true);
+    
     let rel_write_builders = generate_relation_write_builders(model_name, model_metadata, all_metadata);
 
     quote! {
@@ -161,13 +165,22 @@ pub fn generate_data_builder(
         }
 
         impl #data_builder_name {
-            #(#data_methods)*
+            #(#full_data_methods)*
         }
 
         impl From<#data_builder_name> for prisma_core::query_structure::PrismaValue {
             fn from(_b: #data_builder_name) -> Self {
                 prisma_core::query_structure::PrismaValue::Null
             }
+        }
+
+        #[derive(Default)]
+        pub struct #scalar_data_builder_name {
+            pub data: prisma_core::IndexMap<String, prisma_core::query_core::ArgumentValue>,
+        }
+
+        impl #scalar_data_builder_name {
+            #(#scalar_data_methods)*
         }
 
         #(#rel_write_builders)*
@@ -335,7 +348,7 @@ pub fn generate_relation_write_builders(
                             let mut map = prisma_core::IndexMap::new();
                             use prisma_core::FilterBuilder;
                             map.insert("where".to_string(), prisma_core::query_core::ArgumentValue::Object(w_builder.build()));
-                            map.insert("data".to_string(), prisma_core::query_core::ArgumentValue::Object(d_builder.data));
+                            map.insert("data".to_string(), prisma_core::query_core::ArgumentValue::Object(std::mem::take(&mut d_builder.data)));
                             
                             let list = self.data.entry("update".to_string())
                                 .or_insert_with(|| prisma_core::query_core::ArgumentValue::List(Vec::new()));
@@ -356,7 +369,7 @@ pub fn generate_relation_write_builders(
                             let mut map = prisma_core::IndexMap::new();
                             use prisma_core::FilterBuilder;
                             map.insert("where".to_string(), prisma_core::query_core::ArgumentValue::Object(w_builder.build()));
-                            map.insert("data".to_string(), prisma_core::query_core::ArgumentValue::Object(d_builder.data));
+                            map.insert("data".to_string(), prisma_core::query_core::ArgumentValue::Object(std::mem::take(&mut d_builder.data)));
                             
                             self.data.insert("updateMany".to_string(), prisma_core::query_core::ArgumentValue::Object(map));
                             self
@@ -385,8 +398,8 @@ pub fn generate_relation_write_builders(
                             let mut map = prisma_core::IndexMap::new();
                             use prisma_core::FilterBuilder;
                             map.insert("where".to_string(), prisma_core::query_core::ArgumentValue::Object(w_builder.build()));
-                            map.insert("create".to_string(), prisma_core::query_core::ArgumentValue::Object(create_builder.data));
-                            map.insert("update".to_string(), prisma_core::query_core::ArgumentValue::Object(update_builder.data));
+                            map.insert("create".to_string(), prisma_core::query_core::ArgumentValue::Object(std::mem::take(&mut create_builder.data)));
+                            map.insert("update".to_string(), prisma_core::query_core::ArgumentValue::Object(std::mem::take(&mut update_builder.data)));
                             
                             let list = self.data.entry("upsert".to_string())
                                 .or_insert_with(|| prisma_core::query_core::ArgumentValue::List(Vec::new()));
@@ -453,7 +466,7 @@ pub fn generate_relation_write_builders(
                             f(&mut builder);
                             
                             let mut wrap = prisma_core::IndexMap::new();
-                            wrap.insert("update".to_string(), prisma_core::query_core::ArgumentValue::Object(builder.data));
+                            wrap.insert("update".to_string(), prisma_core::query_core::ArgumentValue::Object(std::mem::take(&mut builder.data)));
                             self.data = wrap;
                             self
                         }
@@ -468,8 +481,8 @@ pub fn generate_relation_write_builders(
                             update_f(&mut update_builder);
                             
                             let mut map = prisma_core::IndexMap::new();
-                            map.insert("create".to_string(), prisma_core::query_core::ArgumentValue::Object(create_builder.data));
-                            map.insert("update".to_string(), prisma_core::query_core::ArgumentValue::Object(update_builder.data));
+                            map.insert("create".to_string(), prisma_core::query_core::ArgumentValue::Object(std::mem::take(&mut create_builder.data)));
+                            map.insert("update".to_string(), prisma_core::query_core::ArgumentValue::Object(std::mem::take(&mut update_builder.data)));
                             
                             let mut wrap = prisma_core::IndexMap::new();
                             wrap.insert("upsert".to_string(), prisma_core::query_core::ArgumentValue::Object(map));

@@ -149,6 +149,61 @@ impl UpdateManyBuilder {
     }
 }
 
+/// Builder for bulk update operations and return records
+pub struct UpdateManyAndReturnBuilder<T> {
+    pub state: BuilderState,
+    _phantom: PhantomData<T>,
+}
+
+impl<T> UpdateManyAndReturnBuilder<T> {
+    pub fn new(model_name: String, default_selections: Vec<String>) -> Self {
+        let name = format!("updateMany{}AndReturn", model_name);
+        Self {
+            state: BuilderState {
+                model_name,
+                selection: Selection::with_name(name),
+                arguments: crate::IndexMap::new(),
+                default_selections,
+            },
+            _phantom: PhantomData,
+        }
+    }
+}
+
+impl<T: serde::de::DeserializeOwned + Send + Sync> UpdateManyAndReturnBuilder<T> {
+    pub async fn exec(self, client: &crate::client::PrismaClient) -> crate::Result<Vec<T>> {
+        let operation = self.state.into_operation(true);
+        let op_name = match &operation {
+            query_core::Operation::Write(s) => s.name().to_string(),
+            _ => String::new(),
+        };
+        let res = crate::builder::execute_raw(operation, client).await?;
+
+        // For bulk UpdateManyAndReturn operations, the result is either directly an array
+        // or nested under the operation name
+        let list = if let serde_json::Value::Array(_) = res {
+            res
+        } else {
+            res.get(&op_name)
+                .cloned()
+                .unwrap_or(serde_json::Value::Array(Vec::new()))
+        };
+        Ok(serde_json::from_value(list)?)
+    }
+}
+
+impl<M> Filterable for UpdateManyAndReturnBuilder<M> {
+    fn add_filter_arg(&mut self, name: String, value: ArgumentValue) {
+        self.state.arguments.insert(name, value);
+    }
+}
+
+impl<M> Selectable for UpdateManyAndReturnBuilder<M> {
+    fn add_nested_selection(&mut self, selection: Selection) {
+        self.state.selection.push_nested_selection(selection);
+    }
+}
+
 /// Builder for bulk delete operations
 pub struct DeleteManyBuilder {
     pub state: BuilderState,

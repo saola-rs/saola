@@ -21,6 +21,7 @@ pub fn generate_query_factory(
     let create_many_wrapper_name = format_ident!("{}CreateManyBuilder", model_name);
     let create_many_and_return_wrapper_name = format_ident!("{}CreateManyAndReturnBuilder", model_name);
     let update_many_wrapper_name = format_ident!("{}UpdateManyBuilder", model_name);
+    let update_many_and_return_wrapper_name = format_ident!("{}UpdateManyAndReturnBuilder", model_name);
     let delete_many_wrapper_name = format_ident!("{}DeleteManyBuilder", model_name);
 
     let count_wrapper_name = format_ident!("{}CountBuilder", model_name);
@@ -85,7 +86,7 @@ pub fn generate_query_factory(
                 let mut data_map = ::prisma_core::IndexMap::new();
                 #create_data_inserts
                 use ::prisma_core::Filterable;
-                builder.add_filter_arg("data".to_string(), ::prisma_core::query_core::ArgumentValue::Object(data_map));
+                builder.add_filter_arg("data".to_string(), ::prisma_core::query_core::ArgumentValue::Object(std::mem::take(&mut data_map)));
                 #write_wrapper_name {
                     inner: builder,
                     _phantom: std::marker::PhantomData,
@@ -127,6 +128,12 @@ pub fn generate_query_factory(
             pub fn update_many(&self) -> #update_many_wrapper_name {
                 #update_many_wrapper_name {
                     inner: ::prisma_core::UpdateManyBuilder::new(#model_name_str.to_string())
+                }
+            }
+
+            pub fn update_many_and_return(&self) -> #update_many_and_return_wrapper_name {
+                #update_many_and_return_wrapper_name {
+                    inner: ::prisma_core::UpdateManyAndReturnBuilder::new(#model_name_str.to_string(), vec![#(#scalar_field_names.to_string()),*])
                 }
             }
 

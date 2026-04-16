@@ -71,7 +71,7 @@ impl BuilderState {
     /// Consume this state and create an operation
     pub fn into_operation(mut self, is_write: bool) -> Operation {
         self.apply_defaults();
-        for (k, v) in self.arguments {
+        for (k, v) in std::mem::take(&mut self.arguments) {
             self.selection.push_argument(k, v);
         }
         if is_write {

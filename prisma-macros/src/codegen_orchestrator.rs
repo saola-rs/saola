@@ -113,6 +113,7 @@ pub fn generate_module(schema: &psl::ValidatedSchema, schema_path: &str) -> proc
         model_code.push(wrapper_gen::generate_create_many_wrapper(&model_name, model_metadata));
         model_code.push(wrapper_gen::generate_create_many_and_return_wrapper(&model_name, model_metadata));
         model_code.push(wrapper_gen::generate_update_many_wrapper(&model_name, model_metadata));
+        model_code.push(wrapper_gen::generate_update_many_and_return_wrapper(&model_name, model_metadata));
         model_code.push(wrapper_gen::generate_delete_many_wrapper(&model_name, model_metadata));
         model_code.push(wrapper_gen::generate_count_wrapper(&model_name));
         model_code.push(wrapper_gen::generate_aggregate_wrapper(&model_name));
