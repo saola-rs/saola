@@ -26,9 +26,9 @@ pub fn generate_model_struct(
                 ScalarType::Int => quote! { i32 },
                 ScalarType::Float => quote! { f64 },
                 ScalarType::Boolean => quote! { bool },
-                ScalarType::DateTime => quote! { ::prisma_core::chrono::DateTime<::prisma_core::chrono::Utc> },
-                ScalarType::Json => quote! { ::prisma_core::serde_json::Value },
-                ScalarType::Decimal => quote! { ::prisma_core::bigdecimal::BigDecimal },
+                ScalarType::DateTime => quote! { ::saola_core::chrono::DateTime<::saola_core::chrono::Utc> },
+                ScalarType::Json => quote! { ::saola_core::serde_json::Value },
+                ScalarType::Decimal => quote! { ::saola_core::bigdecimal::BigDecimal },
                 ScalarType::BigInt => quote! { i64 },
                 ScalarType::Bytes => quote! { Vec<u8> },
             },
@@ -40,7 +40,7 @@ pub fn generate_model_struct(
                 let comp_name = format_ident!("{}", db.walk(comp_id).name());
                 quote! { #comp_name }
             }
-            _ => quote! { ::prisma_core::serde_json::Value },
+            _ => quote! { ::saola_core::serde_json::Value },
         };
 
         let final_type = if field.is_optional() {
@@ -93,8 +93,8 @@ pub fn generate_model_struct(
     }
 
     quote! {
-        #[derive(Debug, Clone, ::prisma_core::serde::Serialize, ::prisma_core::serde::Deserialize, Default)]
-        #[serde(crate = "::prisma_core::serde", default)]
+        #[derive(Debug, Clone, ::saola_core::serde::Serialize, ::saola_core::serde::Deserialize, Default)]
+        #[serde(crate = "::saola_core::serde", default)]
         pub struct #model_name {
             #(#fields),*
         }
@@ -117,19 +117,19 @@ pub fn generate_enum(
             #variant_name
         });
         arms.push(quote! {
-            #enum_name::#variant_name => ::prisma_core::query_structure::PrismaValue::Enum(#prisma_name.to_string())
+            #enum_name::#variant_name => ::saola_core::query_structure::PrismaValue::Enum(#prisma_name.to_string())
         });
     }
 
     quote! {
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, ::prisma_core::serde::Serialize, ::prisma_core::serde::Deserialize, Default)]
-        #[serde(crate = "::prisma_core::serde")]
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, ::saola_core::serde::Serialize, ::saola_core::serde::Deserialize, Default)]
+        #[serde(crate = "::saola_core::serde")]
         pub enum #enum_name {
             #[default]
             #(#variants),*
         }
 
-        impl From<#enum_name> for ::prisma_core::query_structure::PrismaValue {
+        impl From<#enum_name> for ::saola_core::query_structure::PrismaValue {
             fn from(val: #enum_name) -> Self {
                 match val {
                     #(#arms),*
@@ -184,9 +184,9 @@ pub fn generate_relation_types(
                     ScalarType::Int => quote! { i32 },
                     ScalarType::Float => quote! { f64 },
                     ScalarType::Boolean => quote! { bool },
-                    ScalarType::DateTime => quote! { ::prisma_core::chrono::DateTime<::prisma_core::chrono::Utc> },
-                    ScalarType::Json => quote! { ::prisma_core::serde_json::Value },
-                    ScalarType::Decimal => quote! { ::prisma_core::bigdecimal::BigDecimal },
+                    ScalarType::DateTime => quote! { ::saola_core::chrono::DateTime<::saola_core::chrono::Utc> },
+                    ScalarType::Json => quote! { ::saola_core::serde_json::Value },
+                    ScalarType::Decimal => quote! { ::saola_core::bigdecimal::BigDecimal },
                     ScalarType::BigInt => quote! { i64 },
                     ScalarType::Bytes => quote! { Vec<u8> },
                 },
@@ -194,7 +194,7 @@ pub fn generate_relation_types(
                     let enum_name = format_ident!("{}", _db.walk(enum_id).name());
                     quote! { #enum_name }
                 }
-                _ => quote! { ::prisma_core::serde_json::Value },
+                _ => quote! { ::saola_core::serde_json::Value },
             };
 
             let final_type = if field.is_optional() {
@@ -240,8 +240,8 @@ pub fn generate_relation_types(
         };
 
         types.push(quote! {
-            #[derive(Debug, Clone, ::prisma_core::serde::Serialize, ::prisma_core::serde::Deserialize)]
-            #[serde(crate = "::prisma_core::serde")]
+            #[derive(Debug, Clone, ::saola_core::serde::Serialize, ::saola_core::serde::Deserialize)]
+            #[serde(crate = "::saola_core::serde")]
             pub struct #type_name #generics_decl {
                 #(#scalar_fields)*
                 #(#relation_fields)*
@@ -294,7 +294,7 @@ pub fn generate_aggregation_structs(
             ScalarFieldType::BuiltInScalar(builtin) => match builtin {
                 ScalarType::Int => quote! { i32 },
                 ScalarType::Float => quote! { f64 },
-                ScalarType::Decimal => quote! { ::prisma_core::bigdecimal::BigDecimal },
+                ScalarType::Decimal => quote! { ::saola_core::bigdecimal::BigDecimal },
                 ScalarType::BigInt => quote! { i64 },
                 _ => quote! { String },
             },
@@ -329,16 +329,16 @@ pub fn generate_aggregation_structs(
                     ScalarType::Int => quote! { i32 },
                     ScalarType::Float => quote! { f64 },
                     ScalarType::Boolean => quote! { bool },
-                    ScalarType::DateTime => quote! { ::prisma_core::chrono::DateTime<::prisma_core::chrono::Utc> },
-                    ScalarType::Decimal => quote! { ::prisma_core::bigdecimal::BigDecimal },
+                    ScalarType::DateTime => quote! { ::saola_core::chrono::DateTime<::saola_core::chrono::Utc> },
+                    ScalarType::Decimal => quote! { ::saola_core::bigdecimal::BigDecimal },
                     ScalarType::BigInt => quote! { i64 },
-                    _ => quote! { ::prisma_core::serde_json::Value },
+                    _ => quote! { ::saola_core::serde_json::Value },
                 },
                 ScalarFieldType::Enum(enum_id) => {
                     let enum_name = format_ident!("{}", _db.walk(enum_id).name());
                     quote! { #enum_name }
                 }
-                _ => quote! { ::prisma_core::serde_json::Value },
+                _ => quote! { ::saola_core::serde_json::Value },
             };
 
             min_fields.push(quote! {
@@ -360,8 +360,8 @@ pub fn generate_aggregation_structs(
     let max_struct = format_ident!("{}MaxAggregate", model_name);
 
     quote! {
-        #[derive(Debug, Clone, ::prisma_core::serde::Serialize, ::prisma_core::serde::Deserialize, Default)]
-        #[serde(crate = "::prisma_core::serde", default)]
+        #[derive(Debug, Clone, ::saola_core::serde::Serialize, ::saola_core::serde::Deserialize, Default)]
+        #[serde(crate = "::saola_core::serde", default)]
         pub struct #aggregate_result {
             #[serde(rename = "_count")]
             pub _count: Option<#count_struct>,
@@ -375,32 +375,32 @@ pub fn generate_aggregation_structs(
             pub _max: Option<#max_struct>,
         }
 
-        #[derive(Debug, Clone, ::prisma_core::serde::Serialize, ::prisma_core::serde::Deserialize, Default)]
-        #[serde(crate = "::prisma_core::serde", default)]
+        #[derive(Debug, Clone, ::saola_core::serde::Serialize, ::saola_core::serde::Deserialize, Default)]
+        #[serde(crate = "::saola_core::serde", default)]
         pub struct #count_struct {
             #(#count_fields),*
         }
 
-        #[derive(Debug, Clone, ::prisma_core::serde::Serialize, ::prisma_core::serde::Deserialize, Default)]
-        #[serde(crate = "::prisma_core::serde", default)]
+        #[derive(Debug, Clone, ::saola_core::serde::Serialize, ::saola_core::serde::Deserialize, Default)]
+        #[serde(crate = "::saola_core::serde", default)]
         pub struct #sum_struct {
             #(#sum_fields),*
         }
 
-        #[derive(Debug, Clone, ::prisma_core::serde::Serialize, ::prisma_core::serde::Deserialize, Default)]
-        #[serde(crate = "::prisma_core::serde", default)]
+        #[derive(Debug, Clone, ::saola_core::serde::Serialize, ::saola_core::serde::Deserialize, Default)]
+        #[serde(crate = "::saola_core::serde", default)]
         pub struct #avg_struct {
             #(#avg_fields),*
         }
 
-        #[derive(Debug, Clone, ::prisma_core::serde::Serialize, ::prisma_core::serde::Deserialize, Default)]
-        #[serde(crate = "::prisma_core::serde", default)]
+        #[derive(Debug, Clone, ::saola_core::serde::Serialize, ::saola_core::serde::Deserialize, Default)]
+        #[serde(crate = "::saola_core::serde", default)]
         pub struct #min_struct {
             #(#min_fields),*
         }
 
-        #[derive(Debug, Clone, ::prisma_core::serde::Serialize, ::prisma_core::serde::Deserialize, Default)]
-        #[serde(crate = "::prisma_core::serde", default)]
+        #[derive(Debug, Clone, ::saola_core::serde::Serialize, ::saola_core::serde::Deserialize, Default)]
+        #[serde(crate = "::saola_core::serde", default)]
         pub struct #max_struct {
             #(#max_fields),*
         }
@@ -428,17 +428,17 @@ pub fn generate_group_by_struct(
                 ScalarType::Int => quote! { i32 },
                 ScalarType::Float => quote! { f64 },
                 ScalarType::Boolean => quote! { bool },
-                ScalarType::DateTime => quote! { ::prisma_core::chrono::DateTime<::prisma_core::chrono::Utc> },
-                ScalarType::Decimal => quote! { ::prisma_core::bigdecimal::BigDecimal },
+                ScalarType::DateTime => quote! { ::saola_core::chrono::DateTime<::saola_core::chrono::Utc> },
+                ScalarType::Decimal => quote! { ::saola_core::bigdecimal::BigDecimal },
                 ScalarType::BigInt => quote! { i64 },
                 ScalarType::Bytes => quote! { Vec<u8> },
-                ScalarType::Json => quote! { ::prisma_core::serde_json::Value },
+                ScalarType::Json => quote! { ::saola_core::serde_json::Value },
             },
             ScalarFieldType::Enum(enum_id) => {
                 let enum_name = format_ident!("{}", _db.walk(enum_id).name());
                 quote! { #enum_name }
             }
-            _ => quote! { ::prisma_core::serde_json::Value },
+            _ => quote! { ::saola_core::serde_json::Value },
         };
 
         fields.push(quote! {
@@ -454,8 +454,8 @@ pub fn generate_group_by_struct(
     let max_struct = format_ident!("{}MaxAggregate", model_name);
 
     quote! {
-        #[derive(Debug, Clone, ::prisma_core::serde::Serialize, ::prisma_core::serde::Deserialize, Default)]
-        #[serde(crate = "::prisma_core::serde", default)]
+        #[derive(Debug, Clone, ::saola_core::serde::Serialize, ::saola_core::serde::Deserialize, Default)]
+        #[serde(crate = "::saola_core::serde", default)]
         pub struct #group_by_result {
             #(#fields),*,
 

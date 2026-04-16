@@ -1271,8 +1271,8 @@ name = "example-app"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "prisma-macros",
- "prisma_core",
+ "saola-core",
+ "saola-macros",
  "serde",
  "serde_json",
  "tokio",
@@ -3434,40 +3434,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "prisma-cli"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "clap 4.6.0",
- "diagnostics",
- "heck 0.4.1",
- "parser-database",
- "prettyplease",
- "prisma-schema",
- "proc-macro2",
- "psl",
- "quote",
- "schema-ast",
- "syn 2.0.117",
- "tokio",
-]
-
-[[package]]
-name = "prisma-macros"
-version = "0.1.0"
-dependencies = [
- "heck 0.4.1",
- "parser-database",
- "prisma-schema",
- "prisma_core",
- "proc-macro2",
- "psl",
- "quote",
- "schema-ast",
- "syn 2.0.117",
-]
-
-[[package]]
 name = "prisma-metrics"
 version = "0.1.0"
 dependencies = [
@@ -3488,19 +3454,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "prisma-schema"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "diagnostics",
- "parser-database",
- "psl",
- "psl-core",
- "schema-ast",
- "thiserror 2.0.18",
-]
-
-[[package]]
 name = "prisma-value"
 version = "0.1.0"
 dependencies = [
@@ -3511,26 +3464,6 @@ dependencies = [
  "serde",
  "serde_json",
  "uuid",
-]
-
-[[package]]
-name = "prisma_core"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "indexmap 2.14.0",
- "psl",
- "quaint",
- "query-connector",
- "query-core",
- "query-structure",
- "schema",
- "schema-core",
- "serde",
- "serde_json",
- "sql-query-connector",
- "thiserror 2.0.18",
- "tokio",
 ]
 
 [[package]]
@@ -4288,6 +4221,73 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "93fc1dc3aaa9bfed95e02e6eadabb4baf7e3078b0bd1b4d7b6b0b68378900502"
 dependencies = [
  "winapi-util",
+]
+
+[[package]]
+name = "saola-cli"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap 4.6.0",
+ "diagnostics",
+ "heck 0.4.1",
+ "parser-database",
+ "prettyplease",
+ "proc-macro2",
+ "psl",
+ "quote",
+ "saola-schema",
+ "schema-ast",
+ "syn 2.0.117",
+ "tokio",
+]
+
+[[package]]
+name = "saola-core"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "indexmap 2.14.0",
+ "psl",
+ "quaint",
+ "query-connector",
+ "query-core",
+ "query-structure",
+ "schema",
+ "schema-core",
+ "serde",
+ "serde_json",
+ "sql-query-connector",
+ "thiserror 2.0.18",
+ "tokio",
+]
+
+[[package]]
+name = "saola-macros"
+version = "0.1.0"
+dependencies = [
+ "heck 0.4.1",
+ "parser-database",
+ "proc-macro2",
+ "psl",
+ "quote",
+ "saola-core",
+ "saola-schema",
+ "schema-ast",
+ "syn 2.0.117",
+]
+
+[[package]]
+name = "saola-schema"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "diagnostics",
+ "parser-database",
+ "psl",
+ "psl-core",
+ "schema-ast",
+ "thiserror 2.0.18",
 ]
 
 [[package]]

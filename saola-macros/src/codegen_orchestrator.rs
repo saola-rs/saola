@@ -159,16 +159,16 @@ pub fn generate_module(schema: &psl::ValidatedSchema, schema_path: &str) -> proc
     };
 
     quote! {
-        pub mod db {
-            use ::prisma_core::prelude::*;
-            pub use ::prisma_macros::select_as;
-            pub use ::prisma_macros::db_prisma;
+        pub mod saola {
+            use ::saola_core::prelude::*;
+            pub use ::saola_macros::select_as;
+            pub use ::saola_macros::saola;
 
             #(#enum_code)*
             #(#model_code)*
 
-            pub async fn client() -> ::prisma_core::Result<::prisma_core::PrismaClient> {
-                ::prisma_core::PrismaClient::new(
+            pub async fn client() -> ::saola_core::Result<::saola_core::SaolaClient> {
+                ::saola_core::SaolaClient::new(
                     include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/", #schema_path)),
                     #url_tokens
                 ).await

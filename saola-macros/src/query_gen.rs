@@ -48,35 +48,35 @@ pub fn generate_query_factory(
 
             pub fn find_many(&self) -> #many_name {
                 #many_name {
-                    inner: ::prisma_core::ReadBuilder::<Vec<#model_name>>::find_many(#model_name_str.to_string(), vec![#(#scalar_field_names.to_string()),*]),
+                    inner: ::saola_core::ReadBuilder::<Vec<#model_name>>::find_many(#model_name_str.to_string(), vec![#(#scalar_field_names.to_string()),*]),
                     _phantom: std::marker::PhantomData,
                 }
             }
 
             pub fn find_unique(&self) -> #unique_name {
                 #unique_name {
-                    inner: ::prisma_core::ReadBuilder::<Option<#model_name>>::find_unique(#model_name_str.to_string(), vec![#(#scalar_field_names.to_string()),*]),
+                    inner: ::saola_core::ReadBuilder::<Option<#model_name>>::find_unique(#model_name_str.to_string(), vec![#(#scalar_field_names.to_string()),*]),
                     _phantom: std::marker::PhantomData,
                 }
             }
 
             pub fn find_first(&self) -> #first_name {
                 #first_name {
-                    inner: ::prisma_core::ReadBuilder::<Option<#model_name>>::find_first(#model_name_str.to_string(), vec![#(#scalar_field_names.to_string()),*]),
+                    inner: ::saola_core::ReadBuilder::<Option<#model_name>>::find_first(#model_name_str.to_string(), vec![#(#scalar_field_names.to_string()),*]),
                     _phantom: std::marker::PhantomData,
                 }
             }
 
             pub fn find_first_or_throw(&self) -> #first_throw_name {
                 #first_throw_name {
-                    inner: ::prisma_core::ReadBuilder::<#model_name>::find_first_or_throw(#model_name_str.to_string(), vec![#(#scalar_field_names.to_string()),*]),
+                    inner: ::saola_core::ReadBuilder::<#model_name>::find_first_or_throw(#model_name_str.to_string(), vec![#(#scalar_field_names.to_string()),*]),
                     _phantom: std::marker::PhantomData,
                 }
             }
 
             pub fn find_unique_or_throw(&self) -> #unique_throw_name {
                 #unique_throw_name {
-                    inner: ::prisma_core::ReadBuilder::<#model_name>::find_unique_or_throw(#model_name_str.to_string(), vec![#(#scalar_field_names.to_string()),*]),
+                    inner: ::saola_core::ReadBuilder::<#model_name>::find_unique_or_throw(#model_name_str.to_string(), vec![#(#scalar_field_names.to_string()),*]),
                     _phantom: std::marker::PhantomData,
                 }
             }
@@ -84,11 +84,11 @@ pub fn generate_query_factory(
             // ============ WRITE OPERATIONS ============
 
             pub fn create(&self, #create_params) -> #write_wrapper_name {
-                let mut builder = ::prisma_core::WriteBuilder::<#model_name>::create(#model_name_str.to_string(), vec![#(#scalar_field_names.to_string()),*]);
-                let mut data_map = ::prisma_core::IndexMap::new();
+                let mut builder = ::saola_core::WriteBuilder::<#model_name>::create(#model_name_str.to_string(), vec![#(#scalar_field_names.to_string()),*]);
+                let mut data_map = ::saola_core::IndexMap::new();
                 #create_data_inserts
-                use ::prisma_core::Filterable;
-                builder.add_filter_arg("data".to_string(), ::prisma_core::query_core::ArgumentValue::Object(std::mem::take(&mut data_map)));
+                use ::saola_core::Filterable;
+                builder.add_filter_arg("data".to_string(), ::saola_core::query_core::ArgumentValue::Object(std::mem::take(&mut data_map)));
                 #write_wrapper_name {
                     inner: builder,
                     _phantom: std::marker::PhantomData,
@@ -97,51 +97,51 @@ pub fn generate_query_factory(
 
             pub fn update(&self) -> #write_wrapper_name {
                 #write_wrapper_name {
-                    inner: ::prisma_core::WriteBuilder::<#model_name>::update(#model_name_str.to_string(), vec![#(#scalar_field_names.to_string()),*]),
+                    inner: ::saola_core::WriteBuilder::<#model_name>::update(#model_name_str.to_string(), vec![#(#scalar_field_names.to_string()),*]),
                     _phantom: std::marker::PhantomData,
                 }
             }
 
             pub fn delete(&self) -> #write_wrapper_name {
                 #write_wrapper_name {
-                    inner: ::prisma_core::WriteBuilder::<#model_name>::delete(#model_name_str.to_string(), vec![#(#scalar_field_names.to_string()),*]),
+                    inner: ::saola_core::WriteBuilder::<#model_name>::delete(#model_name_str.to_string(), vec![#(#scalar_field_names.to_string()),*]),
                     _phantom: std::marker::PhantomData,
                 }
             }
 
             pub fn upsert(&self) -> #upsert_wrapper_name {
                 #upsert_wrapper_name {
-                    inner: ::prisma_core::WriteBuilder::<#model_name>::upsert(#model_name_str.to_string(), vec![#(#scalar_field_names.to_string()),*])
+                    inner: ::saola_core::WriteBuilder::<#model_name>::upsert(#model_name_str.to_string(), vec![#(#scalar_field_names.to_string()),*])
                 }
             }
 
             pub fn create_many(&self) -> #create_many_wrapper_name {
                 #create_many_wrapper_name {
-                    inner: ::prisma_core::CreateManyBuilder::new(#model_name_str.to_string())
+                    inner: ::saola_core::CreateManyBuilder::new(#model_name_str.to_string())
                 }
             }
 
             pub fn create_many_and_return(&self) -> #create_many_and_return_wrapper_name {
                 #create_many_and_return_wrapper_name {
-                    inner: ::prisma_core::CreateManyAndReturnBuilder::new(#model_name_str.to_string(), vec![#(#scalar_field_names.to_string()),*])
+                    inner: ::saola_core::CreateManyAndReturnBuilder::new(#model_name_str.to_string(), vec![#(#scalar_field_names.to_string()),*])
                 }
             }
 
             pub fn update_many(&self) -> #update_many_wrapper_name {
                 #update_many_wrapper_name {
-                    inner: ::prisma_core::UpdateManyBuilder::new(#model_name_str.to_string())
+                    inner: ::saola_core::UpdateManyBuilder::new(#model_name_str.to_string())
                 }
             }
 
             pub fn update_many_and_return(&self) -> #update_many_and_return_wrapper_name {
                 #update_many_and_return_wrapper_name {
-                    inner: ::prisma_core::UpdateManyAndReturnBuilder::new(#model_name_str.to_string(), vec![#(#scalar_field_names.to_string()),*])
+                    inner: ::saola_core::UpdateManyAndReturnBuilder::new(#model_name_str.to_string(), vec![#(#scalar_field_names.to_string()),*])
                 }
             }
 
             pub fn delete_many(&self) -> #delete_many_wrapper_name {
                 #delete_many_wrapper_name {
-                    inner: ::prisma_core::DeleteManyBuilder::new(#model_name_str.to_string())
+                    inner: ::saola_core::DeleteManyBuilder::new(#model_name_str.to_string())
                 }
             }
 
@@ -149,19 +149,19 @@ pub fn generate_query_factory(
 
             pub fn count(&self) -> #count_wrapper_name {
                 #count_wrapper_name {
-                    inner: ::prisma_core::CountBuilder::new(#model_name_str.to_string(), vec![])
+                    inner: ::saola_core::CountBuilder::new(#model_name_str.to_string(), vec![])
                 }
             }
 
             pub fn aggregate(&self) -> #aggregate_wrapper_name {
                 #aggregate_wrapper_name {
-                    inner: ::prisma_core::AggregateBuilder::<#aggregate_result_name>::new(#model_name_str.to_string(), vec![])
+                    inner: ::saola_core::AggregateBuilder::<#aggregate_result_name>::new(#model_name_str.to_string(), vec![])
                 }
             }
 
             pub fn group_by(&self) -> #group_by_wrapper_name {
                 #group_by_wrapper_name {
-                    inner: ::prisma_core::GroupByBuilder::<#group_by_result_name>::new(#model_name_str.to_string(), vec![])
+                    inner: ::saola_core::GroupByBuilder::<#group_by_result_name>::new(#model_name_str.to_string(), vec![])
                 }
             }
         }

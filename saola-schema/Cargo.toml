@@ -1,5 +1,5 @@
 [package]
-name = "prisma-schema"
+name = "saola-schema"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true

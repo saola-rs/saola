@@ -110,13 +110,13 @@ pub struct Transaction {
 
 impl Transaction {
     /// Begin a new transaction with default configuration
-    pub async fn begin(client: &crate::client::PrismaClient) -> crate::Result<Self> {
+    pub async fn begin(client: &crate::client::SaolaClient) -> crate::Result<Self> {
         Self::begin_with_config(client, TransactionConfig::default()).await
     }
 
     /// Begin a new transaction with custom configuration
     pub async fn begin_with_config(
-        client: &crate::client::PrismaClient,
+        client: &crate::client::SaolaClient,
         config: TransactionConfig,
     ) -> crate::Result<Self> {
         let tx_id = client
@@ -157,14 +157,14 @@ impl Transaction {
     }
 }
 
-/// Trait to make both PrismaClient and Transaction work with execute functions
+/// Trait to make both SaolaClient and Transaction work with execute functions
 pub trait QueryExecutorProvider {
     fn executor(&self) -> Arc<dyn QueryExecutor + Send + Sync>;
     fn query_schema(&self) -> Arc<crate::schema::QuerySchema>;
     fn tx_id(&self) -> Option<&TxId>;
 }
 
-impl QueryExecutorProvider for crate::client::PrismaClient {
+impl QueryExecutorProvider for crate::client::SaolaClient {
     fn executor(&self) -> Arc<dyn QueryExecutor + Send + Sync> {
         self.executor.clone()
     }

@@ -23,7 +23,7 @@ async fn main() -> anyhow::Result<()> {
 
     println!("Loading schema from: {}", cli.schema);
 
-    let db = match prisma_schema::parser::parse_schema_file(&cli.schema) {
+    let db = match saola_schema::parser::parse_schema_file(&cli.schema) {
         Ok(db) => db,
         Err(e) => anyhow::bail!("{}", e),
     };

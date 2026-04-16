@@ -35,8 +35,8 @@ pub fn generate_custom_struct(input: TokenStream) -> TokenStream {
         #[derive(
             Debug,
             Clone,
-            ::prisma_core::serde::Serialize,
-            ::prisma_core::serde::Deserialize,
+            ::saola_core::serde::Serialize,
+            ::saola_core::serde::Deserialize,
         )]
         #[serde(deny_unknown_fields)]
         pub struct #struct_name {

@@ -115,12 +115,12 @@ impl ModelMetadata {
                         {
                             let mut rel_builder = #rel_builder::default();
                             #rust_name(&mut rel_builder);
-                            #map_expr.insert(#prisma_name.to_string(), prisma_core::query_core::ArgumentValue::Object(rel_builder.data));
+                            #map_expr.insert(#prisma_name.to_string(), saola_core::query_core::ArgumentValue::Object(rel_builder.data));
                         }
                     }
                 } else {
                     quote! {
-                        #map_expr.insert(#prisma_name.to_string(), prisma_core::query_core::ArgumentValue::Scalar(prisma_core::query_structure::PrismaValue::from(#rust_name)));
+                        #map_expr.insert(#prisma_name.to_string(), saola_core::query_core::ArgumentValue::Scalar(saola_core::query_structure::PrismaValue::from(#rust_name)));
                     }
                 }
             })
@@ -150,8 +150,8 @@ pub fn generate_filter_methods(fields: &[FieldMetadata]) -> Vec<proc_macro2::Tok
                 );
 
                 Some(quote! {
-                    pub fn #rust_field_name(&mut self) -> prisma_core::RelationFilter<'_, Self, #related_where_builder> {
-                        prisma_core::RelationFilter {
+                    pub fn #rust_field_name(&mut self) -> saola_core::RelationFilter<'_, Self, #related_where_builder> {
+                        saola_core::RelationFilter {
                             builder: self,
                             field_name: #prisma_name,
                             _phantom: std::marker::PhantomData,
@@ -162,8 +162,8 @@ pub fn generate_filter_methods(fields: &[FieldMetadata]) -> Vec<proc_macro2::Tok
                 let filter_builder_ident = syn::Ident::new(filter_builder_name, proc_macro2::Span::call_site());
 
                 Some(quote! {
-                    pub fn #rust_field_name(&mut self) -> prisma_core::#filter_builder_ident<'_, Self> {
-                        prisma_core::#filter_builder_ident {
+                    pub fn #rust_field_name(&mut self) -> saola_core::#filter_builder_ident<'_, Self> {
+                        saola_core::#filter_builder_ident {
                             builder: self,
                             field_name: #prisma_name,
                         }
@@ -188,10 +188,10 @@ pub fn generate_unique_filter_methods(fields: &[FieldMetadata]) -> Vec<proc_macr
 
             quote! {
                 pub fn #rust_name<T>(&mut self, value: T) -> &mut Self
-                where T: Into<prisma_core::query_structure::PrismaValue>
+                where T: Into<saola_core::query_structure::PrismaValue>
                 {
-                    use prisma_core::FilterBuilder;
-                    self.add_arg(#prisma_name.to_string(), prisma_core::query_core::ArgumentValue::Scalar(value.into()));
+                    use saola_core::FilterBuilder;
+                    self.add_arg(#prisma_name.to_string(), saola_core::query_core::ArgumentValue::Scalar(value.into()));
                     self
                 }
             }
@@ -220,8 +220,8 @@ pub fn generate_select_methods(fields: &[FieldMetadata]) -> Vec<proc_macro2::Tok
                     {
                         let mut builder = #related_select_builder::default();
                         f(&mut builder);
-                        let selections: Vec<prisma_core::query_core::Selection> = builder.into();
-                        let mut sel = prisma_core::query_core::Selection::with_name(#prisma_name.to_string());
+                        let selections: Vec<saola_core::query_core::Selection> = builder.into();
+                        let mut sel = saola_core::query_core::Selection::with_name(#prisma_name.to_string());
                         for s in selections {
                             sel.push_nested_selection(s);
                         }
@@ -232,7 +232,7 @@ pub fn generate_select_methods(fields: &[FieldMetadata]) -> Vec<proc_macro2::Tok
             } else {
                 quote! {
                     pub fn #rust_name(&mut self) -> &mut Self {
-                        self.selections.push(prisma_core::query_core::Selection::with_name(#prisma_name.to_string()));
+                        self.selections.push(saola_core::query_core::Selection::with_name(#prisma_name.to_string()));
                         self
                     }
                 }
@@ -271,7 +271,7 @@ pub fn generate_data_methods(
                         if !builder.data.is_empty() {
                             // The RelationWriteBuilder already has the "create" or "connect" key!
                             // So we just need to insert its internal map as the value for this field.
-                            self.data.insert(#prisma_name.to_string(), prisma_core::query_core::ArgumentValue::Object(std::mem::take(&mut builder.data)));
+                            self.data.insert(#prisma_name.to_string(), saola_core::query_core::ArgumentValue::Object(std::mem::take(&mut builder.data)));
                         }
                         self
                     }
@@ -280,9 +280,9 @@ pub fn generate_data_methods(
                 // Scalar fields
                 Some(quote! {
                     pub fn #rust_name<T>(&mut self, value: T) -> &mut Self
-                    where T: Into<prisma_core::query_structure::PrismaValue>
+                    where T: Into<saola_core::query_structure::PrismaValue>
                     {
-                        self.data.insert(#prisma_name.to_string(), prisma_core::query_core::ArgumentValue::Scalar(value.into()));
+                        self.data.insert(#prisma_name.to_string(), saola_core::query_core::ArgumentValue::Scalar(value.into()));
                         self
                     }
                 })
@@ -301,10 +301,10 @@ pub fn generate_order_by_methods(fields: &[FieldMetadata]) -> Vec<proc_macro2::T
             let prisma_name = &field.prisma_name;
 
             quote! {
-                pub fn #rust_name(&mut self, order: prisma_core::SortOrder) -> &mut Self {
-                    let mut map = prisma_core::IndexMap::new();
-                    map.insert(#prisma_name.to_string(), prisma_core::ArgumentValue::from(order));
-                    self.args.push(prisma_core::ArgumentValue::Object(map));
+                pub fn #rust_name(&mut self, order: saola_core::SortOrder) -> &mut Self {
+                    let mut map = saola_core::IndexMap::new();
+                    map.insert(#prisma_name.to_string(), saola_core::ArgumentValue::from(order));
+                    self.args.push(saola_core::ArgumentValue::Object(map));
                     self
                 }
             }

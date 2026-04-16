@@ -5,10 +5,10 @@ members = [
     "psl-official/diagnostics",
     "psl-official/schema-ast",
     "psl-official/parser-database",
-    "prisma-schema",
-    "prisma-macros",
-    "prisma_core",
-    "prisma-cli",
+    "saola-schema",
+    "saola-macros",
+    "saola-core",
+    "saola-cli",
     "example-app",
     "quaint",
     "libs/*",
@@ -35,7 +35,7 @@ authors = ["Ravi", "Prisma Team"]
 license = "MIT"
 
 [workspace.dependencies]
-prisma-schema = { path = "./prisma-schema" }
+saola-schema = { path = "./saola-schema" }
 # PSL (Prisma Schema Language) - Official Prisma Parser
 psl = { path = "./psl-official/psl" }
 psl-core = { path = "./psl-official/psl-core", features = ["postgresql", "sqlite", "mysql", "cockroachdb", "mssql", "mongodb"] }
@@ -206,6 +206,9 @@ sql-schema-connector = { path = "./schema-engine/connectors/sql-schema-connector
 mongodb-schema-connector = { path = "./schema-engine/connectors/mongodb-schema-connector" }
 sql-schema-describer = { path = "./schema-engine/sql-schema-describer" }
 mongodb-schema-describer = { path = "./schema-engine/mongodb-schema-describer" }
+saola-core = { path = "./saola-core" }
+saola-macros = { path = "./saola-macros" }
+saola-cli = { path = "./saola-cli" }
 
 request-handlers = { path = "./query-engine/request-handlers", default-features = false }
 query-engine = { path = "./query-engine/query-engine" }

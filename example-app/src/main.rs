@@ -1,11 +1,11 @@
-prisma_macros::init!("schema.prisma");
-use db::*;
-use prisma_core::prelude::*;
+saola_macros::init!("schema.prisma");
+use saola::*;
+use saola_core::prelude::*;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     // 1. Client Initialization
-    let client = db::client().await?;
+    let client = saola::client().await?;
     println!("✓ Client initialized successfully");
 
     let unique_ts = std::time::SystemTime::now()
@@ -148,7 +148,7 @@ async fn main() -> anyhow::Result<()> {
             w.email(unique_email.clone());
         })
         .include(|i| {
-            i.posts_as(db::select_as!({
+            i.posts_as(saola::select_as!({
                 id: String,
                 title: String,
                 status: PostStatus
@@ -346,7 +346,7 @@ async fn main() -> anyhow::Result<()> {
     // MACRO-BASED Transaction Example (simpler syntax!)
     println!("\n[11. Transaction using Macro (cleanest syntax - recommended)]");
     let unique_ts_macro = unique_ts.clone();
-    let macro_result = prisma_core::tx!(client, tx, {
+    let macro_result = saola_core::tx!(client, tx, {
         let user_via_macro = user()
             .create(format!("macro-user-{}@example.com", unique_ts_macro))
             .data(|d| {
@@ -362,7 +362,7 @@ async fn main() -> anyhow::Result<()> {
 
     // CONFIGURATION-BASED Transaction Example with custom timeout
     println!("\n[12. Transaction with Custom Configuration]");
-    let config = prisma_core::TransactionConfig::default()
+    let config = saola_core::TransactionConfig::default()
         .timeout_ms(30000) // 30 second timeout instead of 60
         .isolation_level(IsolationLevel::Serializable);
 
@@ -382,12 +382,12 @@ async fn main() -> anyhow::Result<()> {
 
     // MACRO with Configuration Example
     println!("\n[13. Transaction Macro with Custom Configuration (advanced)]");
-    let config_macro = prisma_core::TransactionConfig::default()
+    let config_macro = saola_core::TransactionConfig::default()
         .max_wait(2000)
         .timeout_ms(20000);
 
     let unique_ts_macro_config = unique_ts.clone();
-    prisma_core::tx_config!(client, tx, config_macro, {
+    saola_core::tx_config!(client, tx, config_macro, {
         let user_macro_config = user()
             .create(format!("macro-config-{}@example.com", unique_ts_macro_config))
             .exec(&tx)

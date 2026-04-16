@@ -1,17 +1,17 @@
-/// PrismaClient - Main entry point for database operations
+/// SaolaClient - Main entry point for database operations
 use psl::parser_database::NoExtensionTypes;
 use query_core::{QueryExecutor, executor::InterpretingExecutor};
 use sql_query_connector::{FromSource, Mysql, PostgreSql, Sqlite};
 use std::sync::Arc;
 
 /// Main database client - initializes connection and schema
-pub struct PrismaClient {
+pub struct SaolaClient {
     pub executor: Arc<dyn QueryExecutor + Send + Sync>,
     pub query_schema: Arc<schema::QuerySchema>,
 }
 
-impl PrismaClient {
-    /// Create a new Prisma client with schema and database URL
+impl SaolaClient {
+    /// Create a new Saola client with schema and database URL
     pub async fn new(schema_str: &str, url: &str) -> crate::Result<Self> {
         let source_file = psl::SourceFile::from(schema_str);
         let validated = psl::validate(source_file, &NoExtensionTypes);
@@ -45,7 +45,7 @@ impl PrismaClient {
             _ => anyhow::bail!("Unsupported provider: {}", datasource.active_provider),
         };
 
-        Ok(PrismaClient { executor, query_schema })
+        Ok(SaolaClient { executor, query_schema })
     }
 
     /// Get a reference to the query executor

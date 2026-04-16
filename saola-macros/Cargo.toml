@@ -1,5 +1,5 @@
 [package]
-name = "prisma-macros"
+name = "saola-macros"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
@@ -10,8 +10,8 @@ proc-macro = true
 
 [dependencies]
 psl = { workspace = true }
-prisma_core = { path = "../prisma_core" }
-prisma-schema = { path = "../prisma-schema" }
+saola-core = { path = "../saola-core" }
+saola-schema = { path = "../saola-schema" }
 proc-macro2 = { workspace = true }
 quote = { workspace = true }
 syn = { version = "2.0", features = ["full", "extra-traits"] }

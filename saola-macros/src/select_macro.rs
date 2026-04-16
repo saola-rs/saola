@@ -119,8 +119,8 @@ fn generate_struct_and_selects(fields: &[FieldShape], prefix: &str) -> (TokenStr
 
                 nested_structs.push(sub_nested);
                 nested_structs.push(quote! {
-                    #[derive(Clone, ::prisma_core::serde::Deserialize, ::prisma_core::serde::Serialize, Default)]
-                    #[serde(crate = "::prisma_core::serde", default)]
+                    #[derive(Clone, ::saola_core::serde::Deserialize, ::saola_core::serde::Serialize, Default)]
+                    #[serde(crate = "::saola_core::serde", default)]
                     pub struct #sub_struct_name {
                         #sub_fields
                     }
@@ -183,8 +183,8 @@ pub fn select_macro_impl(input: SelectShape) -> TokenStream {
         {
             #nested
 
-            #[derive(Clone, ::prisma_core::serde::Deserialize, ::prisma_core::serde::Serialize, Default)]
-            #[serde(crate = "::prisma_core::serde", default)]
+            #[derive(Clone, ::saola_core::serde::Deserialize, ::saola_core::serde::Serialize, Default)]
+            #[serde(crate = "::saola_core::serde", default)]
             pub struct #root_struct_name {
                 #fields
             }
@@ -199,7 +199,7 @@ pub fn select_macro_impl(input: SelectShape) -> TokenStream {
 
             impl std::fmt::Display for #root_struct_name {
                 fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                    let json = ::prisma_core::serde_json::to_string_pretty(self).unwrap_or_else(|_| "Error serializing".to_string());
+                    let json = ::saola_core::serde_json::to_string_pretty(self).unwrap_or_else(|_| "Error serializing".to_string());
                     write!(f, "{}", json)
                 }
             }

@@ -86,15 +86,15 @@ fn parse_model_fields(input: &mut ItemStruct) -> Vec<FieldMetadata> {
     fields
 }
 
-/// Dummy attribute macro to keep prisma-specific field annotations in generated structs
+/// Dummy attribute macro to keep saola-specific field annotations in generated structs
 #[proc_macro_attribute]
-pub fn db_prisma(_attr: TokenStream, item: TokenStream) -> TokenStream {
+pub fn saola(_attr: TokenStream, item: TokenStream) -> TokenStream {
     item
 }
 
 /// Generate type-safe model builders from Rust struct
 #[proc_macro_attribute]
-pub fn prisma_model(_attr: TokenStream, item: TokenStream) -> TokenStream {
+pub fn saola_model(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let mut input = parse_macro_input!(item as ItemStruct);
 
     // Extract model name before parsing fields (to avoid borrow conflicts)
@@ -154,7 +154,7 @@ pub fn prisma_model(_attr: TokenStream, item: TokenStream) -> TokenStream {
     TokenStream::from(expanded)
 }
 
-/// The `init!` macro generates the entire Prisma client module from a schema file.
+/// The `init!` macro generates the entire Saola client module from a schema file.
 #[proc_macro]
 pub fn init(input: TokenStream) -> TokenStream {
     let schema_path = if input.is_empty() {

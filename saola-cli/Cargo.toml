@@ -1,5 +1,5 @@
 [package]
-name = "prisma-cli"
+name = "saola-cli"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
@@ -7,7 +7,7 @@ license.workspace = true
 
 [dependencies]
 heck = { workspace = true }
-prisma-schema = { workspace = true }
+saola-schema = { workspace = true }
 psl = { workspace = true }
 schema-ast = { workspace = true }
 diagnostics = { workspace = true }

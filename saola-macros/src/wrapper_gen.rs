@@ -42,7 +42,7 @@ pub fn generate_read_wrappers(model_name: &syn::Ident, model_metadata: &ModelMet
     include_markers.push(quote! {
         pub struct #empty_marker_name;
         impl #include_marker_trait for #empty_marker_name {
-            fn into_selection(self) -> Option<::prisma_core::query_core::Selection> { None }
+            fn into_selection(self) -> Option<::saola_core::query_core::Selection> { None }
         }
     });
 
@@ -60,25 +60,25 @@ pub fn generate_read_wrappers(model_name: &syn::Ident, model_metadata: &ModelMet
         let prisma_name = &relation.prisma_name;
 
         include_markers.push(quote! {
-            pub struct #pascal_name { pub selection: ::prisma_core::query_core::Selection }
+            pub struct #pascal_name { pub selection: ::saola_core::query_core::Selection }
             impl #include_marker_trait for #pascal_name {
-                fn into_selection(self) -> Option<::prisma_core::query_core::Selection> { Some(self.selection) }
+                fn into_selection(self) -> Option<::saola_core::query_core::Selection> { Some(self.selection) }
             }
 
             pub struct #pascal_name_with<M> {
-                pub selection: ::prisma_core::query_core::Selection,
+                pub selection: ::saola_core::query_core::Selection,
                 pub _phantom: std::marker::PhantomData<M>
             }
             impl<M> #include_marker_trait for #pascal_name_with<M> {
-                fn into_selection(self) -> Option<::prisma_core::query_core::Selection> { Some(self.selection) }
+                fn into_selection(self) -> Option<::saola_core::query_core::Selection> { Some(self.selection) }
             }
 
             pub struct #pascal_name_as<U> {
-                pub selection: ::prisma_core::query_core::Selection,
+                pub selection: ::saola_core::query_core::Selection,
                 pub _phantom: std::marker::PhantomData<U>
             }
             impl<U> #include_marker_trait for #pascal_name_as<U> {
-                fn into_selection(self) -> Option<::prisma_core::query_core::Selection> { Some(self.selection) }
+                fn into_selection(self) -> Option<::saola_core::query_core::Selection> { Some(self.selection) }
             }
         });
 
@@ -86,8 +86,8 @@ pub fn generate_read_wrappers(model_name: &syn::Ident, model_metadata: &ModelMet
             pub fn #rust_name(&mut self) -> #pascal_name {
                 let mut builder = #related_select_builder::default();
                 builder.all();
-                let mut sel = ::prisma_core::query_core::Selection::with_name(#prisma_name.to_string());
-                let fields: Vec<::prisma_core::query_core::Selection> = builder.into();
+                let mut sel = ::saola_core::query_core::Selection::with_name(#prisma_name.to_string());
+                let fields: Vec<::saola_core::query_core::Selection> = builder.into();
                 for f in fields { sel.push_nested_selection(f); }
                 #pascal_name { selection: sel }
             }
@@ -99,7 +99,7 @@ pub fn generate_read_wrappers(model_name: &syn::Ident, model_metadata: &ModelMet
             {
                 let mut builder = #related_include_builder::default();
                 let marker = f(&mut builder);
-                let mut sel = ::prisma_core::query_core::Selection::with_name(#prisma_name.to_string());
+                let mut sel = ::saola_core::query_core::Selection::with_name(#prisma_name.to_string());
                 for scalar in #related_include_builder::scalar_selections() {
                     sel.push_nested_selection(scalar);
                 }
@@ -112,13 +112,13 @@ pub fn generate_read_wrappers(model_name: &syn::Ident, model_metadata: &ModelMet
                 #pascal_name_with { selection: sel, _phantom: std::marker::PhantomData }
             }
 
-            pub fn #as_suffix_name<U: ::prisma_core::serde::de::DeserializeOwned + Send + Sync, F>(&mut self, selection: (std::marker::PhantomData<U>, F)) -> #pascal_name_as<U>
+            pub fn #as_suffix_name<U: ::saola_core::serde::de::DeserializeOwned + Send + Sync, F>(&mut self, selection: (std::marker::PhantomData<U>, F)) -> #pascal_name_as<U>
             where F: FnOnce(&mut #related_select_builder)
             {
                 let mut builder = #related_select_builder::default();
                 (selection.1)(&mut builder);
-                let mut sel = ::prisma_core::query_core::Selection::with_name(#prisma_name.to_string());
-                let fields: Vec<::prisma_core::query_core::Selection> = builder.into();
+                let mut sel = ::saola_core::query_core::Selection::with_name(#prisma_name.to_string());
+                let fields: Vec<::saola_core::query_core::Selection> = builder.into();
                 for f in fields { sel.push_nested_selection(f); }
                 #pascal_name_as { selection: sel, _phantom: std::marker::PhantomData }
             }
@@ -160,7 +160,7 @@ pub fn generate_read_wrappers(model_name: &syn::Ident, model_metadata: &ModelMet
 
         let mut impl_generics_base_list = Vec::new();
         for g in &current_generics_params {
-            impl_generics_base_list.push(quote! {#g: ::prisma_core::serde::de::DeserializeOwned + Send + Sync});
+            impl_generics_base_list.push(quote! {#g: ::saola_core::serde::de::DeserializeOwned + Send + Sync});
         }
         let impl_generics_base = if impl_generics_base_list.is_empty() {
             quote! {}
@@ -244,13 +244,13 @@ pub fn generate_read_wrappers(model_name: &syn::Ident, model_metadata: &ModelMet
 
             let mut impl_generics_with_list = vec![quote! {M}];
             for g in &current_generics_params {
-                impl_generics_with_list.push(quote! {#g: ::prisma_core::serde::de::DeserializeOwned + Send + Sync});
+                impl_generics_with_list.push(quote! {#g: ::saola_core::serde::de::DeserializeOwned + Send + Sync});
             }
             let impl_generics_with = quote! { <#(#impl_generics_with_list),*> };
 
-            let mut impl_generics_as_list = vec![quote! {U: ::prisma_core::serde::de::DeserializeOwned + Send + Sync}];
+            let mut impl_generics_as_list = vec![quote! {U: ::saola_core::serde::de::DeserializeOwned + Send + Sync}];
             for g in &current_generics_params {
-                impl_generics_as_list.push(quote! {#g: ::prisma_core::serde::de::DeserializeOwned + Send + Sync});
+                impl_generics_as_list.push(quote! {#g: ::saola_core::serde::de::DeserializeOwned + Send + Sync});
             }
             let impl_generics_as = quote! { <#(#impl_generics_as_list),*> };
 
@@ -272,7 +272,7 @@ pub fn generate_read_wrappers(model_name: &syn::Ident, model_metadata: &ModelMet
 
     // Empty transition for Value
     transitions.push(quote! {
-        impl #include_transition_trait<#empty_marker_name> for ::prisma_core::serde_json::Value { type Output = ::prisma_core::serde_json::Value; }
+        impl #include_transition_trait<#empty_marker_name> for ::saola_core::serde_json::Value { type Output = ::saola_core::serde_json::Value; }
     });
 
     for relation in &relations {
@@ -280,9 +280,9 @@ pub fn generate_read_wrappers(model_name: &syn::Ident, model_metadata: &ModelMet
         let pascal_name_with = format_ident!("{}Include{}With", model_name, pascal_case(&relation.prisma_name));
         let pascal_name_as = format_ident!("{}Include{}As", model_name, pascal_case(&relation.prisma_name));
         transitions.push(quote! {
-            impl #include_transition_trait<#pascal_name> for ::prisma_core::serde_json::Value { type Output = ::prisma_core::serde_json::Value; }
-            impl<M> #include_transition_trait<#pascal_name_with<M>> for ::prisma_core::serde_json::Value { type Output = ::prisma_core::serde_json::Value; }
-            impl<U> #include_transition_trait<#pascal_name_as<U>> for ::prisma_core::serde_json::Value { type Output = ::prisma_core::serde_json::Value; }
+            impl #include_transition_trait<#pascal_name> for ::saola_core::serde_json::Value { type Output = ::saola_core::serde_json::Value; }
+            impl<M> #include_transition_trait<#pascal_name_with<M>> for ::saola_core::serde_json::Value { type Output = ::saola_core::serde_json::Value; }
+            impl<U> #include_transition_trait<#pascal_name_as<U>> for ::saola_core::serde_json::Value { type Output = ::saola_core::serde_json::Value; }
         });
     }
 
@@ -305,21 +305,21 @@ pub fn generate_read_wrappers(model_name: &syn::Ident, model_metadata: &ModelMet
                     let mut builder = #order_by_name::default();
                     f(&mut builder);
                     if !builder.args.is_empty() {
-                        use ::prisma_core::Filterable;
-                        self.inner.add_filter_arg("orderBy".to_string(), ::prisma_core::query_core::ArgumentValue::List(builder.args));
+                        use ::saola_core::Filterable;
+                        self.inner.add_filter_arg("orderBy".to_string(), ::saola_core::query_core::ArgumentValue::List(builder.args));
                     }
                     self
                 }
 
                 pub fn skip(mut self, skip: i64) -> Self {
-                    use ::prisma_core::Filterable;
-                    self.inner.add_filter_arg("skip".to_string(), ::prisma_core::query_core::ArgumentValue::Scalar(::prisma_core::query_structure::PrismaValue::Int(skip)));
+                    use ::saola_core::Filterable;
+                    self.inner.add_filter_arg("skip".to_string(), ::saola_core::query_core::ArgumentValue::Scalar(::saola_core::query_structure::PrismaValue::Int(skip)));
                     self
                 }
 
                 pub fn take(mut self, take: i64) -> Self {
-                    use ::prisma_core::Filterable;
-                    self.inner.add_filter_arg("take".to_string(), ::prisma_core::query_core::ArgumentValue::Scalar(::prisma_core::query_structure::PrismaValue::Int(take)));
+                    use ::saola_core::Filterable;
+                    self.inner.add_filter_arg("take".to_string(), ::saola_core::query_core::ArgumentValue::Scalar(::saola_core::query_structure::PrismaValue::Int(take)));
                     self
                 }
 
@@ -328,8 +328,8 @@ pub fn generate_read_wrappers(model_name: &syn::Ident, model_metadata: &ModelMet
                     f(&mut builder);
                     let map = builder.build();
                     if !map.is_empty() {
-                        use ::prisma_core::Filterable;
-                        self.inner.add_filter_arg("cursor".to_string(), ::prisma_core::query_core::ArgumentValue::Object(map));
+                        use ::saola_core::Filterable;
+                        self.inner.add_filter_arg("cursor".to_string(), ::saola_core::query_core::ArgumentValue::Object(map));
                     }
                     self
                 }
@@ -340,43 +340,43 @@ pub fn generate_read_wrappers(model_name: &syn::Ident, model_metadata: &ModelMet
 
         wrapper_impls.push(quote! {
             pub struct #w_name<T = #model_name> {
-                pub inner: ::prisma_core::ReadBuilder<#r_type>,
+                pub inner: ::saola_core::ReadBuilder<#r_type>,
                 pub _phantom: std::marker::PhantomData<T>,
             }
 
-            impl<T: ::prisma_core::serde::de::DeserializeOwned + Send + Sync> #w_name<T> {
+            impl<T: ::saola_core::serde::de::DeserializeOwned + Send + Sync> #w_name<T> {
                 pub fn where_clause<F>(mut self, f: F) -> Self where F: FnOnce(&mut #w_where) {
                     let mut builder = #w_where::default();
                     f(&mut builder);
                     let map = builder.build();
                     if !map.is_empty() {
-                        use ::prisma_core::Filterable;
-                        self.inner.add_filter_arg("where".to_string(), ::prisma_core::query_core::ArgumentValue::Object(map));
+                        use ::saola_core::Filterable;
+                        self.inner.add_filter_arg("where".to_string(), ::saola_core::query_core::ArgumentValue::Object(map));
                     }
                     self
                 }
 
                 #pagination_methods
 
-                pub fn select<F>(mut self, f: F) -> #w_name<::prisma_core::serde_json::Value> where F: FnOnce(&mut #select_name) {
+                pub fn select<F>(mut self, f: F) -> #w_name<::saola_core::serde_json::Value> where F: FnOnce(&mut #select_name) {
                     let mut builder = #select_name::default();
                     f(&mut builder);
-                    let selections: Vec<::prisma_core::query_core::Selection> = builder.into();
-                    use ::prisma_core::Selectable;
+                    let selections: Vec<::saola_core::query_core::Selection> = builder.into();
+                    use ::saola_core::Selectable;
                     self.inner.state.selection.clear_nested_selections();
                     for sel in selections { self.inner.add_nested_selection(sel); }
                     #w_name { inner: self.inner.with_type(), _phantom: std::marker::PhantomData }
                 }
 
-                pub fn select_as<U: ::prisma_core::serde::de::DeserializeOwned + Send + Sync, F>(
+                pub fn select_as<U: ::saola_core::serde::de::DeserializeOwned + Send + Sync, F>(
                     mut self,
                     selection: (std::marker::PhantomData<U>, F)
                 ) -> #w_name<U>
                 where F: FnOnce(&mut #select_name) {
                     let mut builder = #select_name::default();
                     (selection.1)(&mut builder);
-                    let selections: Vec<::prisma_core::query_core::Selection> = builder.into();
-                    use ::prisma_core::Selectable;
+                    let selections: Vec<::saola_core::query_core::Selection> = builder.into();
+                    use ::saola_core::Selectable;
                     self.inner.state.selection.clear_nested_selections();
                     for sel in selections { self.inner.add_nested_selection(sel); }
                     #w_name { inner: self.inner.with_type(), _phantom: std::marker::PhantomData }
@@ -390,11 +390,11 @@ pub fn generate_read_wrappers(model_name: &syn::Ident, model_metadata: &ModelMet
                 {
                     let mut builder = #include_name::default();
                     let marker = f(&mut builder);
-                    use ::prisma_core::Selectable;
+                    use ::saola_core::Selectable;
 
                     if self.inner.state.selection.nested_selections().is_empty() {
                         for scalar_field in &[#(#scalar_field_names),*] {
-                            self.inner.add_nested_selection(::prisma_core::query_core::Selection::with_name(scalar_field.to_string()));
+                            self.inner.add_nested_selection(::saola_core::query_core::Selection::with_name(scalar_field.to_string()));
                         }
                     }
 
@@ -408,11 +408,11 @@ pub fn generate_read_wrappers(model_name: &syn::Ident, model_metadata: &ModelMet
                     #w_name { inner: self.inner.with_type(), _phantom: std::marker::PhantomData }
                 }
 
-                pub fn r#as<U: ::prisma_core::serde::de::DeserializeOwned + Send + Sync>(self) -> #w_name<U> {
+                pub fn r#as<U: ::saola_core::serde::de::DeserializeOwned + Send + Sync>(self) -> #w_name<U> {
                     #w_name { inner: self.inner.with_type(), _phantom: std::marker::PhantomData }
                 }
 
-                pub async fn exec(self, provider: &(dyn ::prisma_core::transaction::QueryExecutorProvider + '_)) -> ::prisma_core::Result<#r_type> {
+                pub async fn exec(self, provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_)) -> ::saola_core::Result<#r_type> {
                     self.inner.exec_inferred(provider).await
                 }
             }
@@ -420,16 +420,16 @@ pub fn generate_read_wrappers(model_name: &syn::Ident, model_metadata: &ModelMet
     }
 
     let scalar_selections = model_metadata.scalar_field_names.iter().map(|f| {
-        quote! { ::prisma_core::query_core::Selection::with_name(#f.to_string()) }
+        quote! { ::saola_core::query_core::Selection::with_name(#f.to_string()) }
     });
 
     quote! {
         pub trait #include_marker_trait {
-            fn into_selection(self) -> Option<::prisma_core::query_core::Selection>;
+            fn into_selection(self) -> Option<::saola_core::query_core::Selection>;
         }
 
         pub trait #include_transition_trait<M> {
-            type Output: ::prisma_core::serde::de::DeserializeOwned + Send + Sync;
+            type Output: ::saola_core::serde::de::DeserializeOwned + Send + Sync;
         }
 
         #(#include_markers)*
@@ -437,11 +437,11 @@ pub fn generate_read_wrappers(model_name: &syn::Ident, model_metadata: &ModelMet
 
         #[derive(Default)]
         pub struct #include_name {
-            pub args: ::prisma_core::IndexMap<String, ::prisma_core::query_core::ArgumentValue>,
+            pub args: ::saola_core::IndexMap<String, ::saola_core::query_core::ArgumentValue>,
         }
 
         impl #include_name {
-            pub fn scalar_selections() -> Vec<::prisma_core::query_core::Selection> {
+            pub fn scalar_selections() -> Vec<::saola_core::query_core::Selection> {
                 vec![
                     #(#scalar_selections),*
                 ]
@@ -454,18 +454,18 @@ pub fn generate_read_wrappers(model_name: &syn::Ident, model_metadata: &ModelMet
                 f(&mut builder);
                 let map = builder.build();
                 if !map.is_empty() {
-                    self.args.insert("where".to_string(), ::prisma_core::query_core::ArgumentValue::Object(map));
+                    self.args.insert("where".to_string(), ::saola_core::query_core::ArgumentValue::Object(map));
                 }
                 self
             }
 
             pub fn take(&mut self, take: i64) -> &mut Self {
-                self.args.insert("take".to_string(), ::prisma_core::query_core::ArgumentValue::Scalar(::prisma_core::query_structure::PrismaValue::Int(take)));
+                self.args.insert("take".to_string(), ::saola_core::query_core::ArgumentValue::Scalar(::saola_core::query_structure::PrismaValue::Int(take)));
                 self
             }
 
             pub fn skip(&mut self, skip: i64) -> &mut Self {
-                self.args.insert("skip".to_string(), ::prisma_core::query_core::ArgumentValue::Scalar(::prisma_core::query_structure::PrismaValue::Int(skip)));
+                self.args.insert("skip".to_string(), ::saola_core::query_core::ArgumentValue::Scalar(::saola_core::query_structure::PrismaValue::Int(skip)));
                 self
             }
 
@@ -473,7 +473,7 @@ pub fn generate_read_wrappers(model_name: &syn::Ident, model_metadata: &ModelMet
                 let mut builder = #order_by_name::default();
                 f(&mut builder);
                 if !builder.args.is_empty() {
-                    self.args.insert("orderBy".to_string(), ::prisma_core::query_core::ArgumentValue::List(builder.args));
+                    self.args.insert("orderBy".to_string(), ::saola_core::query_core::ArgumentValue::List(builder.args));
                 }
                 self
             }
@@ -483,7 +483,7 @@ pub fn generate_read_wrappers(model_name: &syn::Ident, model_metadata: &ModelMet
                 f(&mut builder);
                 let map = builder.build();
                 if !map.is_empty() {
-                    self.args.insert("cursor".to_string(), ::prisma_core::query_core::ArgumentValue::Object(map));
+                    self.args.insert("cursor".to_string(), ::saola_core::query_core::ArgumentValue::Object(map));
                 }
                 self
             }
@@ -496,7 +496,7 @@ pub fn generate_read_wrappers(model_name: &syn::Ident, model_metadata: &ModelMet
         }
 
         impl #include_marker_trait for #include_name {
-            fn into_selection(self) -> Option<::prisma_core::query_core::Selection> {
+            fn into_selection(self) -> Option<::saola_core::query_core::Selection> {
                 None
             }
         }
@@ -518,11 +518,11 @@ pub fn generate_write_wrapper(model_name: &syn::Ident, model_metadata: &ModelMet
     quote! {
         /// Builder for write operations (returns T)
         pub struct #write_wrapper_name<T = #model_name> {
-            pub inner: ::prisma_core::WriteBuilder<T>,
+            pub inner: ::saola_core::WriteBuilder<T>,
             pub _phantom: std::marker::PhantomData<T>,
         }
 
-        impl<T: ::prisma_core::serde::de::DeserializeOwned + Send + Sync> #write_wrapper_name<T> {
+        impl<T: ::saola_core::serde::de::DeserializeOwned + Send + Sync> #write_wrapper_name<T> {
             pub fn where_clause<F>(mut self, f: F) -> Self
             where F: FnOnce(&mut #unique_where_builder_name)
             {
@@ -530,8 +530,8 @@ pub fn generate_write_wrapper(model_name: &syn::Ident, model_metadata: &ModelMet
                 f(&mut builder);
                 let map = builder.build();
                 if !map.is_empty() {
-                    use ::prisma_core::Filterable;
-                    self.inner.add_filter_arg("where".to_string(), ::prisma_core::query_core::ArgumentValue::Object(map));
+                    use ::saola_core::Filterable;
+                    self.inner.add_filter_arg("where".to_string(), ::saola_core::query_core::ArgumentValue::Object(map));
                 }
                 self
             }
@@ -544,7 +544,7 @@ pub fn generate_write_wrapper(model_name: &syn::Ident, model_metadata: &ModelMet
 
                 // Find existing data arg and merge if it exists
                 let mut merged_data = std::mem::take(&mut builder.data);
-                if let Some(::prisma_core::query_core::ArgumentValue::Object(existing_map)) = self.inner.state.arguments.get("data") {
+                if let Some(::saola_core::query_core::ArgumentValue::Object(existing_map)) = self.inner.state.arguments.get("data") {
                     let mut new_map = existing_map.clone();
                     for (k, v) in merged_data {
                         new_map.insert(k, v);
@@ -552,18 +552,18 @@ pub fn generate_write_wrapper(model_name: &syn::Ident, model_metadata: &ModelMet
                     merged_data = new_map;
                 }
 
-                use ::prisma_core::Filterable;
-                self.inner.add_filter_arg("data".to_string(), ::prisma_core::query_core::ArgumentValue::Object(merged_data));
+                use ::saola_core::Filterable;
+                self.inner.add_filter_arg("data".to_string(), ::saola_core::query_core::ArgumentValue::Object(merged_data));
                 self
             }
 
-            pub fn select<F>(mut self, f: F) -> #write_wrapper_name<::prisma_core::serde_json::Value>
+            pub fn select<F>(mut self, f: F) -> #write_wrapper_name<::saola_core::serde_json::Value>
             where F: FnOnce(&mut #select_builder_name)
             {
                 let mut builder = #select_builder_name::default();
                 f(&mut builder);
-                let selections: Vec<::prisma_core::query_core::Selection> = builder.into();
-                use ::prisma_core::Selectable;
+                let selections: Vec<::saola_core::query_core::Selection> = builder.into();
+                use ::saola_core::Selectable;
                 self.inner.state.selection.clear_nested_selections();
                 for sel in selections {
                     self.inner.add_nested_selection(sel);
@@ -574,15 +574,15 @@ pub fn generate_write_wrapper(model_name: &syn::Ident, model_metadata: &ModelMet
                 }
             }
 
-            pub fn select_as<U: ::prisma_core::serde::de::DeserializeOwned + Send + Sync, F>(
+            pub fn select_as<U: ::saola_core::serde::de::DeserializeOwned + Send + Sync, F>(
                 mut self,
                 selection: (std::marker::PhantomData<U>, F)
             ) -> #write_wrapper_name<U>
             where F: FnOnce(&mut #select_builder_name) {
                 let mut builder = #select_builder_name::default();
                 (selection.1)(&mut builder);
-                let selections: Vec<::prisma_core::query_core::Selection> = builder.into();
-                use ::prisma_core::Selectable;
+                let selections: Vec<::saola_core::query_core::Selection> = builder.into();
+                use ::saola_core::Selectable;
                 self.inner.state.selection.clear_nested_selections();
                 for sel in selections { self.inner.add_nested_selection(sel); }
                 #write_wrapper_name { inner: self.inner.with_type(), _phantom: std::marker::PhantomData }
@@ -596,11 +596,11 @@ pub fn generate_write_wrapper(model_name: &syn::Ident, model_metadata: &ModelMet
             {
                 let mut builder = #include_builder_name::default();
                 let marker = f(&mut builder);
-                use ::prisma_core::Selectable;
+                use ::saola_core::Selectable;
 
                 if self.inner.state.selection.nested_selections().is_empty() {
                     for scalar_field in &[#(#scalar_field_names),*] {
-                        self.inner.add_nested_selection(::prisma_core::query_core::Selection::with_name(scalar_field.to_string()));
+                        self.inner.add_nested_selection(::saola_core::query_core::Selection::with_name(scalar_field.to_string()));
                     }
                 }
 
@@ -613,14 +613,14 @@ pub fn generate_write_wrapper(model_name: &syn::Ident, model_metadata: &ModelMet
                 #write_wrapper_name { inner: self.inner.with_type(), _phantom: std::marker::PhantomData }
             }
 
-            pub fn r#as<U: ::prisma_core::serde::de::DeserializeOwned + Send + Sync>(self) -> #write_wrapper_name<U> {
+            pub fn r#as<U: ::saola_core::serde::de::DeserializeOwned + Send + Sync>(self) -> #write_wrapper_name<U> {
                 #write_wrapper_name {
                     inner: self.inner.with_type(),
                     _phantom: std::marker::PhantomData,
                 }
             }
 
-            pub async fn exec(self, provider: &(dyn ::prisma_core::transaction::QueryExecutorProvider + '_)) -> ::prisma_core::Result<T> {
+            pub async fn exec(self, provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_)) -> ::saola_core::Result<T> {
                 self.inner.exec_inferred(provider).await
             }
         }
@@ -636,7 +636,7 @@ pub fn generate_upsert_wrapper(model_name: &syn::Ident, model_metadata: &ModelMe
 
     quote! {
         pub struct #wrapper_name {
-            pub inner: ::prisma_core::WriteBuilder<#model_name>,
+            pub inner: ::saola_core::WriteBuilder<#model_name>,
         }
 
         impl #wrapper_name {
@@ -647,8 +647,8 @@ pub fn generate_upsert_wrapper(model_name: &syn::Ident, model_metadata: &ModelMe
                 f(&mut builder);
                 let map = builder.build();
                 if !map.is_empty() {
-                    use ::prisma_core::FilterBuilder;
-                    self.inner.add_filter_arg("where".to_string(), ::prisma_core::query_core::ArgumentValue::Object(map));
+                    use ::saola_core::FilterBuilder;
+                    self.inner.add_filter_arg("where".to_string(), ::saola_core::query_core::ArgumentValue::Object(map));
                 }
                 self
             }
@@ -658,7 +658,7 @@ pub fn generate_upsert_wrapper(model_name: &syn::Ident, model_metadata: &ModelMe
             {
                 let mut builder = #data_builder_name::default();
                 f(&mut builder);
-                self.inner.add_filter_arg("update".to_string(), ::prisma_core::query_core::ArgumentValue::Object(std::mem::take(&mut builder.data)));
+                self.inner.add_filter_arg("update".to_string(), ::saola_core::query_core::ArgumentValue::Object(std::mem::take(&mut builder.data)));
                 self
             }
 
@@ -668,11 +668,11 @@ pub fn generate_upsert_wrapper(model_name: &syn::Ident, model_metadata: &ModelMe
                 let mut create_builder = #data_builder_name::default();
                 #create_data_inserts
                 f(&mut create_builder);
-                self.inner.add_filter_arg("create".to_string(), ::prisma_core::query_core::ArgumentValue::Object(std::mem::take(&mut create_builder.data)));
+                self.inner.add_filter_arg("create".to_string(), ::saola_core::query_core::ArgumentValue::Object(std::mem::take(&mut create_builder.data)));
                 self
             }
 
-            pub async fn exec(self, provider: &(dyn ::prisma_core::transaction::QueryExecutorProvider + '_)) -> ::prisma_core::Result<#model_name> {
+            pub async fn exec(self, provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_)) -> ::saola_core::Result<#model_name> {
                 self.inner.exec_inferred(provider).await
             }
         }
@@ -688,7 +688,7 @@ pub fn generate_create_many_wrapper(
 
     quote! {
         pub struct #wrapper_name {
-            pub inner: ::prisma_core::CreateManyBuilder,
+            pub inner: ::saola_core::CreateManyBuilder,
         }
 
         impl #wrapper_name {
@@ -699,13 +699,13 @@ pub fn generate_create_many_wrapper(
                 f(&mut builder);
 
                 let mut list = match self.inner.state.arguments.get("data") {
-                    Some(::prisma_core::query_core::ArgumentValue::List(l)) => l.clone(),
+                    Some(::saola_core::query_core::ArgumentValue::List(l)) => l.clone(),
                     _ => Vec::new(),
                 };
-                list.push(::prisma_core::query_core::ArgumentValue::Object(std::mem::take(&mut builder.data)));
+                list.push(::saola_core::query_core::ArgumentValue::Object(std::mem::take(&mut builder.data)));
 
-                use ::prisma_core::Filterable;
-                self.inner.add_filter_arg("data".to_string(), ::prisma_core::query_core::ArgumentValue::List(list));
+                use ::saola_core::Filterable;
+                self.inner.add_filter_arg("data".to_string(), ::saola_core::query_core::ArgumentValue::List(list));
                 self
             }
 
@@ -714,7 +714,7 @@ pub fn generate_create_many_wrapper(
                 self
             }
 
-            pub async fn exec(self, provider: &(dyn ::prisma_core::transaction::QueryExecutorProvider + '_)) -> ::prisma_core::Result<i64> {
+            pub async fn exec(self, provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_)) -> ::saola_core::Result<i64> {
                 self.inner.exec(provider).await
             }
         }
@@ -732,7 +732,7 @@ pub fn generate_create_many_and_return_wrapper(
 
     quote! {
         pub struct #wrapper_name {
-            pub inner: ::prisma_core::CreateManyAndReturnBuilder<#model_name>,
+            pub inner: ::saola_core::CreateManyAndReturnBuilder<#model_name>,
         }
 
         impl #wrapper_name {
@@ -743,13 +743,13 @@ pub fn generate_create_many_and_return_wrapper(
                 f(&mut builder);
 
                 let mut list = match self.inner.state.arguments.get("data") {
-                    Some(::prisma_core::query_core::ArgumentValue::List(l)) => l.clone(),
+                    Some(::saola_core::query_core::ArgumentValue::List(l)) => l.clone(),
                     _ => Vec::new(),
                 };
-                list.push(::prisma_core::query_core::ArgumentValue::Object(std::mem::take(&mut builder.data)));
+                list.push(::saola_core::query_core::ArgumentValue::Object(std::mem::take(&mut builder.data)));
 
-                use ::prisma_core::Filterable;
-                self.inner.add_filter_arg("data".to_string(), ::prisma_core::query_core::ArgumentValue::List(list));
+                use ::saola_core::Filterable;
+                self.inner.add_filter_arg("data".to_string(), ::saola_core::query_core::ArgumentValue::List(list));
                 self
             }
 
@@ -761,19 +761,19 @@ pub fn generate_create_many_and_return_wrapper(
             pub fn select<F>(mut self, f: F) -> #wrapper_name where F: FnOnce(&mut #select_builder_name) {
                 let mut builder = #select_builder_name::default();
                 f(&mut builder);
-                let selections: Vec<::prisma_core::query_core::Selection> = builder.into();
-                use ::prisma_core::Selectable;
+                let selections: Vec<::saola_core::query_core::Selection> = builder.into();
+                use ::saola_core::Selectable;
                 self.inner.state.selection.clear_nested_selections();
                 for sel in selections { self.inner.add_nested_selection(sel); }
                 self
             }
 
-            pub async fn exec(self, provider: &(dyn ::prisma_core::transaction::QueryExecutorProvider + '_)) -> ::prisma_core::Result<Vec<#model_name>> {
+            pub async fn exec(self, provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_)) -> ::saola_core::Result<Vec<#model_name>> {
                 let mut builder = self;
                 if builder.inner.state.selection.nested_selections().is_empty() {
                     for field in &[#(#scalar_field_names),*] {
-                        use ::prisma_core::Selectable;
-                        builder.inner.add_nested_selection(::prisma_core::query_core::Selection::with_name(field.to_string()));
+                        use ::saola_core::Selectable;
+                        builder.inner.add_nested_selection(::saola_core::query_core::Selection::with_name(field.to_string()));
                     }
                 }
                 builder.inner.exec(provider).await
@@ -792,7 +792,7 @@ pub fn generate_update_many_wrapper(
 
     quote! {
         pub struct #wrapper_name {
-            pub inner: ::prisma_core::UpdateManyBuilder,
+            pub inner: ::saola_core::UpdateManyBuilder,
         }
 
         impl #wrapper_name {
@@ -803,8 +803,8 @@ pub fn generate_update_many_wrapper(
                 f(&mut builder);
                 let map = builder.build();
                 if !map.is_empty() {
-                    use ::prisma_core::Filterable;
-                    self.inner.add_filter_arg("where".to_string(), ::prisma_core::query_core::ArgumentValue::Object(map));
+                    use ::saola_core::Filterable;
+                    self.inner.add_filter_arg("where".to_string(), ::saola_core::query_core::ArgumentValue::Object(map));
                 }
                 self
             }
@@ -814,12 +814,12 @@ pub fn generate_update_many_wrapper(
             {
                 let mut builder = #scalar_data_builder_name::default();
                 f(&mut builder);
-                use ::prisma_core::Filterable;
-                self.inner.add_filter_arg("data".to_string(), ::prisma_core::query_core::ArgumentValue::Object(std::mem::take(&mut builder.data)));
+                use ::saola_core::Filterable;
+                self.inner.add_filter_arg("data".to_string(), ::saola_core::query_core::ArgumentValue::Object(std::mem::take(&mut builder.data)));
                 self
             }
 
-            pub async fn exec(self, provider: &(dyn ::prisma_core::transaction::QueryExecutorProvider + '_)) -> ::prisma_core::Result<i64> {
+            pub async fn exec(self, provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_)) -> ::saola_core::Result<i64> {
                 self.inner.exec(provider).await
             }
         }
@@ -838,7 +838,7 @@ pub fn generate_update_many_and_return_wrapper(
 
     quote! {
         pub struct #wrapper_name {
-            pub inner: ::prisma_core::UpdateManyAndReturnBuilder<#model_name>,
+            pub inner: ::saola_core::UpdateManyAndReturnBuilder<#model_name>,
         }
 
         impl #wrapper_name {
@@ -849,8 +849,8 @@ pub fn generate_update_many_and_return_wrapper(
                 f(&mut builder);
                 let map = builder.build();
                 if !map.is_empty() {
-                    use ::prisma_core::Filterable;
-                    self.inner.add_filter_arg("where".to_string(), ::prisma_core::query_core::ArgumentValue::Object(map));
+                    use ::saola_core::Filterable;
+                    self.inner.add_filter_arg("where".to_string(), ::saola_core::query_core::ArgumentValue::Object(map));
                 }
                 self
             }
@@ -860,27 +860,27 @@ pub fn generate_update_many_and_return_wrapper(
             {
                 let mut builder = #scalar_data_builder_name::default();
                 f(&mut builder);
-                use ::prisma_core::Filterable;
-                self.inner.add_filter_arg("data".to_string(), ::prisma_core::query_core::ArgumentValue::Object(std::mem::take(&mut builder.data)));
+                use ::saola_core::Filterable;
+                self.inner.add_filter_arg("data".to_string(), ::saola_core::query_core::ArgumentValue::Object(std::mem::take(&mut builder.data)));
                 self
             }
 
             pub fn select<F>(mut self, f: F) -> #wrapper_name where F: FnOnce(&mut #select_builder_name) {
                 let mut builder = #select_builder_name::default();
                 f(&mut builder);
-                let selections: Vec<::prisma_core::query_core::Selection> = builder.into();
-                use ::prisma_core::Selectable;
+                let selections: Vec<::saola_core::query_core::Selection> = builder.into();
+                use ::saola_core::Selectable;
                 self.inner.state.selection.clear_nested_selections();
                 for sel in selections { self.inner.add_nested_selection(sel); }
                 self
             }
 
-            pub async fn exec(self, provider: &(dyn ::prisma_core::transaction::QueryExecutorProvider + '_)) -> ::prisma_core::Result<Vec<#model_name>> {
+            pub async fn exec(self, provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_)) -> ::saola_core::Result<Vec<#model_name>> {
                 let mut builder = self;
                 if builder.inner.state.selection.nested_selections().is_empty() {
                     for field in &[#(#scalar_field_names),*] {
-                        use ::prisma_core::Selectable;
-                        builder.inner.add_nested_selection(::prisma_core::query_core::Selection::with_name(field.to_string()));
+                        use ::saola_core::Selectable;
+                        builder.inner.add_nested_selection(::saola_core::query_core::Selection::with_name(field.to_string()));
                     }
                 }
                 builder.inner.exec(provider).await
@@ -898,7 +898,7 @@ pub fn generate_delete_many_wrapper(
 
     quote! {
         pub struct #wrapper_name {
-            pub inner: ::prisma_core::DeleteManyBuilder,
+            pub inner: ::saola_core::DeleteManyBuilder,
         }
 
         impl #wrapper_name {
@@ -909,13 +909,13 @@ pub fn generate_delete_many_wrapper(
                 f(&mut builder);
                 let map = builder.build();
                 if !map.is_empty() {
-                    use ::prisma_core::Filterable;
-                    self.inner.add_filter_arg("where".to_string(), ::prisma_core::query_core::ArgumentValue::Object(map));
+                    use ::saola_core::Filterable;
+                    self.inner.add_filter_arg("where".to_string(), ::saola_core::query_core::ArgumentValue::Object(map));
                 }
                 self
             }
 
-            pub async fn exec(self, provider: &(dyn ::prisma_core::transaction::QueryExecutorProvider + '_)) -> ::prisma_core::Result<i64> {
+            pub async fn exec(self, provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_)) -> ::saola_core::Result<i64> {
                 self.inner.exec(provider).await
             }
         }
@@ -928,7 +928,7 @@ pub fn generate_count_wrapper(model_name: &syn::Ident) -> proc_macro2::TokenStre
 
     quote! {
         pub struct #count_wrapper_name {
-            pub inner: ::prisma_core::CountBuilder,
+            pub inner: ::saola_core::CountBuilder,
         }
 
         impl #count_wrapper_name {
@@ -939,14 +939,14 @@ pub fn generate_count_wrapper(model_name: &syn::Ident) -> proc_macro2::TokenStre
                 f(&mut builder);
                 let map = builder.build();
                 if !map.is_empty() {
-                    use ::prisma_core::Filterable;
-                    self.inner.add_filter_arg("where".to_string(), ::prisma_core::query_core::ArgumentValue::Object(map));
+                    use ::saola_core::Filterable;
+                    self.inner.add_filter_arg("where".to_string(), ::saola_core::query_core::ArgumentValue::Object(map));
                 }
                 self
             }
 
-            pub async fn exec(self, provider: &(dyn ::prisma_core::transaction::QueryExecutorProvider + '_)) -> ::prisma_core::Result<i64> {
-                use ::prisma_core::Executable;
+            pub async fn exec(self, provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_)) -> ::saola_core::Result<i64> {
+                use ::saola_core::Executable;
                 self.inner.exec(provider).await
             }
         }
@@ -966,7 +966,7 @@ pub fn generate_aggregate_wrapper(model_name: &syn::Ident) -> proc_macro2::Token
 
     quote! {
         pub struct #aggregate_wrapper_name {
-            pub inner: ::prisma_core::AggregateBuilder<#aggregate_result_name>,
+            pub inner: ::saola_core::AggregateBuilder<#aggregate_result_name>,
         }
 
         impl #aggregate_wrapper_name {
@@ -977,8 +977,8 @@ pub fn generate_aggregate_wrapper(model_name: &syn::Ident) -> proc_macro2::Token
                 f(&mut builder);
                 let map = builder.build();
                 if !map.is_empty() {
-                    use ::prisma_core::Filterable;
-                    self.inner.add_filter_arg("where".to_string(), ::prisma_core::query_core::ArgumentValue::Object(map));
+                    use ::saola_core::Filterable;
+                    self.inner.add_filter_arg("where".to_string(), ::saola_core::query_core::ArgumentValue::Object(map));
                 }
                 self
             }
@@ -988,11 +988,11 @@ pub fn generate_aggregate_wrapper(model_name: &syn::Ident) -> proc_macro2::Token
             {
                 let mut builder = #count_builder::default();
                 f(&mut builder);
-                let mut sel = ::prisma_core::query_core::Selection::with_name("_count");
+                let mut sel = ::saola_core::query_core::Selection::with_name("_count");
                 for s in builder.selections {
                     sel.push_nested_selection(s);
                 }
-                use ::prisma_core::Selectable;
+                use ::saola_core::Selectable;
                 self.inner.add_nested_selection(sel);
                 self
             }
@@ -1002,11 +1002,11 @@ pub fn generate_aggregate_wrapper(model_name: &syn::Ident) -> proc_macro2::Token
             {
                 let mut builder = #sum_builder::default();
                 f(&mut builder);
-                let mut sel = ::prisma_core::query_core::Selection::with_name("_sum");
+                let mut sel = ::saola_core::query_core::Selection::with_name("_sum");
                 for s in builder.selections {
                     sel.push_nested_selection(s);
                 }
-                use ::prisma_core::Selectable;
+                use ::saola_core::Selectable;
                 self.inner.add_nested_selection(sel);
                 self
             }
@@ -1016,11 +1016,11 @@ pub fn generate_aggregate_wrapper(model_name: &syn::Ident) -> proc_macro2::Token
             {
                 let mut builder = #avg_builder::default();
                 f(&mut builder);
-                let mut sel = ::prisma_core::query_core::Selection::with_name("_avg");
+                let mut sel = ::saola_core::query_core::Selection::with_name("_avg");
                 for s in builder.selections {
                     sel.push_nested_selection(s);
                 }
-                use ::prisma_core::Selectable;
+                use ::saola_core::Selectable;
                 self.inner.add_nested_selection(sel);
                 self
             }
@@ -1030,11 +1030,11 @@ pub fn generate_aggregate_wrapper(model_name: &syn::Ident) -> proc_macro2::Token
             {
                 let mut builder = #min_builder::default();
                 f(&mut builder);
-                let mut sel = ::prisma_core::query_core::Selection::with_name("_min");
+                let mut sel = ::saola_core::query_core::Selection::with_name("_min");
                 for s in builder.selections {
                     sel.push_nested_selection(s);
                 }
-                use ::prisma_core::Selectable;
+                use ::saola_core::Selectable;
                 self.inner.add_nested_selection(sel);
                 self
             }
@@ -1044,16 +1044,16 @@ pub fn generate_aggregate_wrapper(model_name: &syn::Ident) -> proc_macro2::Token
             {
                 let mut builder = #max_builder::default();
                 f(&mut builder);
-                let mut sel = ::prisma_core::query_core::Selection::with_name("_max");
+                let mut sel = ::saola_core::query_core::Selection::with_name("_max");
                 for s in builder.selections {
                     sel.push_nested_selection(s);
                 }
-                use ::prisma_core::Selectable;
+                use ::saola_core::Selectable;
                 self.inner.add_nested_selection(sel);
                 self
             }
 
-            pub async fn exec(self, provider: &(dyn ::prisma_core::transaction::QueryExecutorProvider + '_)) -> ::prisma_core::Result<#aggregate_result_name> {
+            pub async fn exec(self, provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_)) -> ::saola_core::Result<#aggregate_result_name> {
                 self.inner.exec_inferred(provider).await
             }
         }
@@ -1075,7 +1075,7 @@ pub fn generate_group_by_wrapper(model_name: &syn::Ident) -> proc_macro2::TokenS
 
     quote! {
         pub struct #group_by_wrapper_name {
-            pub inner: ::prisma_core::GroupByBuilder<#group_by_result_name>,
+            pub inner: ::saola_core::GroupByBuilder<#group_by_result_name>,
         }
 
         impl #group_by_wrapper_name {
@@ -1086,8 +1086,8 @@ pub fn generate_group_by_wrapper(model_name: &syn::Ident) -> proc_macro2::TokenS
                 f(&mut builder);
                 let map = builder.build();
                 if !map.is_empty() {
-                    use ::prisma_core::Filterable;
-                    self.inner.add_filter_arg("where".to_string(), ::prisma_core::query_core::ArgumentValue::Object(map));
+                    use ::saola_core::Filterable;
+                    self.inner.add_filter_arg("where".to_string(), ::saola_core::query_core::ArgumentValue::Object(map));
                 }
                 self
             }
@@ -1099,21 +1099,21 @@ pub fn generate_group_by_wrapper(model_name: &syn::Ident) -> proc_macro2::TokenS
                 f(&mut builder);
                 let map = builder.build();
                 if !map.is_empty() {
-                    use ::prisma_core::Filterable;
-                    self.inner.add_filter_arg("having".to_string(), ::prisma_core::query_core::ArgumentValue::Object(map));
+                    use ::saola_core::Filterable;
+                    self.inner.add_filter_arg("having".to_string(), ::saola_core::query_core::ArgumentValue::Object(map));
                 }
                 self
             }
 
             pub fn take(mut self, take: i64) -> Self {
-                use ::prisma_core::Filterable;
-                self.inner.add_filter_arg("take".to_string(), ::prisma_core::query_core::ArgumentValue::Scalar(::prisma_core::query_structure::PrismaValue::Int(take)));
+                use ::saola_core::Filterable;
+                self.inner.add_filter_arg("take".to_string(), ::saola_core::query_core::ArgumentValue::Scalar(::saola_core::query_structure::PrismaValue::Int(take)));
                 self
             }
 
             pub fn skip(mut self, skip: i64) -> Self {
-                use ::prisma_core::Filterable;
-                self.inner.add_filter_arg("skip".to_string(), ::prisma_core::query_core::ArgumentValue::Scalar(::prisma_core::query_structure::PrismaValue::Int(skip)));
+                use ::saola_core::Filterable;
+                self.inner.add_filter_arg("skip".to_string(), ::saola_core::query_core::ArgumentValue::Scalar(::saola_core::query_structure::PrismaValue::Int(skip)));
                 self
             }
 
@@ -1123,8 +1123,8 @@ pub fn generate_group_by_wrapper(model_name: &syn::Ident) -> proc_macro2::TokenS
                 let mut builder = #order_by_name::default();
                 f(&mut builder);
                 if !builder.args.is_empty() {
-                    use ::prisma_core::Filterable;
-                    self.inner.add_filter_arg("orderBy".to_string(), ::prisma_core::query_core::ArgumentValue::List(builder.args));
+                    use ::saola_core::Filterable;
+                    self.inner.add_filter_arg("orderBy".to_string(), ::saola_core::query_core::ArgumentValue::List(builder.args));
                 }
                 self
             }
@@ -1137,15 +1137,15 @@ pub fn generate_group_by_wrapper(model_name: &syn::Ident) -> proc_macro2::TokenS
 
                 let fields = builder.fields.clone();
 
-                use ::prisma_core::Filterable;
-                self.inner.add_filter_arg("by".to_string(), ::prisma_core::query_core::ArgumentValue::List(
-                    fields.iter().map(|f| ::prisma_core::query_core::ArgumentValue::Scalar(::prisma_core::query_structure::PrismaValue::String(f.clone()))).collect()
+                use ::saola_core::Filterable;
+                self.inner.add_filter_arg("by".to_string(), ::saola_core::query_core::ArgumentValue::List(
+                    fields.iter().map(|f| ::saola_core::query_core::ArgumentValue::Scalar(::saola_core::query_structure::PrismaValue::String(f.clone()))).collect()
                 ));
 
                 // ALSO add to selection so they are returned
-                use ::prisma_core::Selectable;
+                use ::saola_core::Selectable;
                 for f in fields {
-                    self.inner.add_nested_selection(::prisma_core::query_core::Selection::with_name(f));
+                    self.inner.add_nested_selection(::saola_core::query_core::Selection::with_name(f));
                 }
 
                 self
@@ -1156,11 +1156,11 @@ pub fn generate_group_by_wrapper(model_name: &syn::Ident) -> proc_macro2::TokenS
             {
                 let mut builder = #count_builder::default();
                 f(&mut builder);
-                let mut sel = ::prisma_core::query_core::Selection::with_name("_count");
+                let mut sel = ::saola_core::query_core::Selection::with_name("_count");
                 for s in builder.selections {
                     sel.push_nested_selection(s);
                 }
-                use ::prisma_core::Selectable;
+                use ::saola_core::Selectable;
                 self.inner.add_nested_selection(sel);
                 self
             }
@@ -1170,11 +1170,11 @@ pub fn generate_group_by_wrapper(model_name: &syn::Ident) -> proc_macro2::TokenS
             {
                 let mut builder = #sum_builder::default();
                 f(&mut builder);
-                let mut sel = ::prisma_core::query_core::Selection::with_name("_sum");
+                let mut sel = ::saola_core::query_core::Selection::with_name("_sum");
                 for s in builder.selections {
                     sel.push_nested_selection(s);
                 }
-                use ::prisma_core::Selectable;
+                use ::saola_core::Selectable;
                 self.inner.add_nested_selection(sel);
                 self
             }
@@ -1184,11 +1184,11 @@ pub fn generate_group_by_wrapper(model_name: &syn::Ident) -> proc_macro2::TokenS
             {
                 let mut builder = #avg_builder::default();
                 f(&mut builder);
-                let mut sel = ::prisma_core::query_core::Selection::with_name("_avg");
+                let mut sel = ::saola_core::query_core::Selection::with_name("_avg");
                 for s in builder.selections {
                     sel.push_nested_selection(s);
                 }
-                use ::prisma_core::Selectable;
+                use ::saola_core::Selectable;
                 self.inner.add_nested_selection(sel);
                 self
             }
@@ -1198,11 +1198,11 @@ pub fn generate_group_by_wrapper(model_name: &syn::Ident) -> proc_macro2::TokenS
             {
                 let mut builder = #min_builder::default();
                 f(&mut builder);
-                let mut sel = ::prisma_core::query_core::Selection::with_name("_min");
+                let mut sel = ::saola_core::query_core::Selection::with_name("_min");
                 for s in builder.selections {
                     sel.push_nested_selection(s);
                 }
-                use ::prisma_core::Selectable;
+                use ::saola_core::Selectable;
                 self.inner.add_nested_selection(sel);
                 self
             }
@@ -1212,16 +1212,16 @@ pub fn generate_group_by_wrapper(model_name: &syn::Ident) -> proc_macro2::TokenS
             {
                 let mut builder = #max_builder::default();
                 f(&mut builder);
-                let mut sel = ::prisma_core::query_core::Selection::with_name("_max");
+                let mut sel = ::saola_core::query_core::Selection::with_name("_max");
                 for s in builder.selections {
                     sel.push_nested_selection(s);
                 }
-                use ::prisma_core::Selectable;
+                use ::saola_core::Selectable;
                 self.inner.add_nested_selection(sel);
                 self
             }
 
-            pub async fn exec(self, provider: &(dyn ::prisma_core::transaction::QueryExecutorProvider + '_)) -> ::prisma_core::Result<Vec<#group_by_result_name>> {
+            pub async fn exec(self, provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_)) -> ::saola_core::Result<Vec<#group_by_result_name>> {
                 self.inner.exec_inferred(provider).await
             }
         }

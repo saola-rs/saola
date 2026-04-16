@@ -1,7 +1,7 @@
 //! Prisma prelude module
 //!
 //! This module re-exports the most common types and traits needed for building queries.
-//! Import this with `use prisma_core::prelude::*;` to make filter operators available
+//! Import this with `use saola_core::prelude::*;` to make filter operators available
 //! in your code closures.
 
 // Re-export all filter operator traits

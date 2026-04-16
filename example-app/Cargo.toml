@@ -7,8 +7,8 @@ license.workspace = true
 
 [dependencies]
 anyhow = "1"
-prisma_core = { path = "../prisma_core" }
-prisma-macros = { path = "../prisma-macros" }
+saola-core = { path = "../saola-core" }
+saola-macros = { path = "../saola-macros" }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 serde = { workspace = true }
 serde_json = { workspace = true }

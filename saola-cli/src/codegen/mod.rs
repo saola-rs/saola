@@ -27,15 +27,15 @@ pub fn generate_client(db: &ParserDatabase) -> TokenStream {
         }
 
         enums.push(quote! {
-            #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, ::prisma_core::serde::Serialize, ::prisma_core::serde::Deserialize, Default)]
-            #[serde(crate = "::prisma_core::serde", rename_all = "UPPERCASE")]
+            #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, ::saola_core::serde::Serialize, ::saola_core::serde::Deserialize, Default)]
+            #[serde(crate = "::saola_core::serde", rename_all = "UPPERCASE")]
             pub enum #enum_name {
                 #(#variants),*
             }
 
-            impl From<#enum_name> for ::prisma_core::query_structure::PrismaValue {
+            impl From<#enum_name> for ::saola_core::query_structure::PrismaValue {
                 fn from(val: #enum_name) -> Self {
-                    ::prisma_core::query_structure::PrismaValue::Enum(format!("{:?}", val).to_uppercase())
+                    ::saola_core::query_structure::PrismaValue::Enum(format!("{:?}", val).to_uppercase())
                 }
             }
         });
@@ -121,9 +121,9 @@ pub fn generate_client(db: &ParserDatabase) -> TokenStream {
         }
 
         models.push(quote! {
-            #[derive(Debug, ::prisma_core::serde::Deserialize, Default)]
-            #[serde(crate = "::prisma_core::serde", default)]
-            #[prisma_macros::prisma_model]
+            #[derive(Debug, ::saola_core::serde::Deserialize, Default)]
+            #[serde(crate = "::saola_core::serde", default)]
+            #[saola_macros::prisma_model]
             pub struct #model_name {
                 #(#fields),*
             }
@@ -133,9 +133,9 @@ pub fn generate_client(db: &ParserDatabase) -> TokenStream {
     quote! {
         pub mod client {
             use super::*;
-            use ::prisma_core as _prisma_core;
+            use ::saola_core as _saola_core;
 
-            pub fn client() -> _prisma_core::PrismaClient {
+            pub fn client() -> _saola_core::PrismaClient {
                 todo!("Initialize client")
             }
 

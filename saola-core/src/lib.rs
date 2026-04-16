@@ -21,7 +21,7 @@ pub mod write;
 // Re-export main types
 pub use aggregate::{AggregateBuilder, CountBuilder, GroupByBuilder};
 pub use builder::{Executable, FilterBuilder, Filterable, Selectable};
-pub use client::PrismaClient;
+pub use client::SaolaClient;
 pub use filter_builders::{
     BoolFilter, DateTimeFilter, EnumFilter, FloatFilter, IntFilter, RelationFilter, StringFilter,
 };
