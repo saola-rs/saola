@@ -20,11 +20,19 @@ enum PostStatus {
 }
 
 model User {
-  id          String  @id @default(cuid())
-  email       String  @unique
+  id          String   @id @default(cuid())
+  email       String   @unique
   displayName String?
-  role        Role    @default(USER)
+  role        Role     @default(USER)
   posts       Post[]
+  profile     Profile?
+}
+
+model Profile {
+  id     String @id @default(cuid())
+  bio    String
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Post {
@@ -34,4 +42,12 @@ model Post {
   published Boolean    @default(false)
   userId    String
   user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comments  Comment[]
+}
+
+model Comment {
+  id      String @id @default(cuid())
+  text    String
+  postId  String
+  post    Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
 }

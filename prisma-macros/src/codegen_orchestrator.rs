@@ -1,11 +1,82 @@
 //! Orchestrate all code generation for unified init! macro
 
+use crate::builder_gen;
+use crate::model_analysis::{FieldMetadata, ModelMetadata};
 use crate::model_gen;
-use quote::quote;
+use crate::query_gen;
+use crate::wrapper_gen;
+use heck::ToSnakeCase;
+use quote::{format_ident, quote};
+use std::collections::HashMap;
 
 /// Generate the complete module structure
 pub fn generate_module(schema: &psl::ValidatedSchema, schema_path: &str) -> proc_macro2::TokenStream {
     let db = &schema.db;
+
+    // 1. Collect metadata for all models first
+    let mut model_metadata_map = HashMap::new();
+    for walker in db.walk_models() {
+        let mut fields = Vec::new();
+
+        let relation_link_fields: std::collections::HashSet<_> = walker
+            .relation_fields()
+            .filter_map(|rf| rf.referencing_fields())
+            .flatten()
+            .map(|f| f.field_id())
+            .collect();
+
+        for field in walker.scalar_fields() {
+            let field_type_str = match field.scalar_field_type() {
+                psl::parser_database::ScalarFieldType::BuiltInScalar(psl::parser_database::ScalarType::String) => {
+                    "String"
+                }
+                psl::parser_database::ScalarFieldType::BuiltInScalar(psl::parser_database::ScalarType::Int) => "i32",
+                psl::parser_database::ScalarFieldType::BuiltInScalar(psl::parser_database::ScalarType::Boolean) => {
+                    "bool"
+                }
+                psl::parser_database::ScalarFieldType::Enum(id) => db.walk(id).name(),
+                _ => "String",
+            }
+            .to_string();
+
+            fields.push(FieldMetadata {
+                rust_name: field.name().to_string(),
+                prisma_name: field.name().to_string(),
+                is_relation: false,
+                is_unique: field.is_unique(),
+                is_id: walker
+                    .primary_key()
+                    .map(|pk| pk.fields().any(|f| f.field_id() == field.field_id()))
+                    .unwrap_or(false),
+                is_optional: !field.ast_field().arity.is_required(),
+                is_list: field.ast_field().arity.is_list(),
+                is_relation_link: relation_link_fields.contains(&field.field_id()),
+                has_default: field.default_value().is_some(),
+                opposite_relation_field: None,
+                field_type: syn::parse_str(&field_type_str).unwrap(),
+            });
+        }
+        for field in walker.relation_fields() {
+            let related_model_name = field.related_model().name();
+            fields.push(FieldMetadata {
+                rust_name: field.name().to_string(),
+                prisma_name: field.name().to_string(),
+                is_relation: true,
+                is_unique: false,
+                is_id: false,
+                is_optional: !field.ast_field().arity.is_required(),
+                is_list: field.ast_field().arity.is_list(),
+                is_relation_link: false,
+                has_default: false,
+                opposite_relation_field: Some(field.opposite_relation_field().unwrap().name().to_string()),
+                field_type: syn::parse_str(related_model_name).unwrap(),
+            });
+        }
+        model_metadata_map.insert(
+            walker.name().to_string(),
+            ModelMetadata::new(walker.name().to_string(), fields),
+        );
+    }
 
     // Generate all enums first
     let mut enum_code = Vec::new();
@@ -13,13 +84,42 @@ pub fn generate_module(schema: &psl::ValidatedSchema, schema_path: &str) -> proc
         enum_code.push(model_gen::generate_enum(db, walker));
     }
 
-    // Generate all model structs
+    // Generate all model structs AND their builders
     let mut model_code = Vec::new();
     for walker in db.walk_models() {
-        model_code.push(model_gen::generate_model_struct(db, walker));
-        // Also generate relation types for this model
-        let rel_types = model_gen::generate_relation_types(db, walker);
-        model_code.push(rel_types);
+        let model_name_str = walker.name().to_string();
+        let model_name = format_ident!("{}", model_name_str);
+        let model_name_snake = format_ident!("{}", model_name_str.to_snake_case());
+        let model_metadata = model_metadata_map.get(&model_name_str).unwrap();
+
+        // 1. Struct and Relation Types
+        model_code.push(model_gen::generate_model_struct(db, walker, &model_metadata_map));
+        model_code.push(model_gen::generate_relation_types(db, walker));
+
+        // 2. Builders
+        model_code.push(builder_gen::generate_where_builder(&model_name, model_metadata));
+        model_code.push(builder_gen::generate_unique_where_builder(&model_name, model_metadata));
+        model_code.push(builder_gen::generate_select_builder(&model_name, model_metadata));
+        model_code.push(builder_gen::generate_data_builder(
+            &model_name,
+            model_metadata,
+            Some(&model_metadata_map),
+        ));
+
+        // 3. Wrappers
+        model_code.push(wrapper_gen::generate_read_wrappers(&model_name, model_metadata));
+        model_code.push(wrapper_gen::generate_write_wrapper(&model_name, model_metadata));
+        model_code.push(wrapper_gen::generate_count_wrapper(&model_name));
+        model_code.push(wrapper_gen::generate_aggregate_wrapper(&model_name));
+        model_code.push(wrapper_gen::generate_group_by_wrapper(&model_name));
+
+        // 4. Query Factory
+        model_code.push(query_gen::generate_query_factory(
+            &model_name,
+            &model_name_snake,
+            &model_name_str,
+            model_metadata,
+        ));
     }
 
     // Extract datasource info
@@ -32,7 +132,6 @@ pub fn generate_module(schema: &psl::ValidatedSchema, schema_path: &str) -> proc
         .url
         .as_literal()
         .unwrap_or_else(|| datasource.url.as_env_var().unwrap_or(""));
-    // For runtime evaluation, we either use literal or env! macro if it's an env var
     let url_tokens = if let Some(env_var) = datasource.url.as_env_var() {
         quote! { std::env::var(#env_var).unwrap_or_else(|_| String::new()).as_str() }
     } else {
@@ -41,30 +140,19 @@ pub fn generate_module(schema: &psl::ValidatedSchema, schema_path: &str) -> proc
 
     quote! {
         pub mod db {
-            // Re-export prelude for generated code
             use ::prisma_core::prelude::*;
-
-            // Re-export select_as macro
             pub use ::prisma_macros::select_as;
+            pub use ::prisma_macros::db_prisma;
 
-            // ============ ENUMS ============
             #(#enum_code)*
-
-            // ============ MODELS ============
             #(#model_code)*
 
-            // ============ CLIENT INITIALIZATION ============
-
-            /// Get or create the Prisma client with auto-configured datasource
             pub async fn client() -> ::prisma_core::Result<::prisma_core::PrismaClient> {
                 ::prisma_core::PrismaClient::new(
                     include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/", #schema_path)),
                     #url_tokens
                 ).await
             }
-
-            // ============ QUERY FACTORIES ============
-            // Auto-generated query factory functions are exposed in the generated #[prisma_model] structs
         }
     }
 }

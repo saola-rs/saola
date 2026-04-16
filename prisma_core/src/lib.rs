@@ -21,7 +21,9 @@ pub mod write;
 pub use aggregate::{AggregateBuilder, CountBuilder, GroupByBuilder};
 pub use builder::{Executable, FilterBuilder, Filterable, Selectable};
 pub use client::PrismaClient;
-pub use filter_builders::{BoolFilter, DateTimeFilter, EnumFilter, FloatFilter, IntFilter, StringFilter};
+pub use filter_builders::{
+    BoolFilter, DateTimeFilter, EnumFilter, FloatFilter, IntFilter, RelationFilter, StringFilter,
+};
 pub use filters::{
     BoolFieldOps, DateTimeFieldOps, EnumFieldOps, FloatFieldOps, IntFieldOps, RelationFilterOps, StringFieldOps,
 };

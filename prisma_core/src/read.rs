@@ -53,7 +53,7 @@ impl<T> ReadBuilder<T> {
 
 impl<T> Filterable for ReadBuilder<T> {
     fn add_filter_arg(&mut self, name: String, value: ArgumentValue) {
-        self.state.selection.push_argument(name, value);
+        self.state.arguments.insert(name, value);
     }
 }
 

@@ -23,7 +23,7 @@ pub fn generate_query_factory(
 
     let scalar_field_names = &model_metadata.scalar_field_names;
     let create_params = model_metadata.create_params();
-    let create_data_inserts = model_metadata.create_data_inserts();
+    let create_data_inserts = model_metadata.create_data_inserts("data_map");
 
     quote! {
         /// Query factory for #model_name operations
@@ -37,97 +37,86 @@ pub fn generate_query_factory(
         impl #query_name {
             // ============ READ OPERATIONS ============
 
-            /// Find many records matching criteria
             pub fn find_many(&self) -> #many_name {
                 #many_name {
-                    inner: prisma_core::ReadBuilder::<Vec<#model_name>>::find_many(#model_name_str.to_string(), vec![#(#scalar_field_names.to_string()),*]),
+                    inner: ::prisma_core::ReadBuilder::<Vec<#model_name>>::find_many(#model_name_str.to_string(), vec![#(#scalar_field_names.to_string()),*]),
                     _phantom: std::marker::PhantomData,
                 }
             }
 
-            /// Find a unique record by unique field
             pub fn find_unique(&self) -> #unique_name {
                 #unique_name {
-                    inner: prisma_core::ReadBuilder::<Option<#model_name>>::find_unique(#model_name_str.to_string(), vec![#(#scalar_field_names.to_string()),*]),
+                    inner: ::prisma_core::ReadBuilder::<Option<#model_name>>::find_unique(#model_name_str.to_string(), vec![#(#scalar_field_names.to_string()),*]),
                     _phantom: std::marker::PhantomData,
                 }
             }
 
-            /// Find the first record matching criteria
             pub fn find_first(&self) -> #first_name {
                 #first_name {
-                    inner: prisma_core::ReadBuilder::<Option<#model_name>>::find_first(#model_name_str.to_string(), vec![#(#scalar_field_names.to_string()),*]),
+                    inner: ::prisma_core::ReadBuilder::<Option<#model_name>>::find_first(#model_name_str.to_string(), vec![#(#scalar_field_names.to_string()),*]),
                     _phantom: std::marker::PhantomData,
                 }
             }
 
-            /// Find the first record or throw
             pub fn find_first_or_throw(&self) -> #first_throw_name {
                 #first_throw_name {
-                    inner: prisma_core::ReadBuilder::<#model_name>::find_first_or_throw(#model_name_str.to_string(), vec![#(#scalar_field_names.to_string()),*]),
+                    inner: ::prisma_core::ReadBuilder::<#model_name>::find_first_or_throw(#model_name_str.to_string(), vec![#(#scalar_field_names.to_string()),*]),
                     _phantom: std::marker::PhantomData,
                 }
             }
 
-            /// Find a unique record or throw
             pub fn find_unique_or_throw(&self) -> #unique_throw_name {
                 #unique_throw_name {
-                    inner: prisma_core::ReadBuilder::<#model_name>::find_unique_or_throw(#model_name_str.to_string(), vec![#(#scalar_field_names.to_string()),*]),
+                    inner: ::prisma_core::ReadBuilder::<#model_name>::find_unique_or_throw(#model_name_str.to_string(), vec![#(#scalar_field_names.to_string()),*]),
                     _phantom: std::marker::PhantomData,
                 }
             }
 
             // ============ WRITE OPERATIONS ============
 
-            /// Create a new record
             pub fn create(&self, #create_params) -> #write_wrapper_name {
-                let mut builder = prisma_core::WriteBuilder::<#model_name>::create(#model_name_str.to_string(), vec![#(#scalar_field_names.to_string()),*]);
-                let mut data_map = prisma_core::IndexMap::new();
+                let mut builder = ::prisma_core::WriteBuilder::<#model_name>::create(#model_name_str.to_string(), vec![#(#scalar_field_names.to_string()),*]);
+                let mut data_map = ::prisma_core::IndexMap::new();
                 #create_data_inserts
-                use prisma_core::Filterable;
-                builder.add_filter_arg("data".to_string(), prisma_core::query_core::ArgumentValue::Object(data_map));
+                use ::prisma_core::Filterable;
+                builder.add_filter_arg("data".to_string(), ::prisma_core::query_core::ArgumentValue::Object(data_map));
                 #write_wrapper_name {
                     inner: builder,
                     _phantom: std::marker::PhantomData,
                 }
             }
 
-            /// Update a record
             pub fn update(&self) -> #write_wrapper_name {
                 #write_wrapper_name {
-                    inner: prisma_core::WriteBuilder::<#model_name>::update(#model_name_str.to_string(), vec![#(#scalar_field_names.to_string()),*]),
+                    inner: ::prisma_core::WriteBuilder::<#model_name>::update(#model_name_str.to_string(), vec![#(#scalar_field_names.to_string()),*]),
                     _phantom: std::marker::PhantomData,
                 }
             }
 
-            /// Delete a record
             pub fn delete(&self) -> #write_wrapper_name {
                 #write_wrapper_name {
-                    inner: prisma_core::WriteBuilder::<#model_name>::delete(#model_name_str.to_string(), vec![#(#scalar_field_names.to_string()),*]),
+                    inner: ::prisma_core::WriteBuilder::<#model_name>::delete(#model_name_str.to_string(), vec![#(#scalar_field_names.to_string()),*]),
                     _phantom: std::marker::PhantomData,
                 }
             }
 
             // ============ AGGREGATION OPERATIONS ============
 
-            /// Count records matching criteria
             pub fn count(&self) -> #count_wrapper_name {
                 #count_wrapper_name {
-                    inner: prisma_core::CountBuilder::new(#model_name_str.to_string(), vec![])
+                    inner: ::prisma_core::CountBuilder::new(#model_name_str.to_string(), vec![])
                 }
             }
 
-            /// Perform aggregations
             pub fn aggregate(&self) -> #aggregate_wrapper_name {
                 #aggregate_wrapper_name {
-                    inner: prisma_core::AggregateBuilder::new(#model_name_str.to_string(), vec![])
+                    inner: ::prisma_core::AggregateBuilder::new(#model_name_str.to_string(), vec![])
                 }
             }
 
-            /// Group records
             pub fn group_by(&self) -> #group_by_wrapper_name {
                 #group_by_wrapper_name {
-                    inner: prisma_core::GroupByBuilder::new(#model_name_str.to_string(), vec![])
+                    inner: ::prisma_core::GroupByBuilder::new(#model_name_str.to_string(), vec![])
                 }
             }
         }

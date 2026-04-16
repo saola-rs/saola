@@ -315,3 +315,72 @@ impl<'a, B: FilterBuilder> DateTimeFieldOps for DateTimeFilter<'a, B> {
         self
     }
 }
+
+/// Relation field filter - allows some/every/none/is/is_not operations
+pub struct RelationFilter<'a, B, WB> {
+    pub builder: &'a mut B,
+    pub field_name: &'static str,
+    pub _phantom: std::marker::PhantomData<WB>,
+}
+
+impl<'a, B: FilterBuilder, WB: Default + FilterBuilder> RelationFilter<'a, B, WB> {
+    pub fn some<F>(mut self, f: F) -> Self
+    where
+        F: FnOnce(&mut WB),
+    {
+        let mut nested = WB::default();
+        f(&mut nested);
+        self.add_nested_op("some", nested);
+        self
+    }
+
+    pub fn every<F>(mut self, f: F) -> Self
+    where
+        F: FnOnce(&mut WB),
+    {
+        let mut nested = WB::default();
+        f(&mut nested);
+        self.add_nested_op("every", nested);
+        self
+    }
+
+    pub fn none<F>(mut self, f: F) -> Self
+    where
+        F: FnOnce(&mut WB),
+    {
+        let mut nested = WB::default();
+        f(&mut nested);
+        self.add_nested_op("none", nested);
+        self
+    }
+
+    pub fn is<F>(mut self, f: F) -> Self
+    where
+        F: FnOnce(&mut WB),
+    {
+        let mut nested = WB::default();
+        f(&mut nested);
+        self.add_nested_op("is", nested);
+        self
+    }
+
+    pub fn is_not<F>(mut self, f: F) -> Self
+    where
+        F: FnOnce(&mut WB),
+    {
+        let mut nested = WB::default();
+        f(&mut nested);
+        self.add_nested_op("isNot", nested);
+        self
+    }
+
+    fn add_nested_op(&mut self, op: &str, nested: WB) {
+        let args = nested.build();
+        if !args.is_empty() {
+            let mut map = IndexMap::new();
+            map.insert(op.to_string(), ArgumentValue::Object(args));
+            self.builder
+                .add_arg(self.field_name.to_string(), ArgumentValue::Object(map));
+        }
+    }
+}

@@ -36,6 +36,14 @@ fn parse_model_fields(input: &mut ItemStruct) -> Vec<FieldMetadata> {
             }
         };
 
+        let is_list = {
+            if let Type::Path(tp) = &field.ty {
+                tp.path.segments.last().unwrap().ident == "Vec"
+            } else {
+                false
+            }
+        };
+
         // Parse prisma attributes
         field.attrs.retain(|attr| {
             if attr.path().is_ident("prisma") {
@@ -67,11 +75,21 @@ fn parse_model_fields(input: &mut ItemStruct) -> Vec<FieldMetadata> {
             is_unique,
             is_id,
             is_optional,
+            is_list,
+            is_relation_link: false,
+            has_default: false,
+            opposite_relation_field: None,
             field_type: field.ty.clone(),
         });
     }
 
     fields
+}
+
+/// Dummy attribute macro to keep prisma-specific field annotations in generated structs
+#[proc_macro_attribute]
+pub fn db_prisma(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    item
 }
 
 /// Generate type-safe model builders from Rust struct
@@ -86,14 +104,15 @@ pub fn prisma_model(_attr: TokenStream, item: TokenStream) -> TokenStream {
 
     // Parse field metadata from model
     let fields = parse_model_fields(&mut input);
-    let model_metadata = ModelMetadata::new(fields);
+    let model_metadata = ModelMetadata::new(model_name_str.clone(), fields);
 
     // Generate all builder and query code
     let where_builder = builder_gen::generate_where_builder(&model_name, &model_metadata);
     let unique_where_builder = builder_gen::generate_unique_where_builder(&model_name, &model_metadata);
     let select_builder = builder_gen::generate_select_builder(&model_name, &model_metadata);
     let include_builder = builder_gen::generate_include_builder(&model_name, &model_metadata);
-    let data_builder = builder_gen::generate_data_builder(&model_name, &model_metadata);
+    let empty_map: std::collections::HashMap<String, ModelMetadata> = std::collections::HashMap::new();
+    let data_builder = builder_gen::generate_data_builder(&model_name, &model_metadata, Some(&empty_map));
 
     let read_wrappers = wrapper_gen::generate_read_wrappers(&model_name, &model_metadata);
     let write_wrapper = wrapper_gen::generate_write_wrapper(&model_name, &model_metadata);

@@ -11,7 +11,6 @@ use syn::{
 
 /// Parsed shape of the ad-hoc struct
 pub struct SelectShape {
-    pub query: syn::Expr,
     pub fields: Vec<FieldShape>,
 }
 
@@ -32,9 +31,6 @@ pub struct SelectShapeNested {
 
 impl Parse for SelectShape {
     fn parse(input: ParseStream) -> Result<Self> {
-        let query: syn::Expr = input.parse()?;
-        input.parse::<Token![,]>()?;
-
         let content;
         braced!(content in input);
 
@@ -46,7 +42,7 @@ impl Parse for SelectShape {
             }
         }
 
-        Ok(SelectShape { query, fields })
+        Ok(SelectShape { fields })
     }
 }
 
@@ -97,10 +93,14 @@ fn generate_struct_and_selects(fields: &[FieldShape], prefix: &str) -> (TokenStr
     let mut struct_fields = Vec::new();
     let mut select_calls = Vec::new();
     let mut nested_structs = Vec::new();
+    let mut names = Vec::new();
+    let mut prisma_names = Vec::new();
 
     for field in fields {
         let name = &field.name;
         let prisma_name = name.to_string();
+        names.push(name.clone());
+        prisma_names.push(prisma_name.clone());
 
         match &field.ty {
             FieldType::Scalar(ty) => {
@@ -119,10 +119,18 @@ fn generate_struct_and_selects(fields: &[FieldShape], prefix: &str) -> (TokenStr
 
                 nested_structs.push(sub_nested);
                 nested_structs.push(quote! {
-                    #[derive(Debug, Clone, ::prisma_core::serde::Deserialize, Default)]
+                    #[derive(Clone, ::prisma_core::serde::Deserialize, ::prisma_core::serde::Serialize, Default)]
                     #[serde(crate = "::prisma_core::serde", default)]
                     pub struct #sub_struct_name {
                         #sub_fields
+                    }
+
+                    impl std::fmt::Debug for #sub_struct_name {
+                        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                            f.debug_struct("Selected")
+                                #(.field(#prisma_names, &self.#names))*
+                                .finish()
+                        }
                     }
                 });
 
@@ -151,13 +159,13 @@ fn generate_struct_and_selects(fields: &[FieldShape], prefix: &str) -> (TokenStr
     (
         quote! { #(#struct_fields),* },
         quote! { #(#select_calls)* },
-        quote! { #(#nested_structs)* },
+        quote! {
+            #(#nested_structs)*
+        },
     )
 }
 
 pub fn select_macro_impl(input: SelectShape) -> TokenStream {
-    let query = &input.query;
-
     // Generate a unique hash based on the field names
     let mut hasher = DefaultHasher::new();
     for field in &input.fields {
@@ -168,21 +176,40 @@ pub fn select_macro_impl(input: SelectShape) -> TokenStream {
     let root_struct_name = format_ident!("_AdHocRoot_{:x}", hash);
     let (fields, selects, nested) = generate_struct_and_selects(&input.fields, &format!("{:x}", hash));
 
+    let names: Vec<_> = input.fields.iter().map(|f| &f.name).collect();
+    let prisma_names: Vec<_> = input.fields.iter().map(|f| f.name.to_string()).collect();
+
     quote! {
         {
             #nested
 
-            #[derive(Debug, Clone, ::prisma_core::serde::Deserialize, Default)]
+            #[derive(Clone, ::prisma_core::serde::Deserialize, ::prisma_core::serde::Serialize, Default)]
             #[serde(crate = "::prisma_core::serde", default)]
             pub struct #root_struct_name {
                 #fields
             }
 
-            #query
-                .select(|s| {
+            impl std::fmt::Debug for #root_struct_name {
+                fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                    f.debug_struct("Selected")
+                        #(.field(#prisma_names, &self.#names))*
+                        .finish()
+                }
+            }
+
+            impl std::fmt::Display for #root_struct_name {
+                fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                    let json = ::prisma_core::serde_json::to_string_pretty(self).unwrap_or_else(|_| "Error serializing".to_string());
+                    write!(f, "{}", json)
+                }
+            }
+
+            (
+                std::marker::PhantomData::<#root_struct_name>,
+                |s| {
                     #selects
-                })
-                .r#as::<#root_struct_name>()
+                }
+            )
         }
     }
 }

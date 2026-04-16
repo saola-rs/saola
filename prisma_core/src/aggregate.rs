@@ -21,7 +21,7 @@ impl CountBuilder {
 
 impl Filterable for CountBuilder {
     fn add_filter_arg(&mut self, name: String, value: ArgumentValue) {
-        self.state.selection.push_argument(name, value);
+        self.state.arguments.insert(name, value);
     }
 }
 
@@ -58,7 +58,7 @@ impl AggregateBuilder {
 
 impl Filterable for AggregateBuilder {
     fn add_filter_arg(&mut self, name: String, value: ArgumentValue) {
-        self.state.selection.push_argument(name, value);
+        self.state.arguments.insert(name, value);
     }
 }
 
@@ -91,7 +91,7 @@ impl GroupByBuilder {
 
 impl Filterable for GroupByBuilder {
     fn add_filter_arg(&mut self, name: String, value: ArgumentValue) {
-        self.state.selection.push_argument(name, value);
+        self.state.arguments.insert(name, value);
     }
 }
 

@@ -1,3 +1,5 @@
 /target
 old
 prisma-engines
+node_modules
+**/*.ts

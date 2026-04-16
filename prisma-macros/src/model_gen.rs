@@ -2,11 +2,17 @@ use heck::ToSnakeCase;
 use psl::parser_database::{ParserDatabase, ScalarFieldType, ScalarType};
 use quote::{format_ident, quote};
 
+use crate::model_analysis::ModelMetadata;
+use std::collections::HashMap;
+
 pub fn generate_model_struct(
     db: &ParserDatabase,
     walker: psl::parser_database::walkers::ModelWalker<'_>,
+    all_metadata: &HashMap<String, ModelMetadata>,
 ) -> proc_macro2::TokenStream {
-    let model_name = format_ident!("{}", walker.name());
+    let model_name_str = walker.name().to_string();
+    let _model_metadata = all_metadata.get(&model_name_str).unwrap();
+    let model_name = format_ident!("{}", model_name_str);
 
     let mut fields = Vec::new();
 
@@ -55,7 +61,6 @@ pub fn generate_model_struct(
             prisma_meta.push(quote! { unique });
         }
 
-        attrs.push(quote! { #[prisma(#(#prisma_meta),*)] });
         attrs.push(quote! { #[serde(rename = #prisma_field_name)] });
 
         fields.push(quote! {
@@ -69,23 +74,20 @@ pub fn generate_model_struct(
         let rust_field_name = format_ident!("{}", prisma_field_name.to_snake_case());
         let related_model = format_ident!("{}", relation.related_model().name());
 
-        let final_type = if relation.ast_field().arity.is_list() {
-            quote! { Vec<#related_model> }
-        } else if !relation.is_required() {
-            quote! { Option<Box<#related_model>> }
+        let (final_type, attrs) = if relation.ast_field().arity.is_list() {
+            (quote! { Vec<#related_model> }, quote! { #[serde(default, skip_serializing_if = "Vec::is_empty")] })
         } else {
-            quote! { Box<#related_model> }
+            (quote! { Option<Box<#related_model>> }, quote! { #[serde(default, skip_serializing_if = "Option::is_none")] })
         };
 
         fields.push(quote! {
-            #[serde(default, skip_serializing)]
-            #[prisma(name = #prisma_field_name, relation)]
+            #attrs
             pub #rust_field_name: #final_type
         });
+
     }
 
     quote! {
-        #[::prisma_macros::prisma_model]
         #[derive(Debug, Clone, ::prisma_core::serde::Serialize, ::prisma_core::serde::Deserialize, Default)]
         #[serde(crate = "::prisma_core::serde", default)]
         pub struct #model_name {
@@ -95,7 +97,7 @@ pub fn generate_model_struct(
 }
 
 pub fn generate_enum(
-    db: &ParserDatabase,
+    _db: &ParserDatabase,
     walker: psl::parser_database::walkers::EnumWalker<'_>,
 ) -> proc_macro2::TokenStream {
     let enum_name = format_ident!("{}", walker.name());
@@ -161,71 +163,109 @@ pub fn generate_relation_types(
         return quote! {};
     }
 
-    // Generate single relation types: UserWithPosts, UserWithComments
-    for relation in &relations {
-        let relation_name = relation.name();
-        let pascal_relation = pascal_case(relation_name);
-        let type_name = format_ident!("{}With{}", model_name, pascal_relation);
-        let related_model = relation.related_model().name();
-        let related_ident = format_ident!("{}", related_model);
-        let rust_relation_name = format_ident!("{}", relation_name.to_snake_case());
+    let mut powerset = vec![vec![]];
+    for &relation in &relations {
+        let mut new_subsets = Vec::new();
+        for subset in &powerset {
+            let mut new_subset = subset.clone();
+            new_subset.push(relation);
+            new_subsets.push(new_subset);
+        }
+        powerset.extend(new_subsets);
+    }
 
-        let related_type = if relation.ast_field().arity.is_list() {
-            quote! { Vec<#related_ident> }
-        } else if !relation.is_required() {
-            quote! { Option<Box<#related_ident>> }
+    // Get scalar fields from parent model
+    let scalar_fields: Vec<_> = walker
+        .scalar_fields()
+        .map(|f| {
+            let field_name = f.name();
+            let rust_name = format_ident!("{}", field_name.to_snake_case());
+            let field_type = match f.scalar_field_type() {
+                ScalarFieldType::BuiltInScalar(builtin) => match builtin {
+                    ScalarType::String => quote! { String },
+                    ScalarType::Int => quote! { i32 },
+                    ScalarType::Float => quote! { f64 },
+                    ScalarType::Boolean => quote! { bool },
+                    ScalarType::DateTime => quote! { ::prisma_core::chrono::DateTime<::prisma_core::chrono::Utc> },
+                    ScalarType::Json => quote! { ::prisma_core::serde_json::Value },
+                    ScalarType::Decimal => quote! { ::prisma_core::bigdecimal::BigDecimal },
+                    ScalarType::BigInt => quote! { i64 },
+                    ScalarType::Bytes => quote! { Vec<u8> },
+                },
+                ScalarFieldType::Enum(enum_id) => {
+                    let enum_name = format_ident!("{}", db.walk(enum_id).name());
+                    quote! { #enum_name }
+                }
+                _ => quote! { ::prisma_core::serde_json::Value },
+            };
+
+            let final_type = if f.is_optional() {
+                quote! { Option<#field_type> }
+            } else {
+                field_type
+            };
+
+            quote! {
+                #[serde(rename = #field_name)]
+                pub #rust_name: #final_type,
+            }
+        })
+        .collect();
+
+    for subset in powerset {
+        if subset.is_empty() {
+            continue;
+        }
+
+        let mut sorted_subset = subset.clone();
+        sorted_subset.sort_by_key(|r| r.name());
+
+        let relation_names: Vec<_> = sorted_subset.iter().map(|r| pascal_case(r.name())).collect();
+        let combined_name = relation_names.join("And");
+        let type_name = format_ident!("{}With{}", model_name, combined_name);
+
+        let mut generic_params = Vec::new();
+        for relation in &sorted_subset {
+            let type_param = format_ident!("T{}", pascal_case(relation.name()));
+            let related_model = format_ident!("{}", relation.related_model().name());
+            generic_params.push(quote! { #type_param = #related_model });
+        }
+        let generics_decl = if generic_params.is_empty() {
+            quote! {}
         } else {
-            quote! { Box<#related_ident> }
+            quote! { <#(#generic_params),*> }
         };
 
-        // Get scalar fields from parent model
-        let scalar_fields: Vec<_> = walker
-            .scalar_fields()
-            .map(|f| {
-                let field_name = f.name();
-                let rust_name = format_ident!("{}", field_name.to_snake_case());
-                let field_type = match f.scalar_field_type() {
-                    ScalarFieldType::BuiltInScalar(builtin) => match builtin {
-                        ScalarType::String => quote! { String },
-                        ScalarType::Int => quote! { i32 },
-                        ScalarType::Float => quote! { f64 },
-                        ScalarType::Boolean => quote! { bool },
-                        ScalarType::DateTime => quote! { ::prisma_core::chrono::DateTime<::prisma_core::chrono::Utc> },
-                        ScalarType::Json => quote! { ::prisma_core::serde_json::Value },
-                        ScalarType::Decimal => quote! { ::prisma_core::bigdecimal::BigDecimal },
-                        ScalarType::BigInt => quote! { i64 },
-                        ScalarType::Bytes => quote! { Vec<u8> },
-                    },
-                    ScalarFieldType::Enum(enum_id) => {
-                        let enum_name = format_ident!("{}", db.walk(enum_id).name());
-                        quote! { #enum_name }
-                    }
-                    _ => quote! { String },
-                };
+        let mut relation_fields = Vec::new();
+        for relation in &sorted_subset {
+            let relation_name = relation.name();
+            let type_param = format_ident!("T{}", pascal_case(relation_name));
+            let rust_relation_name = format_ident!("{}", relation_name.to_snake_case());
 
-                let final_type = if f.is_optional() {
-                    quote! { Option<#field_type> }
-                } else {
-                    field_type
-                };
+            let related_type = if relation.ast_field().arity.is_list() {
+                quote! { Vec<#type_param> }
+            } else if !relation.is_required() {
+                quote! { Option<Box<#type_param>> }
+            } else {
+                quote! { Box<#type_param> }
+            };
 
-                quote! {
-                    pub #rust_name: #final_type,
-                }
-            })
-            .collect();
+            relation_fields.push(quote! {
+                #[serde(rename = #relation_name)]
+                pub #rust_relation_name: #related_type,
+            });
+        }
 
         types.push(quote! {
             #[derive(Debug, Clone, ::prisma_core::serde::Serialize, ::prisma_core::serde::Deserialize)]
             #[serde(crate = "::prisma_core::serde")]
-            pub struct #type_name {
+            pub struct #type_name #generics_decl {
                 #(#scalar_fields)*
-                pub #rust_relation_name: #related_type,
+                #(#relation_fields)*
             }
         });
     }
 
-    // Combine all types
     quote! {
         #(#types)*
     }

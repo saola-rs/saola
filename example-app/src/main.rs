@@ -16,20 +16,36 @@ async fn main() -> anyhow::Result<()> {
             .as_secs()
     );
 
-    // 2. CREATE Operation (Auto-inferred return type: db::User)
-    println!("\n[1. Creating User]");
-    // Rename local variable to avoid shadowing the user() factory function
-    let created_user = user().create(unique_email.clone(), Role::USER).exec(&client).await?;
-    println!("  ✓ Created: {} (id: {})", created_user.email, created_user.id);
+    // 2. CREATE Operation with Nested Relations
+    println!("\n[1. Creating User with Nested Posts and Profile]");
+    let created_user = user()
+        .create(unique_email.clone()) // role is optional (default: USER)
+        .data(|d| {
+            d.posts(|p| {
+                // Post required: title (status, published are implicit defaults; user is implicit)
+                p.create("Nested Post 1".to_string(), |_| {});
+                p.create("Nested Post 2".to_string(), |_| {});
+            });
+            d.profile(|p| {
+                // Profile required: bio (user is implicit)
+                p.create("I am a nested profile".to_string(), |_| {});
+            });
+        })
+        .include(|u| u.posts())
+        .include(|u| u.profile())
+        .exec(&client)
+        .await?;
+    println!(
+        "  ✓ Created: {} (id: {}) with nested posts and profile \n {:?}",
+        created_user.email, created_user.id, created_user
+    );
 
-    // 3. CREATE Nested Relationships
-    println!("\n[2. Creating Posts for User]");
+    // 3. CREATE Nested Relationships (Manual)
+    println!("\n[2. Creating Manual Post for User]");
     let post1 = post()
         .create(
             "Rust ORM is awesome".to_string(),
-            PostStatus::PUBLISHED,
-            true,
-            created_user.id.clone(),
+            |u| { u.connect(|w| { w.id(created_user.id.clone()); }); }
         )
         .exec(&client)
         .await?;
@@ -37,73 +53,100 @@ async fn main() -> anyhow::Result<()> {
     let post2 = post()
         .create(
             "Native Engines in Rust".to_string(),
-            PostStatus::DRAFT,
-            false,
-            created_user.id.clone(),
+            |u| { u.connect(|w| { w.id(created_user.id.clone()); }); }
         )
         .exec(&client)
         .await?;
     println!("  ✓ Created 2 posts: '{}' and '{}'", post1.title, post2.title);
 
-    // 4. FIND MANY with Complex Filters
-    println!("\n[3. Find Many with Logical Operators]");
+    println!("\n[2.1. Creating Comments on Posts]");
+    let _comment1 = comment()
+        .create(
+            "This is great!".to_string(),
+            |p| { p.connect(|w| { w.id(post1.id.clone()); }); }
+        )
+        .exec(&client)
+        .await?;
+    let _comment2 = comment()
+        .create(
+            "I agree".to_string(),
+            |p| { p.connect(|w| { w.id(post1.id.clone()); }); }
+        )
+        .exec(&client)
+        .await?;
+    println!("  ✓ Created 2 comments on post1");
+
+    // 4. FIND MANY with Complex Filters (Scalar + Relation Filters)
+    println!("\n[3. Find Many with Logical Operators + Relation Filters]");
     let users = user()
         .find_many()
         .where_clause(|w| {
+            // Nested filter: Users who have some posts with 'awesome' in the title
+            w.posts().some(|p: &mut PostWhereBuilder| {
+                p.title().contains("awesome".to_string());
+            });
+            
             w.or(|w| {
                 w.email().contains("example.com".to_string());
                 w.role().eq(Role::USER);
-            });
-            w.not(|w| {
-                w.id().eq("non-existent-id".to_string());
             });
         })
         .exec(&client)
         .await?;
     println!("  ✓ Found {} users matching criteria", users.len());
 
-    // 5. FIND UNIQUE with Automatic Relationship Inclusion
-    println!("\n[4. Find Unique + Automatic Include Inference]");
-    // .posts() transitions return type from Option<User> to Option<UserWithPosts>
-    let user_with_posts = user()
+    // 5. FIND UNIQUE with Automatic Relationship Inclusion (Nested Include + Nested Filter + Chained Include)
+    println!("\n[4. Find Unique + Automatic Include Inference + Nested Filter + Multiple Includes]");
+    let user_with_data = user()
         .find_unique()
         .where_clause(|w| {
             w.email(unique_email.clone());
         })
-        .posts()
+        .include(|i| i.posts_with(|p| {
+            p.where_clause(|w| {
+                w.title().contains("awesome".to_string());
+            });
+            p.comments_with(|c| {
+                c.where_clause(|w| {
+                    w.text().contains("agree".to_string());
+                });
+                c.empty()
+            })
+        }))
+        .include(|i| i.profile()) // Chained include: Fetch profile as well
         .exec(&client)
         .await?
         .expect("User should exist");
 
-    println!("  ✓ Retrieved UserWithPosts: {}", user_with_posts.email);
-    println!("    Total Posts: {}", user_with_posts.posts.len());
-    for p in user_with_posts.posts {
+    println!("  ✓ Retrieved UserWithPostsAndProfile: {}", user_with_data.email);
+    println!("    Bio: {}", user_with_data.profile.as_ref().map(|p| p.bio.as_str()).unwrap_or("No bio"));
+    println!("    Total Filtered Posts: {}", user_with_data.posts.len());
+    for p in user_with_data.posts {
         println!("      - {} ({:?})", p.title, p.status);
+        for c in p.comments {
+            println!("        * {}", c.text);
+        }
     }
 
     // 6. Ad-hoc selection with select_as! macro (TypeScript-like syntax)
     println!("\n[5. Ad-hoc selection with select_as! macro]");
-    let partial_data = db::select_as!(
-        user()
-            .find_unique()
-            .where_clause(|w| {w.email(unique_email.clone());}),
-        {
+    let partial_data = user()
+        .find_unique()
+        .where_clause(|w| {
+            w.email(unique_email.clone());
+        })
+        .include(|i| i.posts_as(db::select_as!({
             id: String,
-            email: String,
-            posts: {
-                title: String,
-                status: PostStatus
-            }[]
-        }
-    )
+            title: String,
+            status: PostStatus
+        })))
     .exec(&client)
     .await?
     .expect("User should exist");
 
     println!("  ✓ Zero-boilerplate selection successful!");
-    println!("    Selected ID: {}", partial_data.id);
     println!("    Selected Email: {}", partial_data.email);
-    println!("    Nested Posts: {:?}", partial_data.posts);
+    println!("    Nested Posts (using _as): {:?}", partial_data.posts);
 
     // 7. COUNT Operation
     println!("\n[6. Count Users]");

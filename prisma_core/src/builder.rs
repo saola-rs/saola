@@ -22,14 +22,16 @@ pub trait Selectable {
 }
 
 /// Backward compatibility trait - alias for FilterBuilder used by generated macros
-pub trait FilterBuilder {
+pub trait FilterBuilder: Sized {
     fn add_arg(&mut self, name: String, value: ArgumentValue);
+    fn build(self) -> crate::IndexMap<String, ArgumentValue>;
 }
 
 /// Base builder state - common to all operations
 pub struct BuilderState {
     pub model_name: String,
     pub selection: Selection,
+    pub arguments: crate::IndexMap<String, ArgumentValue>,
     pub default_selections: Vec<String>,
 }
 
@@ -40,6 +42,7 @@ impl BuilderState {
         Self {
             model_name,
             selection: Selection::with_name(name),
+            arguments: crate::IndexMap::new(),
             default_selections,
         }
     }
@@ -50,6 +53,7 @@ impl BuilderState {
         Self {
             model_name,
             selection: Selection::with_name(name),
+            arguments: crate::IndexMap::new(),
             default_selections,
         }
     }
@@ -67,6 +71,9 @@ impl BuilderState {
     /// Consume this state and create an operation
     pub fn into_operation(mut self, is_write: bool) -> Operation {
         self.apply_defaults();
+        for (k, v) in self.arguments {
+            self.selection.push_argument(k, v);
+        }
         if is_write {
             Operation::Write(self.selection)
         } else {

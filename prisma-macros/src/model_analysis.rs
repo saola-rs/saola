@@ -1,6 +1,7 @@
 //! Model field analysis and metadata extraction
 
 use crate::utils::{get_filter_type, get_inner_type};
+use heck::ToUpperCamelCase;
 use quote::quote;
 use syn::Type;
 
@@ -13,11 +14,18 @@ pub struct FieldMetadata {
     pub is_unique: bool,
     pub is_id: bool,
     pub is_optional: bool,
+    pub is_list: bool,
+    pub is_relation_link: bool,
+    pub has_default: bool, // New: field has a @default value
+    pub opposite_relation_field: Option<String>,
     pub field_type: Type,
 }
 
+use std::collections::HashMap;
+
 /// Metadata about the model being processed
 pub struct ModelMetadata {
+    pub name: String,
     pub fields: Vec<FieldMetadata>,
     pub scalar_field_names: Vec<String>,
     pub create_required_fields: Vec<FieldMetadata>,
@@ -25,7 +33,7 @@ pub struct ModelMetadata {
 
 impl ModelMetadata {
     /// Create from parsed field metadata
-    pub fn new(fields: Vec<FieldMetadata>) -> Self {
+    pub fn new(name: String, fields: Vec<FieldMetadata>) -> Self {
         let scalar_field_names: Vec<String> = fields
             .iter()
             .filter(|f| !f.is_relation)
@@ -34,66 +42,126 @@ impl ModelMetadata {
 
         let create_required_fields: Vec<FieldMetadata> = fields
             .iter()
-            .filter(|f| !f.is_relation && !f.is_optional && !f.is_id)
+            .filter(|f| !f.is_optional && !f.is_id && !f.is_relation_link && !f.is_list && !f.has_default)
             .cloned()
             .collect();
 
         Self {
+            name,
             fields,
             scalar_field_names,
             create_required_fields,
         }
     }
 
-    pub fn create_params(&self) -> proc_macro2::TokenStream {
-        let params = self
+    /// Generate parameter list for create function, optionally ignoring one relation (for nested create)
+    pub fn create_params_with_ignore(&self, ignore_relation: Option<&str>) -> proc_macro2::TokenStream {
+        let params: Vec<_> = self
             .create_required_fields
             .iter()
+            .filter(|f| {
+                if let Some(ignore) = ignore_relation {
+                    f.prisma_name != ignore
+                } else {
+                    true
+                }
+            })
             .map(|field| {
                 let rust_name = syn::Ident::new(&field.rust_name, proc_macro2::Span::call_site());
-                let ty = &field.field_type;
-                quote! { #rust_name: #ty }
-            })
-            .collect::<Vec<_>>();
+                let field_type = &field.field_type;
 
-        if params.is_empty() {
-            quote! {}
-        } else {
-            quote! { #(#params),* }
-        }
+                if field.is_relation {
+                    // For relations, we take a closure
+                    let rel_builder = quote::format_ident!(
+                        "{}{}RelationWriteBuilder",
+                        self.name,
+                        field.rust_name.to_upper_camel_case()
+                    );
+                    quote! { #rust_name: impl FnOnce(&mut #rel_builder) }
+                } else {
+                    quote! { #rust_name: #field_type }
+                }
+            })
+            .collect();
+
+        quote! { #(#params),* }
+    }
+
+    pub fn create_params(&self) -> proc_macro2::TokenStream {
+        self.create_params_with_ignore(None)
     }
 
     /// Generate data map insertions for create function
-    pub fn create_data_inserts(&self) -> proc_macro2::TokenStream {
+    pub fn create_data_inserts_with_ignore(
+        &self,
+        map_name: &str,
+        ignore_relation: Option<&str>,
+    ) -> proc_macro2::TokenStream {
+        let map_expr: syn::Expr = syn::parse_str(map_name).expect("Failed to parse map name as expression");
         self.create_required_fields
             .iter()
+            .filter(|f| {
+                if let Some(ignore) = ignore_relation {
+                    f.prisma_name != ignore
+                } else {
+                    true
+                }
+            })
             .map(|field| {
                 let rust_name = syn::Ident::new(&field.rust_name, proc_macro2::Span::call_site());
                 let prisma_name = &field.prisma_name;
 
-                quote! {
-                    data_map.insert(#prisma_name.to_string(), prisma_core::query_core::ArgumentValue::Scalar(prisma_core::query_structure::PrismaValue::from(#rust_name)));
+                if field.is_relation {
+                    let rel_builder = quote::format_ident!("{}{}RelationWriteBuilder", self.name, field.rust_name.to_upper_camel_case());
+                    quote! {
+                        {
+                            let mut rel_builder = #rel_builder::default();
+                            #rust_name(&mut rel_builder);
+                            #map_expr.insert(#prisma_name.to_string(), prisma_core::query_core::ArgumentValue::Object(rel_builder.data));
+                        }
+                    }
+                } else {
+                    quote! {
+                        #map_expr.insert(#prisma_name.to_string(), prisma_core::query_core::ArgumentValue::Scalar(prisma_core::query_structure::PrismaValue::from(#rust_name)));
+                    }
                 }
             })
             .collect::<Vec<_>>()
             .into_iter()
             .collect()
     }
+
+    pub fn create_data_inserts(&self, map_name: &str) -> proc_macro2::TokenStream {
+        self.create_data_inserts_with_ignore(map_name, None)
+    }
 }
 
-/// Generate type-safe filter methods for a model
-pub fn generate_scalar_filter_methods(fields: &[FieldMetadata]) -> Vec<proc_macro2::TokenStream> {
+/// Generate type-safe filter methods for a model (scalars and relations)
+pub fn generate_filter_methods(fields: &[FieldMetadata]) -> Vec<proc_macro2::TokenStream> {
     fields
         .iter()
         .filter_map(|field| {
-            if field.is_relation {
-                return None;
-            }
+            let rust_field_name = syn::Ident::new(&field.rust_name, proc_macro2::Span::call_site());
+            let prisma_name = &field.prisma_name;
 
-            if let Some((filter_builder_name, _trait_name)) = get_filter_type(&field.field_type) {
-                let rust_field_name = syn::Ident::new(&field.rust_name, proc_macro2::Span::call_site());
+            if field.is_relation {
+                let inner_type_str = get_inner_type(&field.field_type);
+                let related_where_builder = syn::Ident::new(
+                    &format!("{}WhereBuilder", inner_type_str),
+                    proc_macro2::Span::call_site(),
+                );
+
+                Some(quote! {
+                    pub fn #rust_field_name(&mut self) -> prisma_core::RelationFilter<'_, Self, #related_where_builder> {
+                        prisma_core::RelationFilter {
+                            builder: self,
+                            field_name: #prisma_name,
+                            _phantom: std::marker::PhantomData,
+                        }
+                    }
+                })
+            } else if let Some((filter_builder_name, _trait_name)) = get_filter_type(&field.field_type) {
                 let filter_builder_ident = syn::Ident::new(filter_builder_name, proc_macro2::Span::call_site());
-                let prisma_name = &field.prisma_name;
 
                 Some(quote! {
                     pub fn #rust_field_name(&mut self) -> prisma_core::#filter_builder_ident<'_, Self> {
@@ -110,19 +178,17 @@ pub fn generate_scalar_filter_methods(fields: &[FieldMetadata]) -> Vec<proc_macr
         .collect()
 }
 
-/// Generate equality filter methods for unique fields
+/// Generate unique filter methods for UniqueWhereBuilder
 pub fn generate_unique_filter_methods(fields: &[FieldMetadata]) -> Vec<proc_macro2::TokenStream> {
     fields
         .iter()
-        .filter_map(|field| {
-            if !field.is_unique {
-                return None;
-            }
-
+        .filter(|f| f.is_unique || f.is_id)
+        .map(|field| {
             let rust_name = syn::Ident::new(&field.rust_name, proc_macro2::Span::call_site());
             let prisma_name = &field.prisma_name;
+            let _ty = &field.field_type;
 
-            Some(quote! {
+            quote! {
                 pub fn #rust_name<T>(&mut self, value: T) -> &mut Self
                 where T: Into<prisma_core::query_structure::PrismaValue>
                 {
@@ -130,12 +196,12 @@ pub fn generate_unique_filter_methods(fields: &[FieldMetadata]) -> Vec<proc_macr
                     self.add_arg(#prisma_name.to_string(), prisma_core::query_core::ArgumentValue::Scalar(value.into()));
                     self
                 }
-            })
+            }
         })
         .collect()
 }
 
-/// Generate select methods for scalar and relation fields
+/// Generate selection builder methods
 pub fn generate_select_methods(fields: &[FieldMetadata]) -> Vec<proc_macro2::TokenStream> {
     fields
         .iter()
@@ -156,10 +222,10 @@ pub fn generate_select_methods(fields: &[FieldMetadata]) -> Vec<proc_macro2::Tok
                     {
                         let mut builder = #related_select_builder::default();
                         f(&mut builder);
+                        let selections: Vec<prisma_core::query_core::Selection> = builder.into();
                         let mut sel = prisma_core::query_core::Selection::with_name(#prisma_name.to_string());
-                        let nested: Vec<prisma_core::query_core::Selection> = builder.into();
-                        for n in nested {
-                            sel.push_nested_selection(n);
+                        for s in selections {
+                            sel.push_nested_selection(s);
                         }
                         self.selections.push(sel);
                         self
@@ -177,31 +243,32 @@ pub fn generate_select_methods(fields: &[FieldMetadata]) -> Vec<proc_macro2::Tok
         .collect()
 }
 
-/// Generate data builder methods for scalar fields
-pub fn generate_data_methods(fields: &[FieldMetadata]) -> Vec<proc_macro2::TokenStream> {
+/// Generate data builder methods for scalar and relation fields
+pub fn generate_data_methods(model_name: &syn::Ident, fields: &[FieldMetadata]) -> Vec<proc_macro2::TokenStream> {
     fields
         .iter()
         .filter_map(|field| {
-            let rust_name = syn::Ident::new(&field.rust_name, proc_macro2::Span::call_site());
+            let rust_name = syn::Ident::new(format!("{}", heck::AsSnakeCase(&field.rust_name)).as_str(), proc_macro2::Span::call_site());
             let prisma_name = &field.prisma_name;
 
             if field.is_relation {
-                // Relation fields get special handling
-                let inner_type = get_inner_type(&field.field_type);
-                let related_data_builder =
-                    syn::Ident::new(&format!("{}DataBuilder", inner_type), proc_macro2::Span::call_site());
+                let _inner_type = get_inner_type(&field.field_type);
+                let rel_write_builder = syn::Ident::new(
+                    &format!("{}{}RelationWriteBuilder", model_name, field.rust_name.to_upper_camel_case()),
+                    proc_macro2::Span::call_site(),
+                );
 
                 Some(quote! {
                     pub fn #rust_name<F>(&mut self, f: F) -> &mut Self
-                    where F: FnOnce(&mut #related_data_builder)
+                    where F: FnOnce(&mut #rel_write_builder)
                     {
-                        let mut builder = #related_data_builder::default();
+                        let mut builder = #rel_write_builder::default();
                         f(&mut builder);
-
-                        let mut create_map = prisma_core::IndexMap::new();
-                        create_map.insert("create".to_string(), prisma_core::query_core::ArgumentValue::Object(builder.data));
-
-                        self.data.insert(#prisma_name.to_string(), prisma_core::query_core::ArgumentValue::Object(create_map));
+                        if !builder.data.is_empty() {
+                            // The RelationWriteBuilder already has the "create" or "connect" key!
+                            // So we just need to insert its internal map as the value for this field.
+                            self.data.insert(#prisma_name.to_string(), prisma_core::query_core::ArgumentValue::Object(builder.data));
+                        }
                         self
                     }
                 })
@@ -216,58 +283,6 @@ pub fn generate_data_methods(fields: &[FieldMetadata]) -> Vec<proc_macro2::Token
                     }
                 })
             }
-        })
-        .collect()
-}
-
-/// Generate include methods for relation fields
-pub fn generate_include_methods(fields: &[FieldMetadata]) -> Vec<proc_macro2::TokenStream> {
-    fields
-        .iter()
-        .filter_map(|field| {
-            if !field.is_relation {
-                return None;
-            }
-
-            let rust_name = syn::Ident::new(&field.rust_name, proc_macro2::Span::call_site());
-            let with_suffix_name =
-                syn::Ident::new(&format!("{}_with", field.rust_name), proc_macro2::Span::call_site());
-            let prisma_name = &field.prisma_name;
-            let inner_type_str = get_inner_type(&field.field_type);
-            let related_select_builder = syn::Ident::new(
-                &format!("{}SelectBuilder", inner_type_str),
-                proc_macro2::Span::call_site(),
-            );
-
-            Some(quote! {
-                // Include all fields of this relation
-                pub fn #rust_name(&mut self) -> &mut Self {
-                    let mut builder = #related_select_builder::default();
-                    builder.all();
-                    let mut sel = prisma_core::query_core::Selection::with_name(#prisma_name.to_string());
-                    let fields: Vec<prisma_core::query_core::Selection> = builder.into();
-                    for f in fields {
-                        sel.push_nested_selection(f);
-                    }
-                    self.includes.push(sel);
-                    self
-                }
-
-                // Include specific fields of this relation via closure
-                pub fn #with_suffix_name<F>(&mut self, f: F) -> &mut Self
-                where F: FnOnce(&mut #related_select_builder)
-                {
-                    let mut builder = #related_select_builder::default();
-                    f(&mut builder);
-                    let mut sel = prisma_core::query_core::Selection::with_name(#prisma_name.to_string());
-                    let fields: Vec<prisma_core::query_core::Selection> = builder.into();
-                    for f in fields {
-                        sel.push_nested_selection(f);
-                    }
-                    self.includes.push(sel);
-                    self
-                }
-            })
         })
         .collect()
 }
