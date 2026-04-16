@@ -7,7 +7,7 @@ license.workspace = true
 
 [dependencies]
 anyhow = "1"
-saola-core = { path = "../saola-core" }
+saola-core = { path = "../saola-core", features = ["full"] }
 saola-macros = { path = "../saola-macros" }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 serde = { workspace = true }

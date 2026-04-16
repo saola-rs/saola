@@ -4248,11 +4248,13 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "indexmap 2.14.0",
+ "mongodb-query-connector",
  "psl",
  "quaint",
  "query-connector",
  "query-core",
  "query-structure",
+ "saola-schema",
  "schema",
  "schema-core",
  "serde",

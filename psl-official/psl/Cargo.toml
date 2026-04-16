@@ -13,7 +13,7 @@ mongodb = ["psl-core/mongodb"]
 all = ["postgresql", "sqlite", "mysql", "cockroachdb", "mssql", "mongodb"]
 
 [dependencies]
-psl-core.workspace = true
+psl-core = { workspace = true }
 
 [dev-dependencies]
 base64.workspace = true

@@ -13,3 +13,12 @@ parser-database = { workspace = true }
 diagnostics = { workspace = true }
 thiserror = { workspace = true }
 anyhow = { workspace = true }
+
+[features]
+default = []
+postgresql = ["psl-core/postgresql"]
+mysql = ["psl-core/mysql"]
+sqlite = ["psl-core/sqlite"]
+mssql = ["psl-core/mssql"]
+mongodb = ["psl-core/mongodb"]
+cockroachdb = ["psl-core/cockroachdb"]

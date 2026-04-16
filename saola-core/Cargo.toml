@@ -10,9 +10,10 @@ indexmap = { workspace = true }
 schema = { workspace = true }
 query-core = { workspace = true }
 query-connector = { workspace = true }
-sql-query-connector = { workspace = true, features = ["postgresql-native", "mysql-native", "sqlite-native", "mssql-native"] }
+sql-query-connector = { workspace = true, default-features = false }
+mongodb-query-connector = { workspace = true, default-features = false, optional = true }
 schema-core = { workspace = true }
-quaint = { workspace = true, features = ["all-native"] }
+quaint = { workspace = true, default-features = false }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true }
@@ -20,3 +21,14 @@ thiserror = { workspace = true }
 anyhow = { workspace = true }
 psl = { workspace = true }
 query-structure = { workspace = true }
+saola-schema = { workspace = true }
+
+[features]
+default = ["sqlite"] # SQLite as default for easy getting started
+postgresql = ["sql-query-connector/postgresql-native", "quaint/postgresql-native", "saola-schema/postgresql", "psl/postgresql"]
+mysql = ["sql-query-connector/mysql-native", "quaint/mysql-native", "saola-schema/mysql", "psl/mysql"]
+sqlite = ["sql-query-connector/sqlite-native", "quaint/sqlite-native", "saola-schema/sqlite", "psl/sqlite"]
+mssql = ["sql-query-connector/mssql-native", "quaint/mssql-native", "saola-schema/mssql", "psl/mssql"]
+mongodb = ["mongodb-query-connector", "saola-schema/mongodb", "psl/mongodb"]
+cockroachdb = ["postgresql", "saola-schema/cockroachdb", "psl/cockroachdb"]
+full = ["postgresql", "mysql", "sqlite", "mssql", "mongodb", "cockroachdb"]

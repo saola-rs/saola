@@ -3,10 +3,6 @@ datasource db {
   url = "file:/home/ravi/Documents/prisma/dev.db"
 }
 
-generator client {
-  provider = "prisma-client-js"
-}
-
 enum Role {
   ADMIN
   USER

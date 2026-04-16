@@ -1,4 +1,4 @@
-/// Transaction support for prisma-core
+/// Transaction support for saola-core
 use query_core::{QueryExecutor, TxId, executor::TransactionOptions, protocol::EngineProtocol};
 use std::sync::Arc;
 
@@ -19,6 +19,7 @@ pub enum IsolationLevel {
     /// Repeatable Read - default for MySQL (prevents non-repeatable reads)
     RepeatableRead,
     /// Snapshot - SQL Server only (MVCC-like isolation)
+    #[cfg(feature = "mssql")]
     Snapshot,
     /// Serializable - strictest level, default for CockroachDB and SQLite
     Serializable,
@@ -31,6 +32,7 @@ impl IsolationLevel {
             IsolationLevel::ReadUncommitted => "ReadUncommitted",
             IsolationLevel::ReadCommitted => "ReadCommitted",
             IsolationLevel::RepeatableRead => "RepeatableRead",
+            #[cfg(feature = "mssql")]
             IsolationLevel::Snapshot => "Snapshot",
             IsolationLevel::Serializable => "Serializable",
         }

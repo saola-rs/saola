@@ -35,10 +35,10 @@ authors = ["Ravi", "Prisma Team"]
 license = "MIT"
 
 [workspace.dependencies]
-saola-schema = { path = "./saola-schema" }
+saola-schema = { path = "./saola-schema", default-features = false }
 # PSL (Prisma Schema Language) - Official Prisma Parser
-psl = { path = "./psl-official/psl" }
-psl-core = { path = "./psl-official/psl-core", features = ["postgresql", "sqlite", "mysql", "cockroachdb", "mssql", "mongodb"] }
+psl = { path = "./psl-official/psl", default-features = false }
+psl-core = { path = "./psl-official/psl-core", default-features = false }
 diagnostics = { path = "./psl-official/diagnostics" }
 schema-ast = { path = "./psl-official/schema-ast" }
 parser-database = { path = "./psl-official/parser-database" }
