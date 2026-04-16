@@ -562,6 +562,228 @@ pub fn generate_write_wrapper(model_name: &syn::Ident, model_metadata: &ModelMet
     }
 }
 
+pub fn generate_create_many_wrapper(model_name: &syn::Ident, model_metadata: &ModelMetadata) -> proc_macro2::TokenStream {
+    let wrapper_name = format_ident!("{}CreateManyBuilder", model_name);
+    let data_builder_name = format_ident!("{}DataBuilder", model_name);
+
+    quote! {
+        pub struct #wrapper_name {
+            inner: ::prisma_core::CreateManyBuilder,
+        }
+
+        impl #wrapper_name {
+            pub fn data<F>(mut self, f: F) -> Self
+            where F: FnOnce(&mut #data_builder_name)
+            {
+                let mut builder = #data_builder_name::default();
+                f(&mut builder);
+                
+                let mut list = match self.inner.state.arguments.get("data") {
+                    Some(::prisma_core::query_core::ArgumentValue::List(l)) => l.clone(),
+                    _ => Vec::new(),
+                };
+                list.push(::prisma_core::query_core::ArgumentValue::Object(builder.data));
+
+                use ::prisma_core::Filterable;
+                self.inner.add_filter_arg("data".to_string(), ::prisma_core::query_core::ArgumentValue::List(list));
+                self
+            }
+
+            pub fn skip_duplicates(mut self, skip: bool) -> Self {
+                self.inner = self.inner.skip_duplicates(skip);
+                self
+            }
+
+            pub async fn exec(self, client: &::prisma_core::client::PrismaClient) -> ::prisma_core::Result<i64> {
+                self.inner.exec(client).await
+            }
+        }
+    }
+}
+
+pub fn generate_create_many_and_return_wrapper(model_name: &syn::Ident, model_metadata: &ModelMetadata) -> proc_macro2::TokenStream {
+    let wrapper_name = format_ident!("{}CreateManyAndReturnBuilder", model_name);
+    let data_builder_name = format_ident!("{}DataBuilder", model_name);
+    let select_builder_name = format_ident!("{}SelectBuilder", model_name);
+    let scalar_field_names = &model_metadata.scalar_field_names;
+
+    quote! {
+        pub struct #wrapper_name {
+            inner: ::prisma_core::CreateManyAndReturnBuilder<#model_name>,
+        }
+
+        impl #wrapper_name {
+            pub fn data<F>(mut self, f: F) -> Self
+            where F: FnOnce(&mut #data_builder_name)
+            {
+                let mut builder = #data_builder_name::default();
+                f(&mut builder);
+                
+                let mut list = match self.inner.state.arguments.get("data") {
+                    Some(::prisma_core::query_core::ArgumentValue::List(l)) => l.clone(),
+                    _ => Vec::new(),
+                };
+                list.push(::prisma_core::query_core::ArgumentValue::Object(builder.data));
+
+                use ::prisma_core::Filterable;
+                self.inner.add_filter_arg("data".to_string(), ::prisma_core::query_core::ArgumentValue::List(list));
+                self
+            }
+
+            pub fn skip_duplicates(mut self, skip: bool) -> Self {
+                self.inner = self.inner.skip_duplicates(skip);
+                self
+            }
+
+            pub fn select<F>(mut self, f: F) -> #wrapper_name where F: FnOnce(&mut #select_builder_name) {
+                // Not strictly needed to change return type as we don't have SelectManyBuilder yet,
+                // but we clear selections and add new ones.
+                let mut builder = #select_builder_name::default();
+                f(&mut builder);
+                let selections: Vec<::prisma_core::query_core::Selection> = builder.into();
+                use ::prisma_core::Selectable;
+                self.inner.state.selection.clear_nested_selections();
+                for sel in selections { self.inner.add_nested_selection(sel); }
+                self
+            }
+
+            pub async fn exec(self, client: &::prisma_core::client::PrismaClient) -> ::prisma_core::Result<Vec<#model_name>> {
+                // Apply defaults if no select called
+                let mut builder = self;
+                if builder.inner.state.selection.nested_selections().is_empty() {
+                    for field in &[#(#scalar_field_names),*] {
+                        use ::prisma_core::Selectable;
+                        builder.inner.add_nested_selection(::prisma_core::query_core::Selection::with_name(field.to_string()));
+                    }
+                }
+                builder.inner.exec(client).await
+            }
+        }
+    }
+}
+
+pub fn generate_update_many_wrapper(model_name: &syn::Ident, model_metadata: &ModelMetadata) -> proc_macro2::TokenStream {
+    let wrapper_name = format_ident!("{}UpdateManyBuilder", model_name);
+    let where_builder_name = format_ident!("{}WhereBuilder", model_name);
+    let data_builder_name = format_ident!("{}DataBuilder", model_name);
+
+    quote! {
+        pub struct #wrapper_name {
+            inner: ::prisma_core::UpdateManyBuilder,
+        }
+
+        impl #wrapper_name {
+            pub fn where_clause<F>(mut self, f: F) -> Self
+            where F: FnOnce(&mut #where_builder_name)
+            {
+                let mut builder = #where_builder_name::default();
+                f(&mut builder);
+                if !builder.args.is_empty() {
+                    let mut map = ::prisma_core::IndexMap::new();
+                    for (k, v) in builder.args { map.insert(k, v); }
+                    use ::prisma_core::Filterable;
+                    self.inner.add_filter_arg("where".to_string(), ::prisma_core::query_core::ArgumentValue::Object(map));
+                }
+                self
+            }
+
+            pub fn data<F>(mut self, f: F) -> Self
+            where F: FnOnce(&mut #data_builder_name)
+            {
+                let mut builder = #data_builder_name::default();
+                f(&mut builder);
+                use ::prisma_core::Filterable;
+                self.inner.add_filter_arg("data".to_string(), ::prisma_core::query_core::ArgumentValue::Object(builder.data));
+                self
+            }
+
+            pub async fn exec(self, client: &::prisma_core::client::PrismaClient) -> ::prisma_core::Result<i64> {
+                self.inner.exec(client).await
+            }
+        }
+    }
+}
+
+pub fn generate_delete_many_wrapper(model_name: &syn::Ident, model_metadata: &ModelMetadata) -> proc_macro2::TokenStream {
+    let wrapper_name = format_ident!("{}DeleteManyBuilder", model_name);
+    let where_builder_name = format_ident!("{}WhereBuilder", model_name);
+
+    quote! {
+        pub struct #wrapper_name {
+            inner: ::prisma_core::DeleteManyBuilder,
+        }
+
+        impl #wrapper_name {
+            pub fn where_clause<F>(mut self, f: F) -> Self
+            where F: FnOnce(&mut #where_builder_name)
+            {
+                let mut builder = #where_builder_name::default();
+                f(&mut builder);
+                if !builder.args.is_empty() {
+                    let mut map = ::prisma_core::IndexMap::new();
+                    for (k, v) in builder.args { map.insert(k, v); }
+                    use ::prisma_core::Filterable;
+                    self.inner.add_filter_arg("where".to_string(), ::prisma_core::query_core::ArgumentValue::Object(map));
+                }
+                self
+            }
+
+            pub async fn exec(self, client: &::prisma_core::client::PrismaClient) -> ::prisma_core::Result<i64> {
+                self.inner.exec(client).await
+            }
+        }
+    }
+}
+
+pub fn generate_upsert_wrapper(model_name: &syn::Ident, model_metadata: &ModelMetadata) -> proc_macro2::TokenStream {
+    let wrapper_name = format_ident!("{}UpsertBuilder", model_name);
+    let where_unique_builder_name = format_ident!("{}UniqueWhereBuilder", model_name);
+    let data_builder_name = format_ident!("{}DataBuilder", model_name);
+    let create_params = model_metadata.create_params();
+    let create_data_inserts = model_metadata.create_data_inserts("create_builder.data");
+
+    quote! {
+        pub struct #wrapper_name {
+            inner: ::prisma_core::WriteBuilder<#model_name>,
+        }
+
+        impl #wrapper_name {
+            pub fn where_clause<F>(mut self, f: F) -> Self
+            where F: FnOnce(&mut #where_unique_builder_name)
+            {
+                let mut builder = #where_unique_builder_name::default();
+                f(&mut builder);
+                use ::prisma_core::FilterBuilder;
+                self.inner.add_filter_arg("where".to_string(), ::prisma_core::query_core::ArgumentValue::Object(builder.build()));
+                self
+            }
+
+            pub fn update<F>(mut self, f: F) -> Self
+            where F: FnOnce(&mut #data_builder_name)
+            {
+                let mut builder = #data_builder_name::default();
+                f(&mut builder);
+                self.inner.add_filter_arg("update".to_string(), ::prisma_core::query_core::ArgumentValue::Object(builder.data));
+                self
+            }
+
+            pub fn create<F>(mut self, #create_params, f: F) -> Self
+            where F: FnOnce(&mut #data_builder_name)
+            {
+                let mut create_builder = #data_builder_name::default();
+                #create_data_inserts
+                f(&mut create_builder);
+                self.inner.add_filter_arg("create".to_string(), ::prisma_core::query_core::ArgumentValue::Object(create_builder.data));
+                self
+            }
+
+            pub async fn exec(self, client: &::prisma_core::client::PrismaClient) -> ::prisma_core::Result<#model_name> {
+                self.inner.exec_inferred(client).await
+            }
+        }
+    }
+}
+
 pub fn generate_count_wrapper(model_name: &syn::Ident) -> proc_macro2::TokenStream {
     let count_wrapper_name = format_ident!("{}CountBuilder", model_name);
     let where_builder_name = format_ident!("{}WhereBuilder", model_name);

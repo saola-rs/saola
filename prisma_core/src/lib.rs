@@ -28,7 +28,7 @@ pub use filters::{
     BoolFieldOps, DateTimeFieldOps, EnumFieldOps, FloatFieldOps, IntFieldOps, RelationFilterOps, StringFieldOps,
 };
 pub use read::ReadBuilder;
-pub use write::WriteBuilder;
+pub use write::{CreateManyAndReturnBuilder, CreateManyBuilder, DeleteManyBuilder, UpdateManyBuilder, WriteBuilder};
 
 // Standard Result type using anyhow::Error
 pub type Result<T> = anyhow::Result<T>;

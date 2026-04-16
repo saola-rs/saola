@@ -17,6 +17,12 @@ pub fn generate_query_factory(
     let first_throw_name = format_ident!("{}FirstOrThrowReadBuilder", model_name);
 
     let write_wrapper_name = format_ident!("{}WriteBuilder", model_name);
+    let upsert_wrapper_name = format_ident!("{}UpsertBuilder", model_name);
+    let create_many_wrapper_name = format_ident!("{}CreateManyBuilder", model_name);
+    let create_many_and_return_wrapper_name = format_ident!("{}CreateManyAndReturnBuilder", model_name);
+    let update_many_wrapper_name = format_ident!("{}UpdateManyBuilder", model_name);
+    let delete_many_wrapper_name = format_ident!("{}DeleteManyBuilder", model_name);
+
     let count_wrapper_name = format_ident!("{}CountBuilder", model_name);
     let aggregate_wrapper_name = format_ident!("{}AggregateBuilder", model_name);
     let group_by_wrapper_name = format_ident!("{}GroupByBuilder", model_name);
@@ -97,6 +103,36 @@ pub fn generate_query_factory(
                 #write_wrapper_name {
                     inner: ::prisma_core::WriteBuilder::<#model_name>::delete(#model_name_str.to_string(), vec![#(#scalar_field_names.to_string()),*]),
                     _phantom: std::marker::PhantomData,
+                }
+            }
+
+            pub fn upsert(&self) -> #upsert_wrapper_name {
+                #upsert_wrapper_name {
+                    inner: ::prisma_core::WriteBuilder::<#model_name>::upsert(#model_name_str.to_string(), vec![#(#scalar_field_names.to_string()),*])
+                }
+            }
+
+            pub fn create_many(&self) -> #create_many_wrapper_name {
+                #create_many_wrapper_name {
+                    inner: ::prisma_core::CreateManyBuilder::new(#model_name_str.to_string())
+                }
+            }
+
+            pub fn create_many_and_return(&self) -> #create_many_and_return_wrapper_name {
+                #create_many_and_return_wrapper_name {
+                    inner: ::prisma_core::CreateManyAndReturnBuilder::new(#model_name_str.to_string(), vec![#(#scalar_field_names.to_string()),*])
+                }
+            }
+
+            pub fn update_many(&self) -> #update_many_wrapper_name {
+                #update_many_wrapper_name {
+                    inner: ::prisma_core::UpdateManyBuilder::new(#model_name_str.to_string())
+                }
+            }
+
+            pub fn delete_many(&self) -> #delete_many_wrapper_name {
+                #delete_many_wrapper_name {
+                    inner: ::prisma_core::DeleteManyBuilder::new(#model_name_str.to_string())
                 }
             }
 

@@ -159,15 +159,27 @@ async fn main() -> anyhow::Result<()> {
         .await?;
     println!("  ✓ Total USERs in database: {}", count);
 
-    // 8. UPDATE Operation (using Unique Filter)
-    println!("\n[7. Update User Display Name]");
+    // 8. UPDATE Operation with Nested Relation Writes
+    println!("\n[7. Update User with Nested Relation Writes]");
     let updated_user = user()
         .update()
         .where_clause(|w| {
             w.email(unique_email.clone());
         })
         .data(|d| {
-            d.display_name("Prisma User".to_string());
+            d.display_name("Prisma Power User".to_string());
+            // Nested update: Update a specific post
+            d.posts(|p| {
+                p.update(|w| { w.title("Nested Post 1".to_string()); }, |d| {
+                    d.title("Updated Nested Post 1".to_string());
+                });
+                // Nested upsert: Update or create a post
+                p.upsert(|w| { w.title("New Upserted Post".to_string()); }, 
+                    "New Upserted Post".to_string(), // Required title
+                    |_| {}, // Create closure
+                    |d| { d.status(PostStatus::PUBLISHED); } // Update closure
+                );
+            });
         })
         .exec(&client)
         .await?;
@@ -183,6 +195,41 @@ async fn main() -> anyhow::Result<()> {
         .exec(&client)
         .await?;
     println!("  ✓ Deleted User: {}", deleted_user.email);
+
+    // 10. BULK Operations
+    println!("\n[9. Bulk Operations]");
+    let created_users = user()
+        .create_many()
+        .data(|d| { d.email(format!("bulk-ret1-{}@example.com", unique_email)); })
+        .data(|d| { d.email(format!("bulk-ret2-{}@example.com", unique_email)); })
+        .exec(&client)
+        .await?;
+    println!("  ✓ Bulk created {} users", created_users);
+
+    // Test CreateManyAndReturn
+    let created_users_with_data = user()
+        .create_many_and_return()
+        .data(|d| { d.email(format!("bulk-and-ret1-{}@example.com", unique_email)); })
+        .data(|d| { d.email(format!("bulk-and-ret2-{}@example.com", unique_email)); })
+        .exec(&client)
+        .await?;
+    println!("  ✓ Bulk created and returned {} users: {:?}", created_users_with_data.len(),
+        created_users_with_data.iter().map(|u| u.email.as_str()).collect::<Vec<_>>());
+
+    let updated_count = user()
+        .update_many()
+        .where_clause(|w| { w.email().contains("bulk".to_string()); })
+        .data(|d| { d.display_name("Bulk User".to_string()); })
+        .exec(&client)
+        .await?;
+    println!("  ✓ Bulk updated {} users", updated_count);
+
+    let deleted_count = user()
+        .delete_many()
+        .where_clause(|w| { w.email().contains("bulk".to_string()); })
+        .exec(&client)
+        .await?;
+    println!("  ✓ Bulk deleted {} users", deleted_count);
 
     println!("\n[All supported features demonstrated] ✓\n");
     Ok(())

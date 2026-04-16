@@ -37,7 +37,7 @@ model Profile {
 
 model Post {
   id        String     @id @default(cuid())
-  title     String
+  title     String     @unique
   status    PostStatus @default(DRAFT)
   published Boolean    @default(false)
   userId    String
