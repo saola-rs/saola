@@ -59,7 +59,10 @@ impl CreateManyBuilder {
     }
 
     pub fn skip_duplicates(mut self, skip: bool) -> Self {
-        self.state.arguments.insert("skipDuplicates".to_string(), ArgumentValue::Scalar(crate::query_structure::PrismaValue::Boolean(skip)));
+        self.state.arguments.insert(
+            "skipDuplicates".to_string(),
+            ArgumentValue::Scalar(crate::query_structure::PrismaValue::Boolean(skip)),
+        );
         self
     }
 
@@ -94,7 +97,10 @@ impl<T> CreateManyAndReturnBuilder<T> {
     }
 
     pub fn skip_duplicates(mut self, skip: bool) -> Self {
-        self.state.arguments.insert("skipDuplicates".to_string(), ArgumentValue::Scalar(crate::query_structure::PrismaValue::Boolean(skip)));
+        self.state.arguments.insert(
+            "skipDuplicates".to_string(),
+            ArgumentValue::Scalar(crate::query_structure::PrismaValue::Boolean(skip)),
+        );
         self
     }
 }
@@ -113,7 +119,9 @@ impl<T: serde::de::DeserializeOwned + Send + Sync> CreateManyAndReturnBuilder<T>
         let list = if let serde_json::Value::Array(_) = res {
             res
         } else {
-            res.get(&op_name).cloned().unwrap_or(serde_json::Value::Array(Vec::new()))
+            res.get(&op_name)
+                .cloned()
+                .unwrap_or(serde_json::Value::Array(Vec::new()))
         };
         Ok(serde_json::from_value(list)?)
     }
