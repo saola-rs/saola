@@ -4,6 +4,11 @@
 
 This example application demonstrates **Saola** (Prisma for Rust) with a real-world blog platform scenario. The project now has a clean separation between demo and comprehensive testing.
 
+use prisma 6.19 for migrations 
+```
+bunx prisma@6.19 migrate
+```
+
 ## Project Structure
 
 ```
