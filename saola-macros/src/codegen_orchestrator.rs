@@ -39,6 +39,13 @@ pub fn generate_module(schema: &psl::ValidatedSchema, schema_path: &str) -> proc
             }
             .to_string();
 
+            let mut field_type: syn::Type = syn::parse_str(&field_type_str).unwrap();
+            let is_optional = !field.ast_field().arity.is_required();
+
+            if is_optional {
+                field_type = syn::parse_quote! { Option<#field_type> };
+            }
+
             fields.push(FieldMetadata {
                 rust_name: field.name().to_snake_case(),
                 prisma_name: field.name().to_string(),
@@ -48,13 +55,13 @@ pub fn generate_module(schema: &psl::ValidatedSchema, schema_path: &str) -> proc
                     .primary_key()
                     .map(|pk| pk.fields().any(|f| f.field_id() == field.field_id()))
                     .unwrap_or(false),
-                is_optional: !field.ast_field().arity.is_required(),
+                is_optional,
                 is_list: field.ast_field().arity.is_list(),
                 is_relation_link: relation_link_fields.contains(&field.field_id()),
                 has_default: field.default_value().is_some(),
                 is_updated_at: field.is_updated_at(),
                 opposite_relation_field: None,
-                field_type: syn::parse_str(&field_type_str).unwrap(),
+                field_type,
             });
         }
         for field in walker.relation_fields() {

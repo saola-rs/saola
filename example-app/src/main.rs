@@ -216,16 +216,20 @@ async fn main() -> anyhow::Result<()> {
         .select_as(saola::select_as!({
             id: String,
             title: String,
-            views: i32
+            views: i32,
+            user: {
+                email: String,
+                password?: String
+            }
         }))
         .where_clause(|w| {
             w.published().eq(true);
         })
-        .take(5)
+        .take(1)
         .exec(&client)
         .await?;
 
-    println!("  Selected {} posts with id, title, views only", minimal_posts.len());
+    println!("  ✅ Selected partial data: {:?}", minimal_posts.first());
     println!();
 
     println!("✨ Demo complete!\n");

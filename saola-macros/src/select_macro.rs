@@ -16,6 +16,7 @@ pub struct SelectShape {
 
 pub struct FieldShape {
     pub name: Ident,
+    pub is_optional: bool,
     pub ty: FieldType,
 }
 
@@ -49,6 +50,12 @@ impl Parse for SelectShape {
 impl Parse for FieldShape {
     fn parse(input: ParseStream) -> Result<Self> {
         let name: Ident = input.parse()?;
+        let is_optional = if input.peek(Token![?]) {
+            input.parse::<Token![?]>()?;
+            true
+        } else {
+            false
+        };
         input.parse::<Token![:]>()?;
 
         if input.peek(Token![struct]) || input.peek(syn::token::Brace) {
@@ -77,12 +84,14 @@ impl Parse for FieldShape {
 
             Ok(FieldShape {
                 name,
+                is_optional,
                 ty: FieldType::Nested(SelectShapeNested { is_array, fields }),
             })
         } else {
             let ty: Type = input.parse()?;
             Ok(FieldShape {
                 name,
+                is_optional,
                 ty: FieldType::Scalar(ty),
             })
         }
@@ -107,9 +116,15 @@ fn generate_struct_and_selects(
 
         match &field.ty {
             FieldType::Scalar(ty) => {
+                let final_ty = if field.is_optional {
+                    quote! { Option<#ty> }
+                } else {
+                    quote! { #ty }
+                };
+
                 struct_fields.push(quote! {
                     #[serde(rename = #prisma_name)]
-                    pub #name: #ty
+                    pub #name: #final_ty
                 });
                 // In select builder, scalars are methods that return SelectionField
                 select_calls.push(quote! { s.#name().assert_type(&_check.#name); });
@@ -138,17 +153,25 @@ fn generate_struct_and_selects(
                     }
                 });
 
-                if nested.is_array {
-                    struct_fields.push(quote! {
-                        #[serde(rename = #prisma_name)]
-                        pub #name: Vec<#sub_struct_name>
-                    });
+                let final_nested_ty = if nested.is_array {
+                    quote! { Vec<#sub_struct_name> }
                 } else {
-                    struct_fields.push(quote! {
-                        #[serde(rename = #prisma_name)]
-                        pub #name: Option<Box<#sub_struct_name>>
-                    });
+                    quote! { Option<Box<#sub_struct_name>> }
+                };
+
+                if field.is_optional {
+                    // If the relation itself is marked optional in select macro, wrap in Option
+                    // Note: for to-one it's already Option, but this allows explicitly showing it's optional
+                    // Actually for relations, optionality is usually determined by the schema.
+                    // But if they write `user?: { ... }`, we should ensure it's Option.
+                    // To-one is already Option<Box<...>>.
+                    // To-many is Vec<...>. We don't usually make to-many optional.
                 }
+
+                struct_fields.push(quote! {
+                    #[serde(rename = #prisma_name)]
+                    pub #name: #final_nested_ty
+                });
 
                 // In select builder, relations return SelectionRelField
                 select_calls.push(quote! {
