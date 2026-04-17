@@ -51,11 +51,13 @@ pub fn generate_where_builder(model_name: &syn::Ident, model_metadata: &ModelMet
                 let mut builder = Self::default();
                 f(&mut builder);
                 if !builder.args.is_empty() {
-                    let mut map = saola_core::IndexMap::new();
+                    let mut vec = Vec::new();
                     for (k, v) in std::mem::take(&mut builder.args) {
+                        let mut map = saola_core::IndexMap::new();
                         map.insert(k, v);
+                        vec.push(saola_core::query_core::ArgumentValue::Object(map));
                     }
-                    self.args.push(("OR".to_string(), saola_core::query_core::ArgumentValue::List(vec![saola_core::query_core::ArgumentValue::Object(map)])));
+                    self.args.push(("OR".to_string(), saola_core::query_core::ArgumentValue::List(vec)));
                 }
                 self
             }

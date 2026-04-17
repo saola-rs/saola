@@ -11,7 +11,10 @@ async fn main() -> anyhow::Result<()> {
     // ============ SCENARIO 1: Blog Writer Creates a Post ============
     println!("📝 Scenario 1: Creating a blog post with profile & metadata\n");
 
-    let unique_ts = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis();
+    let unique_ts = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_millis();
     let unique_email = format!("alice-{}@blog.com", unique_ts);
 
     // email and name are required. password has no default but is optional (?), so it's not a positional arg.
@@ -43,13 +46,17 @@ async fn main() -> anyhow::Result<()> {
                 );
             });
         })
-        .include(|u| {
-            u.posts()
-        })
+        .include(|u| u.posts())
+        .include(|u| u.profile())
         .exec(&client)
         .await?;
 
-    println!("✅ Created user: {} with {} posts\n", writer.name, writer.posts.len());
+    println!(
+        "✅ Created user: {} with {} posts\n {:?}",
+        writer.name,
+        writer.posts.len(),
+        writer
+    );
 
     // ============ SCENARIO 2: Find Popular Blog Posts ============
     println!("🔍 Scenario 2: Finding published posts by active authors\n");
