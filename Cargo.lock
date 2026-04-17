@@ -4247,6 +4247,7 @@ name = "saola-core"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "chrono",
  "indexmap 2.14.0",
  "mongodb-query-connector",
  "psl",

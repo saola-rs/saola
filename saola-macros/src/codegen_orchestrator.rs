@@ -40,7 +40,7 @@ pub fn generate_module(schema: &psl::ValidatedSchema, schema_path: &str) -> proc
             .to_string();
 
             fields.push(FieldMetadata {
-                rust_name: field.name().to_string(),
+                rust_name: field.name().to_snake_case(),
                 prisma_name: field.name().to_string(),
                 is_relation: false,
                 is_unique: field.is_unique(),
@@ -52,6 +52,7 @@ pub fn generate_module(schema: &psl::ValidatedSchema, schema_path: &str) -> proc
                 is_list: field.ast_field().arity.is_list(),
                 is_relation_link: relation_link_fields.contains(&field.field_id()),
                 has_default: field.default_value().is_some(),
+                is_updated_at: field.is_updated_at(),
                 opposite_relation_field: None,
                 field_type: syn::parse_str(&field_type_str).unwrap(),
             });
@@ -59,7 +60,7 @@ pub fn generate_module(schema: &psl::ValidatedSchema, schema_path: &str) -> proc
         for field in walker.relation_fields() {
             let related_model_name = field.related_model().name();
             fields.push(FieldMetadata {
-                rust_name: field.name().to_string(),
+                rust_name: field.name().to_snake_case(),
                 prisma_name: field.name().to_string(),
                 is_relation: true,
                 is_unique: false,
@@ -68,6 +69,7 @@ pub fn generate_module(schema: &psl::ValidatedSchema, schema_path: &str) -> proc
                 is_list: field.ast_field().arity.is_list(),
                 is_relation_link: false,
                 has_default: false,
+                is_updated_at: false,
                 opposite_relation_field: Some(field.opposite_relation_field().unwrap().name().to_string()),
                 field_type: syn::parse_str(related_model_name).unwrap(),
             });

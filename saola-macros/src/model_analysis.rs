@@ -16,7 +16,8 @@ pub struct FieldMetadata {
     pub is_optional: bool,
     pub is_list: bool,
     pub is_relation_link: bool,
-    pub has_default: bool, // New: field has a @default value
+    pub has_default: bool,
+    pub is_updated_at: bool, // New field
     pub opposite_relation_field: Option<String>,
     pub field_type: Type,
 }
@@ -40,7 +41,13 @@ impl ModelMetadata {
 
         let create_required_fields: Vec<FieldMetadata> = fields
             .iter()
-            .filter(|f| !f.is_optional && !f.is_id && !f.is_relation_link && !f.is_list && !f.has_default)
+            .filter(|f| {
+                !f.is_optional
+                    && !f.is_relation_link
+                    && !f.is_list
+                    && !f.has_default
+                    && !f.is_updated_at // Exclude updatedAt fields from required
+            })
             .cloned()
             .collect();
 
@@ -53,9 +60,8 @@ impl ModelMetadata {
     }
 
     /// Generate parameter list for create function, optionally ignoring one relation (for nested create)
-    pub fn create_params_with_ignore(&self, ignore_relation: Option<&str>) -> proc_macro2::TokenStream {
-        let params: Vec<_> = self
-            .create_required_fields
+    pub fn create_params_with_ignore(&self, ignore_relation: Option<&str>) -> Vec<proc_macro2::TokenStream> {
+        self.create_required_fields
             .iter()
             .filter(|f| {
                 if let Some(ignore) = ignore_relation {
@@ -80,12 +86,10 @@ impl ModelMetadata {
                     quote! { #rust_name: #field_type }
                 }
             })
-            .collect();
-
-        quote! { #(#params),* }
+            .collect()
     }
 
-    pub fn create_params(&self) -> proc_macro2::TokenStream {
+    pub fn create_params(&self) -> Vec<proc_macro2::TokenStream> {
         self.create_params_with_ignore(None)
     }
 
@@ -206,6 +210,7 @@ pub fn generate_select_methods(fields: &[FieldMetadata]) -> Vec<proc_macro2::Tok
         .map(|field| {
             let rust_name = syn::Ident::new(&field.rust_name, proc_macro2::Span::call_site());
             let prisma_name = &field.prisma_name;
+            let field_type = &field.field_type;
 
             if field.is_relation {
                 let inner_type_str = get_inner_type(&field.field_type);
@@ -214,8 +219,14 @@ pub fn generate_select_methods(fields: &[FieldMetadata]) -> Vec<proc_macro2::Tok
                     proc_macro2::Span::call_site(),
                 );
 
+                let marker_type = if field.is_list {
+                    quote! { Vec<()> }
+                } else {
+                    quote! { Option<()> }
+                };
+
                 quote! {
-                    pub fn #rust_name<F>(&mut self, f: F) -> &mut Self
+                    pub fn #rust_name<F>(&mut self, f: F) -> saola_core::SelectionRelField<'_, #marker_type, Self>
                     where F: FnOnce(&mut #related_select_builder)
                     {
                         let mut builder = #related_select_builder::default();
@@ -226,14 +237,14 @@ pub fn generate_select_methods(fields: &[FieldMetadata]) -> Vec<proc_macro2::Tok
                             sel.push_nested_selection(s);
                         }
                         self.selections.push(sel);
-                        self
+                        saola_core::SelectionRelField::new(self)
                     }
                 }
             } else {
                 quote! {
-                    pub fn #rust_name(&mut self) -> &mut Self {
+                    pub fn #rust_name(&mut self) -> saola_core::SelectionField<'_, #field_type, Self> {
                         self.selections.push(saola_core::query_core::Selection::with_name(#prisma_name.to_string()));
-                        self
+                        saola_core::SelectionField::new(self)
                     }
                 }
             }
@@ -250,7 +261,7 @@ pub fn generate_data_methods(
     fields
         .iter()
         .filter_map(|field| {
-            let rust_name = syn::Ident::new(format!("{}", heck::AsSnakeCase(&field.rust_name)).as_str(), proc_macro2::Span::call_site());
+            let rust_name = syn::Ident::new(&field.rust_name, proc_macro2::Span::call_site());
             let prisma_name = &field.prisma_name;
 
             if field.is_relation {

@@ -1,6 +1,6 @@
 datasource db {
   provider = "sqlite"
-  url = "file:/home/ravi/Documents/prisma/dev.db"
+  url      = "file:/home/ravi/Documents/prisma/dev.db"
 }
 
 enum Role {
@@ -16,34 +16,59 @@ enum PostStatus {
 }
 
 model User {
-  id          String   @id @default(cuid())
-  email       String   @unique
-  displayName String?
-  role        Role     @default(USER)
-  posts       Post[]
-  profile     Profile?
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String?
+  role      Role     @default(USER)
+  isActive  Boolean  @default(true)
+  posts     Post[]
+  profile   Profile?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Profile {
-  id     String @id @default(cuid())
-  bio    String
-  userId String @unique
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String   @id @default(cuid())
+  bio       String?
+  avatar    String?
+  website   String?
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Post {
   id        String     @id @default(cuid())
-  title     String     @unique
+  title     String
+  content   String
   status    PostStatus @default(DRAFT)
   published Boolean    @default(false)
+  views     Int        @default(0)
   userId    String
   user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   comments  Comment[]
+  tags      Tag[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@index([userId])
+  @@index([status])
 }
 
 model Comment {
-  id      String @id @default(cuid())
-  text    String
-  postId  String
-  post    Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  id        String   @id @default(cuid())
+  text      String
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([postId])
+}
+
+model Tag {
+  id    String @id @default(cuid())
+  name  String @unique
+  posts Post[]
 }

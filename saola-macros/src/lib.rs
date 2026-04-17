@@ -78,6 +78,7 @@ fn parse_model_fields(input: &mut ItemStruct) -> Vec<FieldMetadata> {
             is_list,
             is_relation_link: false,
             has_default: false,
+            is_updated_at: false,
             opposite_relation_field: None,
             field_type: field.ty.clone(),
         });

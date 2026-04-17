@@ -89,7 +89,10 @@ impl Parse for FieldShape {
     }
 }
 
-fn generate_struct_and_selects(fields: &[FieldShape], prefix: &str) -> (TokenStream, TokenStream, TokenStream) {
+fn generate_struct_and_selects(
+    fields: &[FieldShape],
+    prefix: &str,
+) -> (TokenStream, TokenStream, TokenStream, Vec<Ident>, Vec<String>) {
     let mut struct_fields = Vec::new();
     let mut select_calls = Vec::new();
     let mut nested_structs = Vec::new();
@@ -108,14 +111,15 @@ fn generate_struct_and_selects(fields: &[FieldShape], prefix: &str) -> (TokenStr
                     #[serde(rename = #prisma_name)]
                     pub #name: #ty
                 });
-                // In select builder, scalars are methods that take no args
-                select_calls.push(quote! { s.#name(); });
+                // In select builder, scalars are methods that return SelectionField
+                select_calls.push(quote! { s.#name().assert_type(&_check.#name); });
             }
             FieldType::Nested(nested) => {
                 let sub_prefix = format!("{}_{}", prefix, name);
                 let sub_struct_name = format_ident!("_AdHoc_{}", sub_prefix);
 
-                let (sub_fields, sub_selects, sub_nested) = generate_struct_and_selects(&nested.fields, &sub_prefix);
+                let (sub_fields, sub_selects, sub_nested, sub_names, sub_prisma_names) =
+                    generate_struct_and_selects(&nested.fields, &sub_prefix);
 
                 nested_structs.push(sub_nested);
                 nested_structs.push(quote! {
@@ -128,7 +132,7 @@ fn generate_struct_and_selects(fields: &[FieldShape], prefix: &str) -> (TokenStr
                     impl std::fmt::Debug for #sub_struct_name {
                         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                             f.debug_struct("Selected")
-                                #(.field(#prisma_names, &self.#names))*
+                                #(.field(#sub_prisma_names, &self.#sub_names))*
                                 .finish()
                         }
                     }
@@ -146,11 +150,12 @@ fn generate_struct_and_selects(fields: &[FieldShape], prefix: &str) -> (TokenStr
                     });
                 }
 
-                // In select builder, relations are methods that take a closure
+                // In select builder, relations return SelectionRelField
                 select_calls.push(quote! {
                     s.#name(|s| {
+                        let _check: #sub_struct_name = Default::default();
                         #sub_selects
-                    });
+                    }).assert_rel_type(&_check.#name);
                 });
             }
         }
@@ -162,6 +167,8 @@ fn generate_struct_and_selects(fields: &[FieldShape], prefix: &str) -> (TokenStr
         quote! {
             #(#nested_structs)*
         },
+        names,
+        prisma_names,
     )
 }
 
@@ -174,10 +181,8 @@ pub fn select_macro_impl(input: SelectShape) -> TokenStream {
     let hash = hasher.finish();
 
     let root_struct_name = format_ident!("_AdHocRoot_{:x}", hash);
-    let (fields, selects, nested) = generate_struct_and_selects(&input.fields, &format!("{:x}", hash));
-
-    let names: Vec<_> = input.fields.iter().map(|f| &f.name).collect();
-    let prisma_names: Vec<_> = input.fields.iter().map(|f| f.name.to_string()).collect();
+    let (fields, selects, nested, names, prisma_names) =
+        generate_struct_and_selects(&input.fields, &format!("{:x}", hash));
 
     quote! {
         {
@@ -207,6 +212,7 @@ pub fn select_macro_impl(input: SelectShape) -> TokenStream {
             (
                 std::marker::PhantomData::<#root_struct_name>,
                 |s| {
+                    let _check: #root_struct_name = Default::default();
                     #selects
                 }
             )

@@ -32,6 +32,64 @@ pub trait FilterBuilder: Sized {
     fn build(self) -> crate::IndexMap<String, ArgumentValue>;
 }
 
+/// Helper for compile-time type checking in selection macros
+pub struct SelectionField<'a, T, B>(&'a mut B, std::marker::PhantomData<T>);
+
+impl<'a, T, B> SelectionField<'a, T, B> {
+    pub fn new(builder: &'a mut B) -> Self {
+        Self(builder, std::marker::PhantomData)
+    }
+
+    /// Asserts that the field type exactly matches T
+    pub fn assert_type(self, _: &T) -> &'a mut B {
+        self.0
+    }
+}
+
+impl<'a, T, B> std::ops::Deref for SelectionField<'a, T, B> {
+    type Target = B;
+    fn deref(&self) -> &Self::Target {
+        self.0
+    }
+}
+
+impl<'a, T, B> std::ops::DerefMut for SelectionField<'a, T, B> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.0
+    }
+}
+
+/// Helper for compile-time type checking for relations in selection macros
+pub struct SelectionRelField<'a, T, B>(&'a mut B, std::marker::PhantomData<T>);
+
+impl<'a, T, B> SelectionRelField<'a, T, B> {
+    pub fn new(builder: &'a mut B) -> Self {
+        Self(builder, std::marker::PhantomData)
+    }
+
+    /// Asserts that the relation container type (Vec vs Option) is compatible
+    pub fn assert_rel_type<U: RelCompatible<T>>(self, _: &U) -> &'a mut B {
+        self.0
+    }
+}
+
+impl<'a, T, B> std::ops::Deref for SelectionRelField<'a, T, B> {
+    type Target = B;
+    fn deref(&self) -> &Self::Target {
+        self.0
+    }
+}
+
+impl<'a, T, B> std::ops::DerefMut for SelectionRelField<'a, T, B> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.0
+    }
+}
+
+pub trait RelCompatible<T> {}
+impl<A, B> RelCompatible<Vec<B>> for Vec<A> {}
+impl<A, B> RelCompatible<Option<B>> for Option<A> {}
+
 /// Base builder state - common to all operations
 pub struct BuilderState {
     pub model_name: String,
@@ -100,11 +158,28 @@ pub async fn execute_raw<P: crate::transaction::QueryExecutorProvider + ?Sized>(
     Ok(serde_json::to_value(&response.data)?)
 }
 
+/// Recursively unwrap Prisma JSON protocol objects (e.g. {"$type": "DateTime", "value": "..."})
+fn unwrap_prisma_value(value: serde_json::Value) -> serde_json::Value {
+    match value {
+        serde_json::Value::Object(mut map) => {
+            if map.len() == 2 && map.contains_key("$type") && map.contains_key("value") {
+                return map.remove("value").unwrap();
+            }
+            serde_json::Value::Object(map.into_iter().map(|(k, v)| (k, unwrap_prisma_value(v))).collect())
+        }
+        serde_json::Value::Array(list) => {
+            serde_json::Value::Array(list.into_iter().map(unwrap_prisma_value).collect())
+        }
+        _ => value,
+    }
+}
+
 /// Common implementation of execution logic across all builders
 pub async fn execute<T: serde::de::DeserializeOwned, P: crate::transaction::QueryExecutorProvider + ?Sized>(
     operation: Operation,
     provider: &P,
 ) -> crate::Result<T> {
     let json = execute_raw(operation, provider).await?;
-    Ok(serde_json::from_value(json)?)
+    let unwrapped = unwrap_prisma_value(json);
+    Ok(serde_json::from_value(unwrapped)?)
 }

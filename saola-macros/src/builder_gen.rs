@@ -207,26 +207,38 @@ pub fn generate_relation_write_builders(
             let related_unique_where_builder = format_ident!("{}UniqueWhereBuilder", inner_type_str);
             let related_where_builder = format_ident!("{}WhereBuilder", inner_type_str);
 
-            let (create_args, create_inserts) = if let Some(map) = all_metadata {
+            let (create_args_vec, create_inserts) = if let Some(map) = all_metadata {
                 if let Some(rel_meta) = map.get(&inner_type_str) {
                     (rel_meta.create_params_with_ignore(field.opposite_relation_field.as_deref()), 
                      rel_meta.create_data_inserts_with_ignore("builder.data", field.opposite_relation_field.as_deref()))
                 } else {
-                    (quote! {}, quote! {})
+                    (Vec::new(), quote! {})
                 }
             } else {
-                (quote! {}, quote! {})
+                (Vec::new(), quote! {})
             };
 
-            let (upsert_create_args, upsert_create_inserts) = if let Some(map) = all_metadata {
+            let create_args = if create_args_vec.is_empty() {
+                quote! {}
+            } else {
+                quote! { #(#create_args_vec),*, }
+            };
+
+            let (upsert_create_args_vec, upsert_create_inserts) = if let Some(map) = all_metadata {
                 if let Some(rel_meta) = map.get(&inner_type_str) {
                     (rel_meta.create_params_with_ignore(field.opposite_relation_field.as_deref()), 
                      rel_meta.create_data_inserts_with_ignore("create_builder.data", field.opposite_relation_field.as_deref()))
                 } else {
-                    (quote! {}, quote! {})
+                    (Vec::new(), quote! {})
                 }
             } else {
-                (quote! {}, quote! {})
+                (Vec::new(), quote! {})
+            };
+
+            let upsert_create_args = if upsert_create_args_vec.is_empty() {
+                quote! {}
+            } else {
+                quote! { #(#upsert_create_args_vec),*, }
             };
 
             if field.is_list {
@@ -237,7 +249,7 @@ pub fn generate_relation_write_builders(
                     }
 
                     impl #builder_name {
-                        pub fn create<F>(&mut self, #create_args, f: F) -> &mut Self
+                        pub fn create<F>(&mut self, #create_args f: F) -> &mut Self
                         where F: FnOnce(&mut #related_data_builder) {
                             let mut builder = #related_data_builder::default();
                             #create_inserts
@@ -383,7 +395,7 @@ pub fn generate_relation_write_builders(
                             self
                         }
 
-                        pub fn upsert<F>(&mut self, where_f: impl FnOnce(&mut #related_unique_where_builder), #upsert_create_args, create_f: impl FnOnce(&mut #related_data_builder), update_f: F) -> &mut Self
+                        pub fn upsert<F>(&mut self, where_f: impl FnOnce(&mut #related_unique_where_builder), #upsert_create_args create_f: impl FnOnce(&mut #related_data_builder), update_f: F) -> &mut Self
                         where F: FnOnce(&mut #related_data_builder) {
                             let mut w_builder = #related_unique_where_builder::default();
                             where_f(&mut w_builder);
@@ -420,7 +432,7 @@ pub fn generate_relation_write_builders(
                     }
 
                     impl #builder_name {
-                        pub fn create<F>(&mut self, #create_args, f: F) -> &mut Self
+                        pub fn create<F>(&mut self, #create_args f: F) -> &mut Self
                         where F: FnOnce(&mut #related_data_builder) {
                             let mut builder = #related_data_builder::default();
                             #create_inserts
@@ -471,7 +483,7 @@ pub fn generate_relation_write_builders(
                             self
                         }
 
-                        pub fn upsert<F>(&mut self, #upsert_create_args, create_f: impl FnOnce(&mut #related_data_builder), update_f: F) -> &mut Self
+                        pub fn upsert<F>(&mut self, #upsert_create_args create_f: impl FnOnce(&mut #related_data_builder), update_f: F) -> &mut Self
                         where F: FnOnce(&mut #related_data_builder) {
                             let mut create_builder = #related_data_builder::default();
                             #upsert_create_inserts

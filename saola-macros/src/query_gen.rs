@@ -31,7 +31,12 @@ pub fn generate_query_factory(
     let group_by_result_name = format_ident!("{}GroupByResult", model_name);
 
     let scalar_field_names = &model_metadata.scalar_field_names;
-    let create_params = model_metadata.create_params();
+    let create_params_vec = model_metadata.create_params();
+    let create_params = if create_params_vec.is_empty() {
+        quote! {}
+    } else {
+        quote! { #(#create_params_vec),*, }
+    };
     let create_data_inserts = model_metadata.create_data_inserts("data_map");
 
     quote! {

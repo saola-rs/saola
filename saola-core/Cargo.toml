@@ -22,6 +22,7 @@ anyhow = { workspace = true }
 psl = { workspace = true }
 query-structure = { workspace = true }
 saola-schema = { workspace = true }
+chrono = { workspace = true }
 
 [features]
 default = ["sqlite"] # SQLite as default for easy getting started

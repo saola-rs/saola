@@ -4,466 +4,235 @@ use saola_core::prelude::*;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    // 1. Client Initialization
+    println!("🚀 Saola ORM - Real-world Blog Example\n");
+
     let client = saola::client().await?;
-    println!("✓ Client initialized successfully");
 
-    let unique_ts = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap()
-        .as_millis();
+    // ============ SCENARIO 1: Blog Writer Creates a Post ============
+    println!("📝 Scenario 1: Creating a blog post with profile & metadata\n");
 
-    let unique_email = format!("user-{}@example.com", unique_ts);
+    let unique_ts = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis();
+    let unique_email = format!("alice-{}@blog.com", unique_ts);
 
-    // 2. CREATE Operation with Nested Relations
-    println!("\n[1. Creating User with Nested Posts and Profile]");
-    let created_user = user()
-        .create(unique_email.clone()) // role is optional (default: USER)
+    // email and name are required. password has no default but is optional (?), so it's not a positional arg.
+    let writer = user()
+        .create(unique_email.clone(), "Alice Writer".to_string())
         .data(|d| {
+            d.role(Role::USER);
+            d.password("hello".to_string());
+            // Create profile and posts in one call!
+            d.profile(|prof| {
+                prof.create(|p| {
+                    p.bio("Tech writer & developer".to_string());
+                    p.website("alice.dev".to_string());
+                });
+            });
             d.posts(|p| {
-                // Post required: title (status, published are implicit defaults; user is implicit)
-                p.create(format!("Nested Post 1 - {}", unique_ts), |_| {});
-                p.create(format!("Nested Post 2 - {}", unique_ts), |_| {});
-            });
-            d.profile(|p| {
-                // Profile required: bio (user is implicit)
-                p.create("I am a nested profile".to_string(), |_| {});
+                p.create(
+                    "Getting Started with Rust ORM".to_string(),
+                    "Learn how to build type-safe database queries...".to_string(),
+                    |post| {
+                        post.status(PostStatus::PUBLISHED);
+                        post.published(true);
+                    },
+                );
+                p.create(
+                    "Advanced Query Patterns".to_string(),
+                    "Master complex queries with relations filtering...".to_string(),
+                    |_| {},
+                );
             });
         })
-        .include(|u| u.posts())
-        .include(|u| u.profile())
-        .exec(&client)
-        .await?;
-    println!(
-        "  ✓ Created: {} (id: {}) with nested posts and profile \n {:?}",
-        created_user.email, created_user.id, created_user
-    );
-
-    // 3. CREATE Nested Relationships (Manual)
-    println!("\n[2. Creating Manual Post for User]");
-    let post1 = post()
-        .create(format!("Rust ORM is awesome - {}", unique_ts), |u| {
-            u.connect(|w| {
-                w.id(created_user.id.clone());
-            });
+        .include(|u| {
+            u.posts()
         })
         .exec(&client)
         .await?;
 
-    let post2 = post()
-        .create(format!("Native Engines in Rust - {}", unique_ts), |u| {
-            u.connect(|w| {
-                w.id(created_user.id.clone());
-            });
-        })
-        .exec(&client)
-        .await?;
-    println!("  ✓ Created 2 posts: '{}' and '{}'", post1.title, post2.title);
+    println!("✅ Created user: {} with {} posts\n", writer.name, writer.posts.len());
 
-    println!("\n[2.1. Creating Comments on Posts]");
-    let _comment1 = comment()
-        .create("This is great!".to_string(), |p| {
-            p.connect(|w| {
-                w.id(post1.id.clone());
-            });
-        })
-        .exec(&client)
-        .await?;
-    let _comment2 = comment()
-        .create("I agree".to_string(), |p| {
-            p.connect(|w| {
-                w.id(post1.id.clone());
-            });
-        })
-        .exec(&client)
-        .await?;
-    println!("  ✓ Created 2 comments on post1");
+    // ============ SCENARIO 2: Find Popular Blog Posts ============
+    println!("🔍 Scenario 2: Finding published posts by active authors\n");
 
-    // 4. FIND MANY with Complex Filters (Scalar + Relation Filters)
-    println!("\n[3. Find Many with Logical Operators + Relation Filters]");
-    let users = user()
+    let published_posts = post()
         .find_many()
         .where_clause(|w| {
-            // Nested filter: Users who have some posts with 'awesome' in the title
-            w.posts().some(|p: &mut PostWhereBuilder| {
-                p.title().contains("awesome".to_string());
-            });
-
-            w.or(|w| {
-                w.email().contains("example.com".to_string());
-                w.role().eq(Role::USER);
+            // Find published posts from active users
+            w.published().eq(true);
+            w.user().is(|u| {
+                u.is_active().eq(true);
             });
         })
+        .include(|i| i.user())
+        .order_by(|o| {
+            o.created_at(SortOrder::Desc);
+        })
+        .take(10)
         .exec(&client)
         .await?;
-    println!("  ✓ Found {} users matching criteria", users.len());
 
-    // 5. FIND UNIQUE with Automatic Relationship Inclusion (Nested Include + Nested Filter + Chained Include)
-    println!("\n[4. Find Unique + Automatic Include Inference + Nested Filter + Multiple Includes]");
-    let user_with_data = user()
-        .find_unique()
-        .where_clause(|w| {
-            w.email(unique_email.clone());
-        })
-        .include(|i| {
-            i.posts_with(|p| {
-                p.where_clause(|w| {
-                    w.title().contains("awesome".to_string());
-                });
-                p.comments_with(|c| {
-                    c.where_clause(|w| {
-                        w.text().contains("agree".to_string());
-                    });
-                    c.empty()
-                })
-            })
-        })
-        .include(|i| i.profile()) // Chained include: Fetch profile as well
-        .exec(&client)
-        .await?
-        .expect("User should exist");
-
-    println!("  ✓ Retrieved UserWithPostsAndProfile: {}", user_with_data.email);
-    println!(
-        "    Bio: {}",
-        user_with_data
-            .profile
-            .as_ref()
-            .map(|p| p.bio.as_str())
-            .unwrap_or("No bio")
-    );
-    println!("    Total Filtered Posts: {}", user_with_data.posts.len());
-    for p in user_with_data.posts {
-        println!("      - {} ({:?})", p.title, p.status);
-        for c in p.comments {
-            println!("        * {}", c.text);
-        }
+    for post_item in &published_posts {
+        println!("  📄 {} by {}", post_item.title, post_item.user.name);
     }
+    println!();
 
-    // 6. Ad-hoc selection with select_as! macro (TypeScript-like syntax)
-    println!("\n[5. Ad-hoc selection with select_as! macro]");
-    let partial_data = user()
-        .find_unique()
-        .where_clause(|w| {
-            w.email(unique_email.clone());
-        })
-        .include(|i| {
-            i.posts_as(saola::select_as!({
-                id: String,
-                title: String,
-                status: PostStatus
-            }))
-        })
-        .exec(&client)
-        .await?
-        .expect("User should exist");
+    // ============ SCENARIO 3: Blog Analytics ============
+    println!("📊 Scenario 3: Analytics on blog activity\n");
 
-    println!("  ✓ Zero-boilerplate selection successful!");
-    println!("    Selected Email: {}", partial_data.email);
-    println!("    Nested Posts (using _as): {:?}", partial_data.posts);
-
-    // 7. COUNT Operation
-    println!("\n[6. Count Users]");
-    let count = user()
+    let total_posts = post()
         .count()
         .where_clause(|w| {
-            w.role().eq(Role::USER);
+            w.published().eq(true);
         })
         .exec(&client)
         .await?;
-    println!("  ✓ Total USERs in database: {}", count);
 
-    // 8. UPDATE Operation (using Unique Filter)
-    println!("\n[7. Update User Display Name]");
-    let updated_user = user()
-        .update()
+    let active_writers = user()
+        .count()
         .where_clause(|w| {
-            w.email(unique_email.clone());
-        })
-        .data(|d| {
-            d.display_name("Prisma User".to_string());
+            w.is_active().eq(true);
+            w.posts().some(|p| {
+                p.published().eq(true);
+            });
         })
         .exec(&client)
         .await?;
-    println!("  ✓ Updated: {} -> {:?}", updated_user.email, updated_user.display_name);
 
-    // 9. DELETE Operation
-    println!("\n[8. Delete User]");
-    let deleted_user = user()
-        .delete()
+    println!("  📈 Total published posts: {}", total_posts);
+    println!("  👥 Active writers: {}\n", active_writers);
+
+    // ============ SCENARIO 4: Find Popular Tech Content ============
+    println!("🏷️  Scenario 4: Finding tech-related content\n");
+
+    let tech_posts = post()
+        .find_many()
         .where_clause(|w| {
-            w.email(unique_email.clone());
+            // Posts containing tech keywords
+            w.or(|or| {
+                or.title().contains("Rust".to_string());
+                or.title().contains("ORM".to_string());
+                or.content().contains("programming".to_string());
+            });
+            // Only published
+            w.published().eq(true);
         })
-        .exec(&client)
-        .await?;
-    println!("  ✓ Deleted User: {}", deleted_user.email);
-
-    // 10. BULK Operations
-    println!("\n[9. Bulk Operations]");
-    let created_users_count = user()
-        .create_many()
-        .data(|d| {
-            d.email(format!("bulk-1-{}@example.com", unique_ts));
-        })
-        .data(|d| {
-            d.email(format!("bulk-2-{}@example.com", unique_ts));
-        })
-        .exec(&client)
-        .await?;
-    println!("  ✓ Bulk created {} users", created_users_count);
-
-    // Test CreateManyAndReturn
-    let created_users_with_data = user()
-        .create_many_and_return()
-        .data(|d| {
-            d.email(format!("bulk-ret1-{}@example.com", unique_ts));
-        })
-        .data(|d| {
-            d.email(format!("bulk-ret2-{}@example.com", unique_ts));
-        })
-        .exec(&client)
-        .await?;
-    println!(
-        "  ✓ Bulk created and returned {} users: {:?}",
-        created_users_with_data.len(),
-        created_users_with_data
-            .iter()
-            .map(|u| u.email.as_str())
-            .collect::<Vec<_>>()
-    );
-
-    let updated_users = user()
-        .update_many_and_return()
-        .where_clause(|w| {
-            w.email().contains("bulk-ret".to_string());
-        })
-        .data(|d| {
-            d.display_name("Updated Bulk User".to_string());
-        })
-        .exec(&client)
-        .await?;
-
-    println!("  ✓ Bulk updated and returned {} users", updated_users.len());
-    for u in &updated_users {
-        println!("    - {} (id: {})", u.email, u.id);
-    }
-
-    let deleted_count = user()
-        .delete_many()
-        .where_clause(|w| {
-            w.email().contains("bulk".to_string());
-        })
-        .exec(&client)
-        .await?;
-    println!("  ✓ Bulk deleted {} users", deleted_count);
-
-    // 11. AGGREGATE Operation
-    println!("\n[10. Aggregate Operation]");
-    let aggregate_result = user()
-        .aggregate()
-        .count(|c| {
-            c._all().email();
-        })
-        .exec(&client)
-        .await?;
-    println!("  ✓ Aggregate count: {:?}", aggregate_result._count);
-
-    // 11. GROUP BY Operation
-    println!("\n[11. GroupBy Operation]");
-    let group_by_results = user()
-        .group_by()
-        .by(|b| {
-            b.role();
-        })
-        .count(|c| {
-            c._all();
-        })
+        .include(|i| i.user())
         .order_by(|o| {
-            o.role(SortOrder::Asc);
+            o.created_at(SortOrder::Desc);
+        })
+        .take(5)
+        .exec(&client)
+        .await?;
+
+    for item in &tech_posts {
+        println!("  🏷️  {} - by {}", item.title, item.user.name);
+    }
+    println!();
+
+    // ============ SCENARIO 5: Update Post Status ============
+    println!("✏️  Scenario 5: Publishing a draft post\n");
+
+    let draft_posts = post()
+        .find_many()
+        .where_clause(|w| {
+            w.status().eq(PostStatus::DRAFT);
         })
         .take(1)
         .exec(&client)
         .await?;
-    println!("  ✓ GroupBy results (ordered by role, take 1): {:?}", group_by_results);
 
-    // TRANSACTION Example
-    println!("\n[9. Transaction Example - Create Multiple Records Atomically]");
-    let unique_ts_clone = unique_ts.clone();
-    let tx_result = client
-        .transaction(|tx| async move {
-            let tx_user = user()
-                .create(format!("tx-user-{}@example.com", unique_ts_clone))
-                .exec(&tx)
-                .await?;
-
-            let _post = post()
-                .create(format!("Transaction Post - {}", unique_ts_clone), |u| {
-                    u.connect(|w| {
-                        w.id(tx_user.id.clone());
-                    });
-                })
-                .exec(&tx)
-                .await?;
-
-            Ok(tx_user)
-        })
-        .await?;
-    println!("  ✓ Transaction committed: user {} created with posts", tx_result.email);
-
-    // TRANSACTION Rollback Example
-    println!("\n[10. Transaction Rollback Example - Failed Transaction]");
-    let unique_ts_fail = unique_ts.clone();
-    let rollback_result: anyhow::Result<()> = client
-        .transaction(|tx| async move {
-            let fail_user = user()
-                .create(format!("fail-user-{}@example.com", unique_ts_fail))
-                .exec(&tx)
-                .await?;
-
-            println!("    - Created user: {} (transaction in progress)", fail_user.email);
-
-            // Simulate error
-            Err(anyhow::anyhow!("Simulated error: invalid data detected"))
-        })
-        .await;
-
-    match rollback_result {
-        Ok(_) => println!("  ✗ Transaction succeeded (unexpected)"),
-        Err(e) => {
-            println!("  ✓ Transaction rolled back due to: {}", e);
-
-            // Verify the user was NOT created (transaction was rolled back)
-            let all_users = user().find_many().exec(&client).await?;
-            let fail_user_exists = all_users.iter().any(|u| u.email.contains("fail-user"));
-            if fail_user_exists {
-                println!("  ✗ ERROR: User exists after rollback (rollback failed!)");
-            } else {
-                println!("  ✓ Verified: User was NOT persisted (rollback successful!)");
-            }
-        }
-    }
-
-    // MACRO-BASED Transaction Example (simpler syntax!)
-    println!("\n[11. Transaction using Macro (cleanest syntax - recommended)]");
-    let unique_ts_macro = unique_ts.clone();
-    let macro_result = saola_core::tx!(client, tx, {
-        let user_via_macro = user()
-            .create(format!("macro-user-{}@example.com", unique_ts_macro))
+    if let Some(draft) = draft_posts.first() {
+        let published = post()
+            .update()
+            .where_clause(|w| {
+                w.id(draft.id.clone());
+            })
             .data(|d| {
-                d.posts(|p| {
-                    p.create(format!("Post for macro user - {}", unique_ts_macro), |_| {});
-                });
+                d.status(PostStatus::PUBLISHED);
+                d.published(true);
+                d.views(0);
             })
-            .exec(&tx)
+            .exec(&client)
             .await?;
-        println!("  ✓ User created via macro: {}", user_via_macro.email);
-        Ok(user_via_macro)
-    })?;
 
-    // CONFIGURATION-BASED Transaction Example with custom timeout
-    println!("\n[12. Transaction with Custom Configuration]");
-    let config = saola_core::TransactionConfig::default()
-        .timeout_ms(30000) // 30 second timeout instead of 60
-        .isolation_level(IsolationLevel::Serializable);
-
-    let unique_ts_config = unique_ts.clone();
-    let config_user = client
-        .transaction_with_config(config, |tx| {
-            Box::pin(async move {
-                let user_with_config = user()
-                    .create(format!("config-user-{}@example.com", unique_ts_config))
-                    .exec(&tx)
-                    .await?;
-                println!("  ✓ User created with custom config: {}", user_with_config.email);
-                Ok(user_with_config)
-            })
-        })
-        .await?;
-
-    // MACRO with Configuration Example
-    println!("\n[13. Transaction Macro with Custom Configuration (advanced)]");
-    let config_macro = saola_core::TransactionConfig::default()
-        .max_wait(2000)
-        .timeout_ms(20000);
-
-    let unique_ts_macro_config = unique_ts.clone();
-    saola_core::tx_config!(client, tx, config_macro, {
-        let user_macro_config = user()
-            .create(format!("macro-config-{}@example.com", unique_ts_macro_config))
-            .exec(&tx)
-            .await?;
-        println!("  ✓ User created with macro and config: {}", user_macro_config.email);
-        Ok(user_macro_config)
-    })?;
-
-    // 14. Pagination and Ordering
-    println!("\n[14. Pagination and Ordering]");
-    let paginated_users = user()
-        .find_many()
-        .order_by(|o| {
-            o.email(SortOrder::Desc);
-        })
-        .take(2)
-        .skip(1)
-        .exec(&client)
-        .await?;
-    println!(
-        "  ✓ Paginated users (desc, take 2, skip 1): {:?}",
-        paginated_users.iter().map(|u| &u.email).collect::<Vec<_>>()
-    );
-
-    // 15. Nested Pagination and Ordering
-    println!("\n[15. Nested Pagination and Ordering]");
-    let user_with_paginated_posts = user()
-        .find_first()
-        .where_clause(|w| {
-            w.email().eq(format!("macro-user-{}@example.com", unique_ts));
-        })
-        .include(|i| {
-            i.posts_with(|p| {
-                p.order_by(|o| {
-                    o.title(SortOrder::Asc);
-                })
-                .take(1);
-                p.empty()
-            })
-        })
-        .exec(&client)
-        .await?;
-    if let Some(u) = user_with_paginated_posts {
-        println!("  ✓ User {} has {} paginated posts", u.email, u.posts.len());
-        for p in u.posts {
-            println!("    - Post: {}", p.title);
-        }
+        println!("  ✅ Published: {}\n", published.title);
     }
 
-    // 16. Cursor-based pagination
-    println!("\n[16. Cursor-based Pagination]");
-    let first_user = user()
-        .find_first()
-        .order_by(|o| {
-            o.email(SortOrder::Asc);
-        })
-        .exec(&client)
-        .await?
-        .unwrap();
-    let users_after_cursor = user()
+    // ============ SCENARIO 6: Pagination & Sorting ============
+    println!("📄 Scenario 6: Listing posts with pagination\n");
+
+    let paginated = post()
         .find_many()
+        .where_clause(|w| {
+            w.published().eq(true);
+        })
         .order_by(|o| {
-            o.email(SortOrder::Asc);
+            o.created_at(SortOrder::Desc);
         })
-        .cursor(|c| {
-            c.id(first_user.id.clone());
-        })
-        .take(2)
+        .take(3)
+        .skip(0)
         .exec(&client)
         .await?;
-    println!(
-        "  ✓ Users after cursor (id: {}): {:?}",
-        first_user.id,
-        users_after_cursor.iter().map(|u| &u.email).collect::<Vec<_>>()
-    );
 
-    println!("\n[All supported features demonstrated] ✓\n");
+    println!("  Latest {} posts:", paginated.len());
+    for post_item in &paginated {
+        println!("    • {}", post_item.title);
+    }
+    println!();
+
+    // ============ SCENARIO 7: Complex Filtering ============
+    println!("🔎 Scenario 7: Finding moderators with recent posts\n");
+
+    let moderator_posts = user()
+        .find_many()
+        .where_clause(|w| {
+            w.role().eq(Role::MODERATOR);
+            w.is_active().eq(true);
+            w.posts().some(|p| {
+                p.published().eq(true);
+            });
+        })
+        .include(|i| i.posts())
+        .exec(&client)
+        .await?;
+
+    for user_item in &moderator_posts {
+        println!("  👤 {} (Moderator) - {} posts", user_item.name, user_item.posts.len());
+    }
+    println!();
+
+    // ============ SCENARIO 8: Select Projection ============
+    println!("🎯 Scenario 8: Fetching only specific fields (zero boilerplate)\n");
+
+    let minimal_posts = post()
+        .find_many()
+        .select_as(saola::select_as!({
+            id: String,
+            title: String,
+            views: i32
+        }))
+        .where_clause(|w| {
+            w.published().eq(true);
+        })
+        .take(5)
+        .exec(&client)
+        .await?;
+
+    println!("  Selected {} posts with id, title, views only", minimal_posts.len());
+    println!();
+
+    println!("✨ Demo complete!\n");
+    println!("🎯 Key Features Demonstrated:");
+    println!("  ✓ Nested creates (user + profile + posts in one call)");
+    println!("  ✓ Relation filters (users -> posts filtering)");
+    println!("  ✓ Complex OR queries");
+    println!("  ✓ Sorting & pagination");
+    println!("  ✓ Aggregations (count)");
+    println!("  ✓ Type-safe includes");
+    println!("  ✓ Field projections (select_as macro)");
+    println!("  ✓ Zero boilerplate - schema is the only source of truth!\n");
+
+    println!("📚 For comprehensive tests, run: cargo test --lib tests\n");
+
     Ok(())
 }

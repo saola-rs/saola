@@ -6,6 +6,7 @@ pub use query_structure;
 pub use schema;
 pub use serde;
 pub use serde_json;
+pub use chrono;
 
 // Internal modules - exported for use by macros
 pub mod aggregate;
@@ -20,7 +21,7 @@ pub mod write;
 
 // Re-export main types
 pub use aggregate::{AggregateBuilder, CountBuilder, GroupByBuilder};
-pub use builder::{Executable, FilterBuilder, Filterable, Selectable};
+pub use builder::{Executable, FilterBuilder, Filterable, Selectable, SelectionField, SelectionRelField, RelCompatible};
 pub use client::SaolaClient;
 pub use filter_builders::{
     BoolFilter, DateTimeFilter, EnumFilter, FloatFilter, IntFilter, RelationFilter, StringFilter,

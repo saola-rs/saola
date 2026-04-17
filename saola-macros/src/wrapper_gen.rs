@@ -631,7 +631,12 @@ pub fn generate_upsert_wrapper(model_name: &syn::Ident, model_metadata: &ModelMe
     let wrapper_name = format_ident!("{}UpsertBuilder", model_name);
     let where_unique_builder_name = format_ident!("{}UniqueWhereBuilder", model_name);
     let data_builder_name = format_ident!("{}DataBuilder", model_name);
-    let create_params = model_metadata.create_params();
+    let create_params_vec = model_metadata.create_params();
+    let create_params = if create_params_vec.is_empty() {
+        quote! {}
+    } else {
+        quote! { #(#create_params_vec),*, }
+    };
     let create_data_inserts = model_metadata.create_data_inserts("create_builder.data");
 
     quote! {
@@ -662,7 +667,7 @@ pub fn generate_upsert_wrapper(model_name: &syn::Ident, model_metadata: &ModelMe
                 self
             }
 
-            pub fn create<F>(mut self, #create_params, f: F) -> Self
+            pub fn create<F>(mut self, #create_params f: F) -> Self
             where F: FnOnce(&mut #data_builder_name)
             {
                 let mut create_builder = #data_builder_name::default();
