@@ -3,3 +3,6 @@ old
 prisma-engines
 node_modules
 **/*.ts
+.idea
+.vscode
+*.db

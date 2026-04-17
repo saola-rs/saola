@@ -372,7 +372,7 @@ impl From<DataOperation> for String {
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(into = "String")]
-pub(crate) enum DependentOperation {
+pub enum DependentOperation {
     NestedUpdate,
     DisconnectRecords,
     FindRecords { model: String },

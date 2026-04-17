@@ -9,7 +9,7 @@ async fn main() -> anyhow::Result<()> {
     let client = saola::client().await?;
 
     // ============ SCENARIO 1: Blog Writer Creates a Post ============
-    println!("📝 Scenario 1: Creating a blog post with profile & metadata\n");
+    println!("Scenario 1: Creating a blog post with profile & metadata\n");
 
     let unique_ts = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
@@ -52,14 +52,14 @@ async fn main() -> anyhow::Result<()> {
         .await?;
 
     println!(
-        "✅ Created user: {} with {} posts\n {:?}",
+        "Created user: {} with {} posts\n {:?}",
         writer.name,
         writer.posts.len(),
         writer
     );
 
     // ============ SCENARIO 2: Find Popular Blog Posts ============
-    println!("🔍 Scenario 2: Finding published posts by active authors\n");
+    println!("Scenario 2: Finding published posts by active authors\n");
 
     let published_posts = post()
         .find_many()
@@ -79,12 +79,12 @@ async fn main() -> anyhow::Result<()> {
         .await?;
 
     for post_item in &published_posts {
-        println!("  📄 {} by {}", post_item.title, post_item.user.name);
+        println!("  {} by {}", post_item.title, post_item.user.name);
     }
     println!();
 
     // ============ SCENARIO 3: Blog Analytics ============
-    println!("📊 Scenario 3: Analytics on blog activity\n");
+    println!("Scenario 3: Analytics on blog activity\n");
 
     let total_posts = post()
         .count()
@@ -105,11 +105,11 @@ async fn main() -> anyhow::Result<()> {
         .exec(&client)
         .await?;
 
-    println!("  📈 Total published posts: {}", total_posts);
-    println!("  👥 Active writers: {}\n", active_writers);
+    println!("  Total published posts: {}", total_posts);
+    println!("  Active writers: {}\n", active_writers);
 
     // ============ SCENARIO 4: Find Popular Tech Content ============
-    println!("🏷️  Scenario 4: Finding tech-related content\n");
+    println!("Scenario 4: Finding tech-related content\n");
 
     let tech_posts = post()
         .find_many()
@@ -132,12 +132,12 @@ async fn main() -> anyhow::Result<()> {
         .await?;
 
     for item in &tech_posts {
-        println!("  🏷️  {} - by {}", item.title, item.user.name);
+        println!("   {} - by {}", item.title, item.user.name);
     }
     println!();
 
     // ============ SCENARIO 5: Update Post Status ============
-    println!("✏️  Scenario 5: Publishing a draft post\n");
+    println!("Scenario 5: Publishing a draft post\n");
 
     let draft_posts = post()
         .find_many()
@@ -162,11 +162,11 @@ async fn main() -> anyhow::Result<()> {
             .exec(&client)
             .await?;
 
-        println!("  ✅ Published: {}\n", published.title);
+        println!("  Published: {}\n", published.title);
     }
 
     // ============ SCENARIO 6: Pagination & Sorting ============
-    println!("📄 Scenario 6: Listing posts with pagination\n");
+    println!("Scenario 6: Listing posts with pagination\n");
 
     let paginated = post()
         .find_many()
@@ -188,7 +188,7 @@ async fn main() -> anyhow::Result<()> {
     println!();
 
     // ============ SCENARIO 7: Complex Filtering ============
-    println!("🔎 Scenario 7: Finding moderators with recent posts\n");
+    println!("Scenario 7: Finding moderators with recent posts\n");
 
     let moderator_posts = user()
         .find_many()
@@ -204,12 +204,12 @@ async fn main() -> anyhow::Result<()> {
         .await?;
 
     for user_item in &moderator_posts {
-        println!("  👤 {} (Moderator) - {} posts", user_item.name, user_item.posts.len());
+        println!("  {} (Moderator) - {} posts", user_item.name, user_item.posts.len());
     }
     println!();
 
     // ============ SCENARIO 8: Select Projection ============
-    println!("🎯 Scenario 8: Fetching only specific fields (zero boilerplate)\n");
+    println!("Scenario 8: Fetching only specific fields (zero boilerplate)\n");
 
     let minimal_posts = post()
         .find_many()
@@ -229,21 +229,8 @@ async fn main() -> anyhow::Result<()> {
         .exec(&client)
         .await?;
 
-    println!("  ✅ Selected partial data: {:?}", minimal_posts.first());
+    println!("  Selected partial data: {:?}", minimal_posts.first());
     println!();
-
-    println!("✨ Demo complete!\n");
-    println!("🎯 Key Features Demonstrated:");
-    println!("  ✓ Nested creates (user + profile + posts in one call)");
-    println!("  ✓ Relation filters (users -> posts filtering)");
-    println!("  ✓ Complex OR queries");
-    println!("  ✓ Sorting & pagination");
-    println!("  ✓ Aggregations (count)");
-    println!("  ✓ Type-safe includes");
-    println!("  ✓ Field projections (select_as macro)");
-    println!("  ✓ Zero boilerplate - schema is the only source of truth!\n");
-
-    println!("📚 For comprehensive tests, run: cargo test --lib tests\n");
 
     Ok(())
 }
