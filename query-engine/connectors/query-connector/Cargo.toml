@@ -1,6 +1,6 @@
 [package]
 edition.workspace = true
-name = "query-connector"
+name = "saola-query-connector"
 version = "0.1.0"
 
 [features]

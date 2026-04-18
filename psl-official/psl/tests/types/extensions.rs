@@ -1,6 +1,6 @@
 use expect_test::expect;
 use indoc::indoc;
-use psl::parser_database::{ExtensionTypeEntry, ExtensionTypeId, ExtensionTypes, ScalarFieldType};
+use saola_psl::parser_database::{ExtensionTypeEntry, ExtensionTypeId, ExtensionTypes, ScalarFieldType};
 
 use crate::{
     Provider,
@@ -24,7 +24,7 @@ fn accepts_extension_type_reference() {
             ("VectorN".into(), "vector".into(), 1, None),
         ],
     };
-    let datamodel = psl::parse_schema(schema, &extensions).unwrap();
+    let datamodel = saola_psl::parse_schema(schema, &extensions).unwrap();
     let model = datamodel.assert_has_model("A");
 
     model
@@ -47,7 +47,7 @@ fn rejects_an_extension_type_marked_unsupported() {
     let extensions = TestExtensions {
         types: vec![("VectorN".into(), "vector".into(), 1, None)],
     };
-    let datamodel = psl::parse_schema(schema, &extensions).unwrap_err();
+    let datamodel = saola_psl::parse_schema(schema, &extensions).unwrap_err();
     expect![[r#"
         [1;91merror[0m: [1mError validating: The type `Unsupported("vector")` you specified in the type definition for the field `a` is supported as a native type by Prisma. Please use the native type notation `VectorN @test.vector` for full support.[0m
           [1;94m-->[0m  [4mschema.prisma:13[0m
@@ -76,7 +76,7 @@ fn rejects_invalid_extension_modifier() {
             ("VectorN".into(), "vector".into(), 1, None),
         ],
     };
-    let datamodel = psl::parse_schema(schema, &extensions).unwrap_err();
+    let datamodel = saola_psl::parse_schema(schema, &extensions).unwrap_err();
     expect![[r#"
         [1;91merror[0m: [1mNative type vector is not compatible with declared field type Vector3, expected field type VectorN.[0m
           [1;94m-->[0m  [4mschema.prisma:13[0m
@@ -104,7 +104,7 @@ fn rejects_missing_extension_modifier() {
             ("VectorN".into(), "vector".into(), 1, None),
         ],
     };
-    let datamodel = psl::parse_schema(schema, &extensions).unwrap_err();
+    let datamodel = saola_psl::parse_schema(schema, &extensions).unwrap_err();
     expect![[r#"
         [1;91merror[0m: [1mFunction "vector" takes 1 arguments, but received 0.[0m
           [1;94m-->[0m  [4mschema.prisma:13[0m
@@ -153,7 +153,7 @@ impl ExtensionTypes for TestExtensions {
             )
     }
 
-    fn enumerate(&self) -> Box<dyn Iterator<Item = psl::parser_database::ExtensionTypeEntry<'_>> + '_> {
+    fn enumerate(&self) -> Box<dyn Iterator<Item = saola_psl::parser_database::ExtensionTypeEntry<'_>> + '_> {
         Box::new(self.types.iter().enumerate().map(
             |(i, (prisma_name, db_name, number_of_args, expected_db_type_modifiers))| ExtensionTypeEntry {
                 id: ExtensionTypeId::from(i),

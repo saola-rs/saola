@@ -1,4 +1,4 @@
-use query_template::{Fragment, PlaceholderFormat, QueryTemplate};
+use saola_query_template::{Fragment, PlaceholderFormat, QueryTemplate};
 
 struct Dummy {}
 

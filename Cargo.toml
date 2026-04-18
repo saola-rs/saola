@@ -34,12 +34,12 @@ license = "MIT"
 
 [workspace.dependencies]
 # PSL (Prisma Schema Language) - Official Prisma Parser
-psl = { path = "./psl-official/psl", default-features = false }
-psl-core = { path = "./psl-official/psl-core", default-features = false }
-diagnostics = { path = "./psl-official/diagnostics" }
-schema-ast = { path = "./psl-official/schema-ast" }
-parser-database = { path = "./psl-official/parser-database" }
-prisma-value = { path = "./libs/prisma-value" }
+psl = { path = "./psl-official/psl", package = "saola-psl", default-features = false, version = "0.1.0" }
+psl-core = { path = "./psl-official/psl-core", package = "saola-psl-core", default-features = false, version = "0.1.0" }
+diagnostics = { path = "./psl-official/diagnostics", package = "saola-diagnostics", version = "0.1.0" }
+schema-ast = { path = "./psl-official/schema-ast", package = "saola-schema-ast", version = "0.1.0" }
+parser-database = { path = "./psl-official/parser-database", package = "saola-parser-database", version = "0.1.0" }
+prisma-value = { path = "./libs/prisma-value", package = "saola-prisma-value", version = "0.1.0" }
 
 # Core dependencies
 serde = { version = "1.0", features = ["derive"] }
@@ -172,38 +172,38 @@ insta = "1"
 pretty_assertions = "1"
 similar = "2"
 tracing-test = "0.2"
-quaint = { path = "./quaint", default-features = false }
-build-utils = { path = "./libs/build-utils" }
-crosstarget-utils = { path = "./libs/crosstarget-utils" }
-panic-utils = { path = "./libs/panic-utils" }
-prisma-metrics = { path = "./libs/metrics" }
-telemetry = { path = "./libs/telemetry" }
-user-facing-errors = { path = "./libs/user-facing-errors" }
-user-facing-error-macros = { path = "./libs/user-facing-error-macros" }
-mongodb-client = { path = "./libs/mongodb-client" }
-test-setup = { path = "./libs/test-setup" }
-test-macros = { path = "./libs/test-macros" }
-query-engine-common = { path = "./libs/query-engine-common" }
-sql-ddl = { path = "./libs/sql-ddl" }
-query-template = { path = "libs/query-template" }
-query-core = { path = "./query-engine/core" }
-schema = { path = "./query-engine/schema" }
-query-structure = { path = "./query-engine/query-structure" }
-query-connector = { path = "./query-engine/connectors/query-connector" }
-query-builder = { path = "./query-engine/query-builders/query-builder" }
-sql-query-builder = { path = "./query-engine/query-builders/sql-query-builder" }
-dmmf = { path = "./query-engine/dmmf" }
-sql-query-connector = { path = "./query-engine/connectors/sql-query-connector", default-features = false }
-mongodb-query-connector = { path = "./query-engine/connectors/mongodb-query-connector", default-features = false }
-schema-core = { path = "./schema-engine/core" }
-datamodel-renderer = { path = "./schema-engine/datamodel-renderer" }
-schema-connector = { path = "./schema-engine/connectors/schema-connector" }
-sql-schema-connector = { path = "./schema-engine/connectors/sql-schema-connector" }
-mongodb-schema-connector = { path = "./schema-engine/connectors/mongodb-schema-connector" }
-sql-schema-describer = { path = "./schema-engine/sql-schema-describer" }
-mongodb-schema-describer = { path = "./schema-engine/mongodb-schema-describer" }
-saola-core = { path = "./saola-core" }
-saola-macros = { path = "./saola-macros" }
+quaint = { path = "./quaint", package = "saola-quaint", default-features = false, version = "0.2.0-alpha.13" }
+build-utils = { path = "./libs/build-utils", version = "0.1.0" }
+crosstarget-utils = { path = "./libs/crosstarget-utils", package = "saola-crosstarget-utils", version = "0.1.0" }
+panic-utils = { path = "./libs/panic-utils", package = "saola-panic-utils", version = "0.1.0" }
+prisma-metrics = { path = "./libs/metrics", package = "saola-metrics", version = "0.1.0" }
+telemetry = { path = "./libs/telemetry", package = "saola-telemetry", version = "0.1.0" }
+user-facing-errors = { path = "./libs/user-facing-errors", package = "saola-user-facing-errors", version = "0.1.0" }
+user-facing-error-macros = { path = "./libs/user-facing-error-macros", package = "saola-user-facing-error-macros", version = "0.1.0" }
+mongodb-client = { path = "./libs/mongodb-client", package = "saola-mongodb-client", version = "0.1.0" }
+test-setup = { path = "./libs/test-setup", version = "0.1.0" }
+test-macros = { path = "./libs/test-macros", version = "0.1.0" }
+query-engine-common = { path = "./libs/query-engine-common", package = "saola-query-engine-common", version = "0.1.0" }
+sql-ddl = { path = "./libs/sql-ddl", package = "saola-sql-ddl", version = "0.1.0" }
+query-template = { path = "libs/query-template", package = "saola-query-template", version = "0.1.0" }
+query-core = { path = "./query-engine/core", package = "saola-query-core", version = "0.1.0" }
+schema = { path = "./query-engine/schema", package = "saola-query-schema", version = "0.1.0" }
+query-structure = { path = "./query-engine/query-structure", package = "saola-query-structure", version = "0.1.0" }
+query-connector = { path = "./query-engine/connectors/query-connector", package = "saola-query-connector", version = "0.1.0" }
+query-builder = { path = "./query-engine/query-builders/query-builder", package = "saola-query-builder", version = "0.1.0" }
+sql-query-builder = { path = "./query-engine/query-builders/sql-query-builder", package = "saola-sql-query-builder", version = "0.1.0" }
+dmmf = { path = "./query-engine/dmmf", package = "saola-dmmf", version = "0.1.0" }
+sql-query-connector = { path = "./query-engine/connectors/sql-query-connector", package = "saola-sql-query-connector", default-features = false, version = "0.1.0" }
+mongodb-query-connector = { path = "./query-engine/connectors/mongodb-query-connector", package = "saola-mongodb-query-connector", default-features = false, version = "0.1.0" }
+schema-core = { path = "./schema-engine/core", version = "0.1.0" }
+datamodel-renderer = { path = "./schema-engine/datamodel-renderer", version = "0.1.0" }
+schema-connector = { path = "./schema-engine/connectors/schema-connector", version = "0.1.0" }
+sql-schema-connector = { path = "./schema-engine/connectors/sql-schema-connector", version = "0.1.0" }
+mongodb-schema-connector = { path = "./schema-engine/connectors/mongodb-schema-connector", version = "0.1.0" }
+sql-schema-describer = { path = "./schema-engine/sql-schema-describer", version = "0.1.0" }
+mongodb-schema-describer = { path = "./schema-engine/mongodb-schema-describer", version = "0.1.0" }
+saola-core = { path = "./saola-core", version = "0.1.0" }
+saola-macros = { path = "./saola-macros", version = "0.1.0" }
 
 wasm-rs-dbg = { version = "0.1", default-features = false, features = ["console-error"] }
 serde-wasm-bindgen = "0.6"

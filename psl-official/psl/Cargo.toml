@@ -1,5 +1,5 @@
 [package]
-name = "psl"
+name = "saola-psl"
 version = "0.1.0"
 edition.workspace = true
 

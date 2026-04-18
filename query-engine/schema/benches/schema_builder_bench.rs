@@ -15,7 +15,7 @@ fn criterion_benchmark(c: &mut Criterion) {
         let validated_schema = std::sync::Arc::new(psl::validate_without_extensions(source_file));
 
         c.bench_function(&format!("schema_builder::build ({name})"), |b| {
-            b.iter(|| black_box(schema::build(validated_schema.clone(), true)));
+            b.iter(|| black_box(saola_query_schema::build(validated_schema.clone(), true)));
         });
     }
 }

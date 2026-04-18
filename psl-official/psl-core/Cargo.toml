@@ -1,6 +1,6 @@
 [package]
 edition.workspace = true
-name = "psl-core"
+name = "saola-psl-core"
 version = "0.1.0"
 
 [features]

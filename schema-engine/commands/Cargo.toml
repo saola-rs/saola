@@ -1,4 +1,5 @@
 [package]
+publish = false
 edition = "2024"
 name = "schema-commands"
 version = "0.1.0"

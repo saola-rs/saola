@@ -1,6 +1,6 @@
 [package]
 edition.workspace = true
-name = "sql-query-connector"
+name = "saola-sql-query-connector"
 version = "0.1.0"
 
 [features]
@@ -58,7 +58,7 @@ quaint = { workspace = true, default-features = false }
 expect-test.workspace = true
 
 [dependencies.connector-interface]
-package = "query-connector"
+package = "saola-query-connector"
 path = "../query-connector"
 
 [dependencies.query-structure]

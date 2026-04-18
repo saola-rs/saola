@@ -4,7 +4,7 @@ mod gin;
 mod gist;
 mod spgist;
 
-use psl::parser_database::IndexAlgorithm;
+use saola_psl::parser_database::IndexAlgorithm;
 
 use crate::{Provider, common::*, with_header};
 
@@ -19,7 +19,7 @@ fn hash_index() {
         }
     "#};
 
-    psl::parse_schema_without_extensions(with_header(dml, Provider::Postgres, &[]))
+    saola_psl::parse_schema_without_extensions(with_header(dml, Provider::Postgres, &[]))
         .unwrap()
         .assert_has_model("A")
         .assert_index_on_fields(&["a"])

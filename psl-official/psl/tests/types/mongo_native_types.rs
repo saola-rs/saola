@@ -1,5 +1,5 @@
 use crate::{Provider, common::*, with_header};
-use psl::builtin_connectors::MongoDbType;
+use saola_psl::builtin_connectors::MongoDbType;
 
 #[test]
 fn valid_json_usage_in_model() {
@@ -11,7 +11,7 @@ fn valid_json_usage_in_model() {
     "#};
 
     let schema = with_header(dml, Provider::Mongo, &[]);
-    let datamodel = psl::parse_schema_without_extensions(schema).unwrap();
+    let datamodel = saola_psl::parse_schema_without_extensions(schema).unwrap();
     let model = datamodel.assert_has_model("A");
 
     model
@@ -30,7 +30,7 @@ fn valid_object_id_usage_in_model() {
     "#};
 
     let schema = with_header(dml, Provider::Mongo, &[]);
-    let datamodel = psl::parse_schema_without_extensions(schema).unwrap();
+    let datamodel = saola_psl::parse_schema_without_extensions(schema).unwrap();
     let model = datamodel.assert_has_model("A");
 
     model
@@ -53,7 +53,7 @@ fn valid_long_usage_in_model() {
     "#};
 
     let schema = with_header(dml, Provider::Mongo, &[]);
-    let datamodel = psl::parse_schema_without_extensions(schema).unwrap();
+    let datamodel = saola_psl::parse_schema_without_extensions(schema).unwrap();
     let model = datamodel.assert_has_model("A");
 
     model

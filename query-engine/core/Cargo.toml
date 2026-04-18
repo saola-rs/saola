@@ -1,6 +1,6 @@
 [package]
 edition.workspace = true
-name = "query-core"
+name = "saola-query-core"
 version = "0.1.0"
 
 [features]
@@ -14,7 +14,7 @@ bigdecimal.workspace = true
 bon.workspace = true
 chrono.workspace = true
 connection-string.workspace = true
-connector = { path = "../connectors/query-connector", package = "query-connector" }
+connector = { path = "../connectors/query-connector", package = "saola-query-connector" }
 crossbeam-channel.workspace = true
 psl.workspace = true
 futures.workspace = true

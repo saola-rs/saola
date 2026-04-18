@@ -1,4 +1,5 @@
 [package]
+publish = false
 edition.workspace = true
 name = "sql-schema-connector"
 version = "0.1.0"

@@ -1,5 +1,5 @@
 use crate::common::*;
-use psl::diagnostics::{DatamodelWarning, Span};
+use saola_psl::diagnostics::{DatamodelWarning, Span};
 
 #[test]
 fn nice_warning_for_deprecated_generator_preview_feature() {
@@ -10,7 +10,7 @@ fn nice_warning_for_deprecated_generator_preview_feature() {
     }
     "#;
 
-    let res = psl::parse_configuration(schema).unwrap();
+    let res = saola_psl::parse_configuration(schema).unwrap();
 
     res.warnings
         .assert_is(DatamodelWarning::new_preview_feature_is_stabilized(

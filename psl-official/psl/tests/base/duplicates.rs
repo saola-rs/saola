@@ -314,7 +314,7 @@ fn mapped_names_should_not_cause_collisions_with_names() {
         }
     "#};
 
-    let schema = psl::parse_schema_without_extensions(with_header(schema, Provider::Mongo, &[])).unwrap();
+    let schema = saola_psl::parse_schema_without_extensions(with_header(schema, Provider::Mongo, &[])).unwrap();
     let typ = schema.assert_has_type("TestData");
 
     typ.assert_has_scalar_field("id");

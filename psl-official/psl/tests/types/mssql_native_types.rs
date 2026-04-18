@@ -1,5 +1,5 @@
 use crate::common::*;
-use psl::{
+use saola_psl::{
     builtin_connectors::{MsSqlType, MsSqlTypeParameter::*},
     parser_database::NoExtensionTypes,
 };
@@ -885,7 +885,7 @@ macro_rules! test_type {
                         }}
                     "#);
 
-                    let schema = psl::parse_schema(&dml, &NoExtensionTypes).unwrap();
+                    let schema = saola_psl::parse_schema(&dml, &NoExtensionTypes).unwrap();
 
                     schema
                         .assert_has_model("Blog")

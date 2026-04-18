@@ -56,7 +56,7 @@ fn serialize_generators_to_cmf() {
         ]"#]];
 
     let config = parse_configuration(schema);
-    let rendered = psl::generators_to_json(&config.generators);
+    let rendered = saola_psl::generators_to_json(&config.generators);
 
     expected.assert_eq(&rendered);
 }
@@ -108,7 +108,7 @@ fn preview_features_setting_must_work() {
         ]"#]];
 
     let config = parse_configuration(schema);
-    let rendered = psl::generators_to_json(&config.generators);
+    let rendered = saola_psl::generators_to_json(&config.generators);
 
     expected.assert_eq(&rendered);
 }
@@ -138,7 +138,7 @@ fn hidden_preview_features_setting_must_work() {
         ]"#]];
 
     let config = parse_configuration(schema);
-    let rendered = psl::generators_to_json(&config.generators);
+    let rendered = saola_psl::generators_to_json(&config.generators);
 
     expected.assert_eq(&rendered);
 }
@@ -167,7 +167,7 @@ fn back_slashes_in_providers_must_work() {
         ]"#]];
 
     let config = parse_configuration(schema);
-    let rendered = psl::generators_to_json(&config.generators);
+    let rendered = saola_psl::generators_to_json(&config.generators);
 
     expected.assert_eq(&rendered);
 }
@@ -207,7 +207,7 @@ fn new_lines_in_generator_must_work() {
         ]"#]];
 
     let config = parse_configuration(schema);
-    let rendered = psl::get_config::generators_to_json(&config.generators);
+    let rendered = saola_psl::get_config::generators_to_json(&config.generators);
 
     expected.assert_eq(&rendered);
 }
@@ -221,7 +221,7 @@ fn fail_to_load_generator_with_options_missing() {
         }
     "#};
 
-    let error = psl::parse_configuration(schema)
+    let error = saola_psl::parse_configuration(schema)
         .map(drop)
         .map_err(|diag| diag.to_pretty_string("schema.prisma", schema))
         .unwrap_err();
@@ -250,7 +250,7 @@ fn nice_error_for_unknown_generator_preview_feature() {
         }
     "#};
 
-    let error = psl::parse_configuration(schema)
+    let error = saola_psl::parse_configuration(schema)
         .map(drop)
         .map_err(|diag| diag.to_pretty_string("schema.prisma", schema))
         .unwrap_err();
@@ -306,7 +306,7 @@ fn binary_targets_from_env_var_should_work() {
         ]"#]];
 
     let config = parse_configuration(schema);
-    let rendered = psl::get_config::generators_to_json(&config.generators);
+    let rendered = saola_psl::get_config::generators_to_json(&config.generators);
 
     expected.assert_eq(&rendered);
 }
@@ -339,7 +339,7 @@ fn retain_env_var_definitions_in_generator_block() {
         ]"#]];
 
     let config = parse_configuration(schema);
-    let rendered = psl::get_config::generators_to_json(&config.generators);
+    let rendered = saola_psl::get_config::generators_to_json(&config.generators);
 
     expected.assert_eq(&rendered);
 }
@@ -396,7 +396,7 @@ fn empty_preview_features_array_should_work() {
         }
     "#;
 
-    let schema = psl::parse_schema_without_extensions(schema).unwrap();
+    let schema = saola_psl::parse_schema_without_extensions(schema).unwrap();
     assert!(schema.configuration.preview_features().is_empty());
 }
 
@@ -414,7 +414,7 @@ fn empty_preview_features_array_with_empty_space_should_work() {
         }
     "#;
 
-    let schema = psl::parse_schema_without_extensions(schema).unwrap();
+    let schema = saola_psl::parse_schema_without_extensions(schema).unwrap();
     assert!(schema.configuration.preview_features().is_empty());
 }
 
@@ -445,7 +445,7 @@ fn engine_type_must_be_a_string() {
         [1;94m   | [0m
     "#]];
 
-    let error = psl::parse_configuration(with_array)
+    let error = saola_psl::parse_configuration(with_array)
         .map(drop)
         .map_err(|diag| diag.to_pretty_string("schema.prisma", with_array))
         .unwrap_err();

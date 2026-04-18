@@ -1,5 +1,5 @@
 use crate::{Provider, common::*, with_header};
-use psl::parser_database::ScalarType;
+use saola_psl::parser_database::ScalarType;
 
 #[test]
 fn parse_scalar_types() {
@@ -13,7 +13,7 @@ fn parse_scalar_types() {
     }
     "#;
 
-    let schema = psl::parse_schema_without_extensions(dml).unwrap();
+    let schema = saola_psl::parse_schema_without_extensions(dml).unwrap();
     let user_model = schema.assert_has_model("User");
 
     user_model
@@ -56,7 +56,7 @@ fn parse_field_arity() {
     }
     "#;
 
-    let schema = psl::parse_schema_without_extensions(dml).unwrap();
+    let schema = saola_psl::parse_schema_without_extensions(dml).unwrap();
     let post_model = schema.assert_has_model("Post");
 
     post_model
@@ -178,7 +178,7 @@ fn json_type_must_work_for_some_connectors() {
     "#};
 
     // empty connector does support it
-    psl::parse_schema_without_extensions(dml)
+    saola_psl::parse_schema_without_extensions(dml)
         .unwrap()
         .assert_has_model("User")
         .assert_has_scalar_field("json")
@@ -199,14 +199,14 @@ fn json_type_must_work_for_some_connectors() {
     expectation.assert_eq(&error);
 
     // Postgres does support it
-    psl::parse_schema_without_extensions(format!("{POSTGRES_SOURCE}\n{dml}"))
+    saola_psl::parse_schema_without_extensions(format!("{POSTGRES_SOURCE}\n{dml}"))
         .unwrap()
         .assert_has_model("User")
         .assert_has_scalar_field("json")
         .assert_scalar_type(ScalarType::Json);
 
     // MySQL does support it
-    psl::parse_schema_without_extensions(format!("{MYSQL_SOURCE}\n{dml}"))
+    saola_psl::parse_schema_without_extensions(format!("{MYSQL_SOURCE}\n{dml}"))
         .unwrap()
         .assert_has_model("User")
         .assert_has_scalar_field("json")
@@ -229,7 +229,7 @@ fn resolve_enum_field() {
     }
     "#;
 
-    let schema = psl::parse_schema_without_extensions(dml).unwrap();
+    let schema = saola_psl::parse_schema_without_extensions(dml).unwrap();
     let user_model = schema.assert_has_model("User");
     user_model.assert_has_scalar_field("email");
 
@@ -266,7 +266,7 @@ fn json_list_type_must_work_for_some_connectors() {
     let schema = with_header(dml, Provider::Postgres, &[]);
 
     // Postgres does support it
-    psl::parse_schema_without_extensions(schema)
+    saola_psl::parse_schema_without_extensions(schema)
         .unwrap()
         .assert_has_model("User")
         .assert_has_scalar_field("json_list")

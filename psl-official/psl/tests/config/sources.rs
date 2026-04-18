@@ -1,5 +1,5 @@
 use crate::common::*;
-use psl::{StringFromEnvVar, datamodel_connector::RelationMode};
+use saola_psl::{StringFromEnvVar, datamodel_connector::RelationMode};
 
 #[test]
 fn must_error_if_multiple_datasources_are_defined() {
@@ -659,7 +659,7 @@ fn fail_when_preview_features_are_declared() {
 fn fail_when_no_source_is_declared() {
     let invalid_datamodel: &str = r#"        "#;
 
-    let error = psl::parse_configuration(invalid_datamodel)
+    let error = saola_psl::parse_configuration(invalid_datamodel)
         .and_then(|res| res.validate_that_one_datasource_is_provided())
         .map_err(|e| e.to_pretty_string("schema.prisma", invalid_datamodel))
         .unwrap_err();

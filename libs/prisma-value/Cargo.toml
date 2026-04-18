@@ -1,6 +1,6 @@
 [package]
 edition.workspace = true
-name = "prisma-value"
+name = "saola-prisma-value"
 version = "0.1.0"
 
 [dependencies]

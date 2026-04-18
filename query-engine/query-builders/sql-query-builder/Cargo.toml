@@ -1,6 +1,6 @@
 [package]
 edition.workspace = true
-name = "sql-query-builder"
+name = "saola-sql-query-builder"
 version = "0.1.0"
 
 [features]

@@ -1,4 +1,4 @@
-use psl::parser_database::ScalarType;
+use saola_psl::parser_database::ScalarType;
 
 use crate::common::*;
 
@@ -11,7 +11,7 @@ fn should_apply_updated_at_attribute() {
         }
     "#};
 
-    let schema = psl::parse_schema_without_extensions(dml).unwrap();
+    let schema = saola_psl::parse_schema_without_extensions(dml).unwrap();
     let model = schema.assert_has_model("User");
 
     model

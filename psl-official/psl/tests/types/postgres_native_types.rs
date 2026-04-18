@@ -1,5 +1,5 @@
 use crate::common::*;
-use psl::builtin_connectors::{KnownPostgresType, PostgresType};
+use saola_psl::builtin_connectors::{KnownPostgresType, PostgresType};
 
 #[test]
 fn xml_data_type_should_fail_on_index() {
@@ -225,7 +225,7 @@ fn xml_should_work_with_string_scalar_type() {
         }
     "#};
 
-    let datamodel = psl::parse_schema_without_extensions(dml).unwrap();
+    let datamodel = saola_psl::parse_schema_without_extensions(dml).unwrap();
     let user_model = datamodel.assert_has_model("Blog");
 
     user_model

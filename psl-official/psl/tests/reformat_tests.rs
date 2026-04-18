@@ -37,13 +37,13 @@ fn run_reformat_test(test_file_path: &str) {
 include!(concat!(env!("OUT_DIR"), "/reformat_tests.rs"));
 
 fn reformat(s: &str) -> String {
-    psl::reformat(s, 2).unwrap()
+    saola_psl::reformat(s, 2).unwrap()
 }
 
 mod reformat_multi_file {
     use std::{collections::HashMap, fs, io::Write, path};
 
-    use psl::{SourceFile, reformat_multiple};
+    use saola_psl::{SourceFile, reformat_multiple};
 
     use crate::panic_with_diff;
 

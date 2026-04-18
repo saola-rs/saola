@@ -1,4 +1,4 @@
-use psl::parser_database::{IndexAlgorithm, OperatorClass};
+use saola_psl::parser_database::{IndexAlgorithm, OperatorClass};
 
 use crate::{Provider, common::*, with_header};
 
@@ -90,7 +90,7 @@ fn with_inet() {
         }
     "#};
 
-    psl::parse_schema_without_extensions(with_header(dml, Provider::Postgres, &[]))
+    saola_psl::parse_schema_without_extensions(with_header(dml, Provider::Postgres, &[]))
         .unwrap()
         .assert_has_model("A")
         .assert_index_on_fields(&["a"])
@@ -110,7 +110,7 @@ fn with_raw_unsupported() {
         }
     "#};
 
-    psl::parse_schema_without_extensions(with_header(dml, Provider::Postgres, &[]))
+    saola_psl::parse_schema_without_extensions(with_header(dml, Provider::Postgres, &[]))
         .unwrap()
         .assert_has_model("A")
         .assert_index_on_fields(&["a"])
@@ -130,7 +130,7 @@ fn with_unsupported_no_ops() {
         }
     "#};
 
-    psl::parse_schema_without_extensions(with_header(dml, Provider::Postgres, &[]))
+    saola_psl::parse_schema_without_extensions(with_header(dml, Provider::Postgres, &[]))
         .unwrap()
         .assert_has_model("A")
         .assert_index_on_fields(&["a"])

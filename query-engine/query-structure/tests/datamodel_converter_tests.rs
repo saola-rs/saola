@@ -1,6 +1,6 @@
 #![allow(non_snake_case)]
 
-use query_structure::*;
+use saola_query_structure::*;
 use std::sync::Arc;
 
 #[test]
@@ -504,7 +504,7 @@ fn duplicate_relation_name() {
 
 fn convert(datamodel: &str) -> InternalDataModel {
     let schema = psl::parse_schema_without_extensions(datamodel).unwrap();
-    query_structure::convert(Arc::new(schema))
+    saola_query_structure::convert(Arc::new(schema))
 }
 
 trait DatamodelAssertions {

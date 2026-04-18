@@ -769,22 +769,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d0a5c400df2834b80a4c3327b3aad3a4c4cd4de0629063962b03235697506a28"
 
 [[package]]
-name = "crosstarget-utils"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "derive_more 0.99.20",
- "enumflags2",
- "futures",
- "js-sys",
- "pin-project",
- "regex",
- "tokio",
- "wasm-bindgen",
- "wasm-bindgen-futures",
-]
-
-[[package]]
 name = "cruet"
 version = "0.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -949,8 +933,8 @@ dependencies = [
  "expect-test",
  "indoc",
  "itertools 0.13.0",
- "psl",
  "regex",
+ "saola-psl",
 ]
 
 [[package]]
@@ -1021,15 +1005,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "diagnostics"
-version = "0.1.0"
-dependencies = [
- "colored 3.1.1",
- "indoc",
- "pest",
-]
-
-[[package]]
 name = "diff"
 version = "0.1.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1062,26 +1037,6 @@ name = "dissimilar"
 version = "1.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "aeda16ab4059c5fd2a83f2b9c9e9c981327b18aa8e3b313f7e6563799d4f093e"
-
-[[package]]
-name = "dmmf"
-version = "0.1.0"
-dependencies = [
- "bigdecimal",
- "colored 3.1.1",
- "expect-test",
- "flate2",
- "indexmap 2.14.0",
- "indoc",
- "itertools 0.13.0",
- "pretty_assertions",
- "psl",
- "query-structure",
- "schema",
- "serde",
- "serde_json",
- "similar",
-]
 
 [[package]]
 name = "either"
@@ -2514,15 +2469,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "mongodb-client"
-version = "0.1.0"
-dependencies = [
- "mongodb",
- "percent-encoding",
- "thiserror 2.0.18",
-]
-
-[[package]]
 name = "mongodb-internal-macros"
 version = "3.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2532,40 +2478,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.117",
-]
-
-[[package]]
-name = "mongodb-query-connector"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "async-trait",
- "bigdecimal",
- "bson",
- "chrono",
- "derive_more 0.99.20",
- "futures",
- "indexmap 2.14.0",
- "itertools 0.13.0",
- "mongodb",
- "mongodb-client",
- "pretty_assertions",
- "prisma-metrics",
- "prisma-value",
- "psl",
- "query-connector",
- "query-structure",
- "rand 0.8.5",
- "regex",
- "serde",
- "serde_json",
- "telemetry",
- "thiserror 2.0.18",
- "tokio",
- "tracing",
- "tracing-futures",
- "user-facing-errors",
- "uuid",
 ]
 
 [[package]]
@@ -2582,18 +2494,18 @@ dependencies = [
  "indoc",
  "itertools 0.13.0",
  "mongodb",
- "mongodb-client",
  "mongodb-schema-describer",
  "names",
- "psl",
  "regex",
+ "saola-mongodb-client",
+ "saola-psl",
+ "saola-user-facing-errors",
  "schema-connector",
  "serde",
  "serde_json",
  "tokio",
  "tracing",
  "url",
- "user-facing-errors",
 ]
 
 [[package]]
@@ -2996,10 +2908,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e2355d85b9a3786f481747ced0e0ff2ba35213a1f9bd406ed906554d7af805a1"
 
 [[package]]
-name = "panic-utils"
-version = "0.1.0"
-
-[[package]]
 name = "parking"
 version = "2.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3026,19 +2934,6 @@ dependencies = [
  "redox_syscall 0.5.18",
  "smallvec",
  "windows-link",
-]
-
-[[package]]
-name = "parser-database"
-version = "0.1.0"
-dependencies = [
- "diagnostics",
- "either",
- "enumflags2",
- "indexmap 2.14.0",
- "itertools 0.13.0",
- "rustc-hash 2.1.2",
- "schema-ast",
 ]
 
 [[package]]
@@ -3326,39 +3221,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "prisma-metrics"
-version = "0.1.0"
-dependencies = [
- "derive_more 0.99.20",
- "expect-test",
- "futures",
- "metrics",
- "metrics-exporter-prometheus",
- "metrics-util",
- "parking_lot",
- "pin-project",
- "serde",
- "serde_json",
- "tokio",
- "tracing",
- "tracing-futures",
- "tracing-subscriber",
-]
-
-[[package]]
-name = "prisma-value"
-version = "0.1.0"
-dependencies = [
- "base64 0.22.1",
- "bigdecimal",
- "chrono",
- "regex",
- "serde",
- "serde_json",
- "uuid",
-]
-
-[[package]]
 name = "proc-macro-crate"
 version = "3.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3374,43 +3236,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8fd00f0bb2e90d81d1044c2b32617f68fcb9fa3bb7640c23e9c748e53fb30934"
 dependencies = [
  "unicode-ident",
-]
-
-[[package]]
-name = "psl"
-version = "0.1.0"
-dependencies = [
- "base64 0.22.1",
- "dissimilar",
- "either",
- "expect-test",
- "indoc",
- "psl-core",
-]
-
-[[package]]
-name = "psl-core"
-version = "0.1.0"
-dependencies = [
- "bigdecimal",
- "cfg-if",
- "chrono",
- "connection-string",
- "cruet",
- "diagnostics",
- "either",
- "enumflags2",
- "hex",
- "indoc",
- "itertools 0.13.0",
- "lsp-types",
- "parser-database",
- "prisma-value",
- "regex",
- "schema-ast",
- "serde",
- "serde_json",
- "url",
 ]
 
 [[package]]
@@ -3434,63 +3259,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "quaint"
-version = "0.2.0-alpha.13"
-dependencies = [
- "async-trait",
- "base64 0.22.1",
- "bigdecimal",
- "bit-vec",
- "byteorder",
- "bytes",
- "cfg_aliases",
- "chrono",
- "concat-idents",
- "connection-string",
- "crosstarget-utils",
- "either",
- "enumflags2",
- "expect-test",
- "futures",
- "getrandom 0.2.17",
- "hex",
- "indoc",
- "itertools 0.13.0",
- "lru-cache",
- "mobc",
- "mysql_async",
- "names",
- "native-tls",
- "num_cpus",
- "paste",
- "percent-encoding",
- "pin-project",
- "postgres-native-tls",
- "postgres-types",
- "prisma-metrics",
- "quaint-test-macros",
- "quaint-test-setup",
- "query-template",
- "regex",
- "rusqlite",
- "serde",
- "serde_json",
- "sqlformat",
- "telemetry",
- "thiserror 2.0.18",
- "tiberius",
- "tokio",
- "tokio-postgres",
- "tokio-tungstenite",
- "tokio-util",
- "tracing",
- "tracing-futures",
- "tracing-test",
- "url",
- "uuid",
-]
-
-[[package]]
 name = "quaint-test-macros"
 version = "0.1.0"
 dependencies = [
@@ -3508,7 +3276,7 @@ dependencies = [
  "async-trait",
  "bitflags 2.11.0",
  "names",
- "quaint",
+ "saola-quaint",
  "tokio",
 ]
 
@@ -3525,126 +3293,6 @@ dependencies = [
  "wasi 0.11.1+wasi-snapshot-preview1",
  "web-sys",
  "winapi",
-]
-
-[[package]]
-name = "query-builder"
-version = "0.1.0"
-dependencies = [
- "query-structure",
- "query-template",
- "serde",
-]
-
-[[package]]
-name = "query-connector"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "async-trait",
- "chrono",
- "futures",
- "indexmap 2.14.0",
- "itertools 0.13.0",
- "prisma-value",
- "query-structure",
- "serde",
- "serde_json",
- "telemetry",
- "thiserror 2.0.18",
- "tracing-futures",
- "user-facing-errors",
- "uuid",
-]
-
-[[package]]
-name = "query-core"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "bigdecimal",
- "bon",
- "chrono",
- "connection-string",
- "crossbeam-channel",
- "crosstarget-utils",
- "cuid",
- "derive_more 0.99.20",
- "enumflags2",
- "futures",
- "indexmap 2.14.0",
- "itertools 0.13.0",
- "lru 0.7.8",
- "petgraph",
- "prisma-metrics",
- "psl",
- "query-builder",
- "query-connector",
- "query-structure",
- "schema",
- "serde",
- "serde_json",
- "smallvec",
- "sql-query-builder",
- "telemetry",
- "thiserror 2.0.18",
- "tokio",
- "tracing",
- "tracing-futures",
- "tracing-subscriber",
- "ulid",
- "user-facing-errors",
- "uuid",
-]
-
-[[package]]
-name = "query-engine-common"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "connection-string",
- "napi",
- "prisma-metrics",
- "psl",
- "query-connector",
- "query-core",
- "serde",
- "serde_json",
- "telemetry",
- "thiserror 2.0.18",
- "tracing",
- "tracing-futures",
- "tracing-subscriber",
- "tsify",
- "url",
- "user-facing-errors",
- "wasm-bindgen",
-]
-
-[[package]]
-name = "query-structure"
-version = "0.0.0"
-dependencies = [
- "bigdecimal",
- "chrono",
- "cuid",
- "getrandom 0.2.17",
- "indexmap 2.14.0",
- "itertools 0.13.0",
- "nanoid",
- "prisma-value",
- "psl",
- "telemetry",
- "thiserror 2.0.18",
- "ulid",
- "uuid",
-]
-
-[[package]]
-name = "query-template"
-version = "0.1.0"
-dependencies = [
- "serde",
 ]
 
 [[package]]
@@ -4124,15 +3772,60 @@ dependencies = [
  "anyhow",
  "chrono",
  "indexmap 2.14.0",
- "mongodb-query-connector",
- "psl",
- "query-connector",
- "query-core",
- "query-structure",
- "schema",
+ "saola-mongodb-query-connector",
+ "saola-psl",
+ "saola-query-connector",
+ "saola-query-core",
+ "saola-query-schema",
+ "saola-query-structure",
+ "saola-sql-query-connector",
  "serde",
  "serde_json",
- "sql-query-connector",
+]
+
+[[package]]
+name = "saola-crosstarget-utils"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "derive_more 0.99.20",
+ "enumflags2",
+ "futures",
+ "js-sys",
+ "pin-project",
+ "regex",
+ "tokio",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+]
+
+[[package]]
+name = "saola-diagnostics"
+version = "0.1.0"
+dependencies = [
+ "colored 3.1.1",
+ "indoc",
+ "pest",
+]
+
+[[package]]
+name = "saola-dmmf"
+version = "0.1.0"
+dependencies = [
+ "bigdecimal",
+ "colored 3.1.1",
+ "expect-test",
+ "flate2",
+ "indexmap 2.14.0",
+ "indoc",
+ "itertools 0.13.0",
+ "pretty_assertions",
+ "saola-psl",
+ "saola-query-schema",
+ "saola-query-structure",
+ "serde",
+ "serde_json",
+ "similar",
 ]
 
 [[package]]
@@ -4141,10 +3834,438 @@ version = "0.1.0"
 dependencies = [
  "heck 0.4.1",
  "proc-macro2",
- "psl",
  "quote",
- "schema-ast",
+ "saola-psl",
+ "saola-schema-ast",
  "syn 2.0.117",
+]
+
+[[package]]
+name = "saola-metrics"
+version = "0.1.0"
+dependencies = [
+ "derive_more 0.99.20",
+ "expect-test",
+ "futures",
+ "metrics",
+ "metrics-exporter-prometheus",
+ "metrics-util",
+ "parking_lot",
+ "pin-project",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
+ "tracing-futures",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "saola-mongodb-client"
+version = "0.1.0"
+dependencies = [
+ "mongodb",
+ "percent-encoding",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "saola-mongodb-query-connector"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "bigdecimal",
+ "bson",
+ "chrono",
+ "derive_more 0.99.20",
+ "futures",
+ "indexmap 2.14.0",
+ "itertools 0.13.0",
+ "mongodb",
+ "pretty_assertions",
+ "rand 0.8.5",
+ "regex",
+ "saola-metrics",
+ "saola-mongodb-client",
+ "saola-prisma-value",
+ "saola-psl",
+ "saola-query-connector",
+ "saola-query-structure",
+ "saola-telemetry",
+ "saola-user-facing-errors",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "tokio",
+ "tracing",
+ "tracing-futures",
+ "uuid",
+]
+
+[[package]]
+name = "saola-panic-utils"
+version = "0.1.0"
+
+[[package]]
+name = "saola-parser-database"
+version = "0.1.0"
+dependencies = [
+ "either",
+ "enumflags2",
+ "indexmap 2.14.0",
+ "itertools 0.13.0",
+ "rustc-hash 2.1.2",
+ "saola-diagnostics",
+ "saola-schema-ast",
+]
+
+[[package]]
+name = "saola-prisma-value"
+version = "0.1.0"
+dependencies = [
+ "base64 0.22.1",
+ "bigdecimal",
+ "chrono",
+ "regex",
+ "serde",
+ "serde_json",
+ "uuid",
+]
+
+[[package]]
+name = "saola-psl"
+version = "0.1.0"
+dependencies = [
+ "base64 0.22.1",
+ "dissimilar",
+ "either",
+ "expect-test",
+ "indoc",
+ "saola-psl-core",
+]
+
+[[package]]
+name = "saola-psl-core"
+version = "0.1.0"
+dependencies = [
+ "bigdecimal",
+ "cfg-if",
+ "chrono",
+ "connection-string",
+ "cruet",
+ "either",
+ "enumflags2",
+ "hex",
+ "indoc",
+ "itertools 0.13.0",
+ "lsp-types",
+ "regex",
+ "saola-diagnostics",
+ "saola-parser-database",
+ "saola-prisma-value",
+ "saola-schema-ast",
+ "serde",
+ "serde_json",
+ "url",
+]
+
+[[package]]
+name = "saola-quaint"
+version = "0.2.0-alpha.13"
+dependencies = [
+ "async-trait",
+ "base64 0.22.1",
+ "bigdecimal",
+ "bit-vec",
+ "byteorder",
+ "bytes",
+ "cfg_aliases",
+ "chrono",
+ "concat-idents",
+ "connection-string",
+ "either",
+ "enumflags2",
+ "expect-test",
+ "futures",
+ "getrandom 0.2.17",
+ "hex",
+ "indoc",
+ "itertools 0.13.0",
+ "lru-cache",
+ "mobc",
+ "mysql_async",
+ "names",
+ "native-tls",
+ "num_cpus",
+ "paste",
+ "percent-encoding",
+ "pin-project",
+ "postgres-native-tls",
+ "postgres-types",
+ "quaint-test-macros",
+ "quaint-test-setup",
+ "regex",
+ "rusqlite",
+ "saola-crosstarget-utils",
+ "saola-metrics",
+ "saola-query-template",
+ "saola-telemetry",
+ "serde",
+ "serde_json",
+ "sqlformat",
+ "thiserror 2.0.18",
+ "tiberius",
+ "tokio",
+ "tokio-postgres",
+ "tokio-tungstenite",
+ "tokio-util",
+ "tracing",
+ "tracing-futures",
+ "tracing-test",
+ "url",
+ "uuid",
+]
+
+[[package]]
+name = "saola-query-builder"
+version = "0.1.0"
+dependencies = [
+ "saola-query-structure",
+ "saola-query-template",
+ "serde",
+]
+
+[[package]]
+name = "saola-query-connector"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "chrono",
+ "futures",
+ "indexmap 2.14.0",
+ "itertools 0.13.0",
+ "saola-prisma-value",
+ "saola-query-structure",
+ "saola-telemetry",
+ "saola-user-facing-errors",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "tracing-futures",
+ "uuid",
+]
+
+[[package]]
+name = "saola-query-core"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "bigdecimal",
+ "bon",
+ "chrono",
+ "connection-string",
+ "crossbeam-channel",
+ "cuid",
+ "derive_more 0.99.20",
+ "enumflags2",
+ "futures",
+ "indexmap 2.14.0",
+ "itertools 0.13.0",
+ "lru 0.7.8",
+ "petgraph",
+ "saola-crosstarget-utils",
+ "saola-metrics",
+ "saola-psl",
+ "saola-query-builder",
+ "saola-query-connector",
+ "saola-query-schema",
+ "saola-query-structure",
+ "saola-sql-query-builder",
+ "saola-telemetry",
+ "saola-user-facing-errors",
+ "serde",
+ "serde_json",
+ "smallvec",
+ "thiserror 2.0.18",
+ "tokio",
+ "tracing",
+ "tracing-futures",
+ "tracing-subscriber",
+ "ulid",
+ "uuid",
+]
+
+[[package]]
+name = "saola-query-engine-common"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "connection-string",
+ "napi",
+ "saola-metrics",
+ "saola-psl",
+ "saola-query-connector",
+ "saola-query-core",
+ "saola-telemetry",
+ "saola-user-facing-errors",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "tracing",
+ "tracing-futures",
+ "tracing-subscriber",
+ "tsify",
+ "url",
+ "wasm-bindgen",
+]
+
+[[package]]
+name = "saola-query-schema"
+version = "0.1.0"
+dependencies = [
+ "codspeed-criterion-compat",
+ "rustc-hash 2.1.2",
+ "saola-psl",
+ "saola-query-structure",
+]
+
+[[package]]
+name = "saola-query-structure"
+version = "0.1.0"
+dependencies = [
+ "bigdecimal",
+ "chrono",
+ "cuid",
+ "getrandom 0.2.17",
+ "indexmap 2.14.0",
+ "itertools 0.13.0",
+ "nanoid",
+ "saola-prisma-value",
+ "saola-psl",
+ "saola-telemetry",
+ "thiserror 2.0.18",
+ "ulid",
+ "uuid",
+]
+
+[[package]]
+name = "saola-query-template"
+version = "0.1.0"
+dependencies = [
+ "serde",
+]
+
+[[package]]
+name = "saola-schema-ast"
+version = "0.1.0"
+dependencies = [
+ "pest",
+ "pest_derive",
+ "saola-diagnostics",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "saola-sql-ddl"
+version = "0.1.0"
+dependencies = [
+ "indoc",
+]
+
+[[package]]
+name = "saola-sql-query-builder"
+version = "0.1.0"
+dependencies = [
+ "bigdecimal",
+ "chrono",
+ "itertools 0.13.0",
+ "saola-prisma-value",
+ "saola-psl",
+ "saola-quaint",
+ "saola-query-builder",
+ "saola-query-schema",
+ "saola-query-structure",
+ "saola-telemetry",
+ "serde_json",
+]
+
+[[package]]
+name = "saola-sql-query-connector"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "base64 0.22.1",
+ "bigdecimal",
+ "chrono",
+ "cuid",
+ "expect-test",
+ "futures",
+ "itertools 0.13.0",
+ "rand 0.8.5",
+ "saola-panic-utils",
+ "saola-prisma-value",
+ "saola-psl",
+ "saola-quaint",
+ "saola-query-builder",
+ "saola-query-connector",
+ "saola-query-structure",
+ "saola-sql-query-builder",
+ "saola-telemetry",
+ "saola-user-facing-errors",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "tokio",
+ "tracing",
+ "tracing-futures",
+ "ulid",
+ "uuid",
+]
+
+[[package]]
+name = "saola-telemetry"
+version = "0.1.0"
+dependencies = [
+ "ahash 0.8.12",
+ "derive_more 0.99.20",
+ "enumflags2",
+ "insta",
+ "rand 0.8.5",
+ "saola-crosstarget-utils",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "tokio",
+ "tracing",
+ "tracing-futures",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "saola-user-facing-error-macros"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.117",
+]
+
+[[package]]
+name = "saola-user-facing-errors"
+version = "0.1.0"
+dependencies = [
+ "indoc",
+ "itertools 0.13.0",
+ "saola-panic-utils",
+ "saola-quaint",
+ "saola-user-facing-error-macros",
+ "serde",
+ "serde_json",
+ "tracing",
 ]
 
 [[package]]
@@ -4163,39 +4284,19 @@ dependencies = [
 ]
 
 [[package]]
-name = "schema"
-version = "0.1.0"
-dependencies = [
- "codspeed-criterion-compat",
- "psl",
- "query-structure",
- "rustc-hash 2.1.2",
-]
-
-[[package]]
-name = "schema-ast"
-version = "0.1.0"
-dependencies = [
- "diagnostics",
- "pest",
- "pest_derive",
- "serde",
- "serde_json",
-]
-
-[[package]]
 name = "schema-commands"
 version = "0.1.0"
 dependencies = [
  "async-trait",
  "chrono",
- "crosstarget-utils",
  "enumflags2",
  "json-rpc-api",
  "jsonrpc-core",
  "mongodb-schema-connector",
- "psl",
- "quaint",
+ "saola-crosstarget-utils",
+ "saola-psl",
+ "saola-quaint",
+ "saola-user-facing-errors",
  "schema-connector",
  "serde",
  "serde_json",
@@ -4205,7 +4306,6 @@ dependencies = [
  "tracing-futures",
  "tracing-subscriber",
  "url",
- "user-facing-errors",
 ]
 
 [[package]]
@@ -4216,14 +4316,14 @@ dependencies = [
  "enumflags2",
  "js-sys",
  "json-rpc-api",
- "psl",
- "quaint",
+ "saola-psl",
+ "saola-quaint",
+ "saola-user-facing-errors",
  "serde",
  "serde_json",
  "sha2",
  "tracing",
  "tracing-error",
- "user-facing-errors",
  "wasm-bindgen",
 ]
 
@@ -4234,14 +4334,15 @@ dependencies = [
  "async-trait",
  "bon",
  "chrono",
- "crosstarget-utils",
  "enumflags2",
  "futures",
  "hashbrown 0.16.1",
  "json-rpc-api",
  "jsonrpc-core",
  "mongodb-schema-connector",
- "psl",
+ "saola-crosstarget-utils",
+ "saola-psl",
+ "saola-user-facing-errors",
  "schema-commands",
  "schema-connector",
  "serde",
@@ -4252,7 +4353,6 @@ dependencies = [
  "tracing-futures",
  "tracing-subscriber",
  "url",
- "user-facing-errors",
 ]
 
 [[package]]
@@ -4565,71 +4665,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "sql-ddl"
-version = "0.1.0"
-dependencies = [
- "indoc",
-]
-
-[[package]]
-name = "sql-query-builder"
-version = "0.1.0"
-dependencies = [
- "bigdecimal",
- "chrono",
- "itertools 0.13.0",
- "prisma-value",
- "psl",
- "quaint",
- "query-builder",
- "query-structure",
- "schema",
- "serde_json",
- "telemetry",
-]
-
-[[package]]
-name = "sql-query-connector"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "async-trait",
- "base64 0.22.1",
- "bigdecimal",
- "chrono",
- "cuid",
- "expect-test",
- "futures",
- "itertools 0.13.0",
- "panic-utils",
- "prisma-value",
- "psl",
- "quaint",
- "query-builder",
- "query-connector",
- "query-structure",
- "rand 0.8.5",
- "serde",
- "serde_json",
- "sql-query-builder",
- "telemetry",
- "thiserror 2.0.18",
- "tokio",
- "tracing",
- "tracing-futures",
- "ulid",
- "user-facing-errors",
- "uuid",
-]
-
-[[package]]
 name = "sql-schema-connector"
 version = "0.1.0"
 dependencies = [
  "base64 0.22.1",
  "chrono",
  "connection-string",
- "crosstarget-utils",
  "datamodel-renderer",
  "either",
  "enumflags2",
@@ -4637,14 +4678,16 @@ dependencies = [
  "indexmap 2.14.0",
  "indoc",
  "itertools 0.13.0",
- "prisma-value",
- "psl",
- "quaint",
  "regex",
+ "saola-crosstarget-utils",
+ "saola-prisma-value",
+ "saola-psl",
+ "saola-quaint",
+ "saola-sql-ddl",
+ "saola-user-facing-errors",
  "schema-connector",
  "serde",
  "serde_json",
- "sql-ddl",
  "sql-schema-describer",
  "sqlformat",
  "sqlparser",
@@ -4654,7 +4697,6 @@ dependencies = [
  "tracing",
  "tracing-futures",
  "url",
- "user-facing-errors",
  "uuid",
  "versions",
 ]
@@ -4672,10 +4714,10 @@ dependencies = [
  "indoc",
  "itertools 0.13.0",
  "pretty_assertions",
- "prisma-value",
- "psl",
- "quaint",
  "regex",
+ "saola-prisma-value",
+ "saola-psl",
+ "saola-quaint",
  "serde",
  "test-macros",
  "test-setup",
@@ -4864,25 +4906,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "55937e1799185b12863d447f42597ed69d9928686b8d88a1df17376a097d8369"
 
 [[package]]
-name = "telemetry"
-version = "0.1.0"
-dependencies = [
- "ahash 0.8.12",
- "crosstarget-utils",
- "derive_more 0.99.20",
- "enumflags2",
- "insta",
- "rand 0.8.5",
- "serde",
- "serde_json",
- "thiserror 2.0.18",
- "tokio",
- "tracing",
- "tracing-futures",
- "tracing-subscriber",
-]
-
-[[package]]
 name = "tempfile"
 version = "3.27.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4912,7 +4935,7 @@ dependencies = [
  "connection-string",
  "dissimilar",
  "enumflags2",
- "quaint",
+ "saola-quaint",
  "tokio",
  "tracing",
  "tracing-error",
@@ -5476,29 +5499,6 @@ dependencies = [
  "percent-encoding",
  "serde",
  "serde_derive",
-]
-
-[[package]]
-name = "user-facing-error-macros"
-version = "0.1.0"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.117",
-]
-
-[[package]]
-name = "user-facing-errors"
-version = "0.1.0"
-dependencies = [
- "indoc",
- "itertools 0.13.0",
- "panic-utils",
- "quaint",
- "serde",
- "serde_json",
- "tracing",
- "user-facing-error-macros",
 ]
 
 [[package]]

@@ -1,5 +1,5 @@
 use crate::common::*;
-use psl::parser_database::ScalarType;
+use saola_psl::parser_database::ScalarType;
 
 #[test]
 fn unique_attribute() {
@@ -10,7 +10,7 @@ fn unique_attribute() {
         }
     "#;
 
-    let schema = psl::parse_schema_without_extensions(dml).unwrap();
+    let schema = saola_psl::parse_schema_without_extensions(dml).unwrap();
     let model = schema.assert_has_model("Test");
 
     model

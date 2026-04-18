@@ -4,7 +4,7 @@ fn main() {
     let validated_schema = std::sync::Arc::new(psl::validate_without_extensions(source_file));
 
     let now = std::time::Instant::now();
-    let _ = schema::build(validated_schema, true);
+    let _ = saola_query_schema::build(validated_schema, true);
     let elapsed = now.elapsed();
 
     println!("Elapsed: {elapsed:.2?}");

@@ -1,4 +1,4 @@
-use query_template::PlaceholderFormat;
+use saola_query_template::PlaceholderFormat;
 
 #[test]
 fn placeholder_formatting_numbered() {

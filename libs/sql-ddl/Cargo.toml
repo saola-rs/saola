@@ -1,5 +1,5 @@
 [package]
-name = "sql-ddl"
+name = "saola-sql-ddl"
 version = "0.1.0"
 edition.workspace = true
 

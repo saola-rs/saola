@@ -1,5 +1,5 @@
 use crate::{Provider, common::*, with_header};
-use psl::parser_database::ScalarType;
+use saola_psl::parser_database::ScalarType;
 
 #[test]
 fn settings_must_be_deteced() {

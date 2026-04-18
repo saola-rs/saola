@@ -1,7 +1,7 @@
 mod cycle_detection;
 
 use crate::common::*;
-use psl::{
+use saola_psl::{
     datamodel_connector::RelationMode,
     parser_database::ReferentialAction::{self, *},
 };

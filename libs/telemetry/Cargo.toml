@@ -1,6 +1,6 @@
 [package]
 edition.workspace = true
-name = "telemetry"
+name = "saola-telemetry"
 version = "0.1.0"
 
 [dependencies]

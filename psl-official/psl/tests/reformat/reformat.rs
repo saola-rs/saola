@@ -1,7 +1,7 @@
 use crate::common::*;
 
 fn reformat(input: &str) -> String {
-    psl::reformat(input, 2).unwrap_or_else(|| input.to_owned())
+    saola_psl::reformat(input, 2).unwrap_or_else(|| input.to_owned())
 }
 
 #[test]

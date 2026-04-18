@@ -1,5 +1,5 @@
 [package]
-name = "user-facing-errors"
+name = "saola-user-facing-errors"
 version = "0.1.0"
 edition.workspace = true
 

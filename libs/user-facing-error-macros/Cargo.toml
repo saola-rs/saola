@@ -1,5 +1,5 @@
 [package]
-name = "user-facing-error-macros"
+name = "saola-user-facing-error-macros"
 version = "0.1.0"
 edition.workspace = true
 

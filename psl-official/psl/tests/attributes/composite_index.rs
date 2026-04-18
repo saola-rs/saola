@@ -15,7 +15,7 @@ fn simple_composite_index() {
         }
     "#};
 
-    psl::parse_schema_without_extensions(with_header(schema, crate::Provider::Mongo, &[]))
+    saola_psl::parse_schema_without_extensions(with_header(schema, crate::Provider::Mongo, &[]))
         .unwrap()
         .assert_has_model("B")
         .assert_index_on_fields(&["field"]);
@@ -36,7 +36,7 @@ fn simple_composite_unique() {
         }
     "#};
 
-    psl::parse_schema_without_extensions(with_header(schema, crate::Provider::Mongo, &[]))
+    saola_psl::parse_schema_without_extensions(with_header(schema, crate::Provider::Mongo, &[]))
         .unwrap()
         .assert_has_model("B")
         .assert_unique_on_fields(&["field"]);
@@ -59,7 +59,7 @@ fn composite_unique_with_normal_unique() {
         }
     "#};
 
-    let schema = psl::parse_schema_without_extensions(with_header(schema, crate::Provider::Mongo, &[])).unwrap();
+    let schema = saola_psl::parse_schema_without_extensions(with_header(schema, crate::Provider::Mongo, &[])).unwrap();
     let model = schema.assert_has_model("User");
 
     model.assert_unique_on_fields(&["number"]);
@@ -81,7 +81,7 @@ fn simple_composite_fulltext() {
         }
     "#};
 
-    psl::parse_schema_without_extensions(with_header(schema, crate::Provider::Mongo, &[]))
+    saola_psl::parse_schema_without_extensions(with_header(schema, crate::Provider::Mongo, &[]))
         .unwrap()
         .assert_has_model("B")
         .assert_fulltext_on_fields(&["field"]);
@@ -102,7 +102,7 @@ fn composite_index_with_default() {
         }
     "#};
 
-    psl::parse_schema_without_extensions(with_header(schema, crate::Provider::Mongo, &[]))
+    saola_psl::parse_schema_without_extensions(with_header(schema, crate::Provider::Mongo, &[]))
         .unwrap()
         .assert_has_model("B")
         .assert_index_on_fields(&["field"]);
@@ -123,7 +123,7 @@ fn composite_index_with_map() {
         }
     "#};
 
-    psl::parse_schema_without_extensions(with_header(schema, crate::Provider::Mongo, &[]))
+    saola_psl::parse_schema_without_extensions(with_header(schema, crate::Provider::Mongo, &[]))
         .unwrap()
         .assert_has_model("B")
         .assert_index_on_fields(&["field"]);
@@ -144,7 +144,7 @@ fn composite_index_with_sort() {
         }
     "#};
 
-    psl::parse_schema_without_extensions(with_header(schema, crate::Provider::Mongo, &[]))
+    saola_psl::parse_schema_without_extensions(with_header(schema, crate::Provider::Mongo, &[]))
         .unwrap()
         .assert_has_model("B")
         .assert_index_on_fields(&["field"])
@@ -172,7 +172,7 @@ fn reformat() {
     "#};
 
     let datamodel = with_header(schema, crate::Provider::Mongo, &[]);
-    let result = psl::reformat(&datamodel, 2).unwrap_or_else(|| datamodel.to_owned());
+    let result = saola_psl::reformat(&datamodel, 2).unwrap_or_else(|| datamodel.to_owned());
 
     let expected = expect![[r#"
         datasource test {

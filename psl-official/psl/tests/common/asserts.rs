@@ -2,14 +2,14 @@ use std::fmt::Debug;
 
 use base64::prelude::*;
 use either::Either::{Left, Right};
-use psl::datamodel_connector::Connector;
-use psl::diagnostics::DatamodelWarning;
-use psl::parser_database::{
+use saola_psl::datamodel_connector::Connector;
+use saola_psl::diagnostics::DatamodelWarning;
+use saola_psl::parser_database::{
     IndexAlgorithm, ModelId, OperatorClass, ReferentialAction, ScalarFieldType, ScalarType, SortOrder, walkers,
 };
-use psl::schema_ast::ast::WithDocumentation;
-use psl::schema_ast::ast::{self, FieldArity};
-use psl::{Diagnostics, StringFromEnvVar};
+use saola_psl::schema_ast::ast::WithDocumentation;
+use saola_psl::schema_ast::ast::{self, FieldArity};
+use saola_psl::{Diagnostics, StringFromEnvVar};
 
 pub(crate) trait DatamodelAssert<'a> {
     fn assert_has_model(&'a self, name: &str) -> walkers::ModelWalker<'a>;
@@ -110,7 +110,7 @@ pub(crate) trait IndexFieldAssert {
     fn assert_raw_ops(&self, ops: &str) -> &Self;
 }
 
-impl DatasourceAsserts for psl::Datasource {
+impl DatasourceAsserts for saola_psl::Datasource {
     #[track_caller]
     fn assert_name(&self, name: &str) -> &Self {
         assert_eq!(&self.name, name);
@@ -138,7 +138,7 @@ impl WarningAsserts for Vec<DatamodelWarning> {
     }
 }
 
-impl<'a> DatamodelAssert<'a> for psl::ValidatedSchema {
+impl<'a> DatamodelAssert<'a> for saola_psl::ValidatedSchema {
     #[track_caller]
     fn assert_has_model(&'a self, name: &str) -> walkers::ModelWalker<'a> {
         self.db

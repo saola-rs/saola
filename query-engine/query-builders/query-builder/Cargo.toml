@@ -1,6 +1,6 @@
 [package]
 edition.workspace = true
-name = "query-builder"
+name = "saola-query-builder"
 version = "0.1.0"
 
 [dependencies]
