@@ -13,14 +13,15 @@ use crate::{
 use bson::Bson;
 use bson::Document;
 use futures::Future;
-use prisma_metrics::{
-    PRISMA_DATASOURCE_QUERIES_DURATION_HISTOGRAM_MS, PRISMA_DATASOURCE_QUERIES_TOTAL, counter, histogram,
+use crate::{counter, histogram};
+use crate::metrics::{
+    PRISMA_DATASOURCE_QUERIES_DURATION_HISTOGRAM_MS, PRISMA_DATASOURCE_QUERIES_TOTAL,
 };
 use query_structure::*;
 use std::sync::Arc;
 use std::time::Instant;
 use tracing::{debug, info_span};
-use tracing_futures::Instrument;
+use tracing::Instrument;
 
 const DB_SYSTEM_NAME: &str = "mongodb";
 

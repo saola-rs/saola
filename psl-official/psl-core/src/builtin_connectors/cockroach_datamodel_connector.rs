@@ -7,8 +7,9 @@ use parser_database::{ExtensionTypes, ScalarFieldType};
 use crate::{
     ValidatedSchema,
     datamodel_connector::{
-        Connector, ConnectorCapabilities, ConnectorCapability, ConstraintScope, Flavour, NativeTypeConstructor,
-        NativeTypeInstance, RelationMode, StringFilter,
+        CompletionItem, CompletionItemKind, CompletionList, Connector, ConnectorCapabilities,
+        ConnectorCapability, ConstraintScope, Flavour, NativeTypeConstructor, NativeTypeInstance, RelationMode,
+        StringFilter,
     },
     diagnostics::{DatamodelError, Diagnostics},
     parser_database::{
@@ -18,12 +19,10 @@ use crate::{
         walkers::ModelWalker,
     },
 };
+use super::completions;
 use chrono::*;
 use enumflags2::BitFlags;
-use lsp_types::{CompletionItem, CompletionItemKind, CompletionList};
-use std::borrow::Cow;
 
-use super::completions;
 
 const CONSTRAINT_SCOPES: &[ConstraintScope] = &[ConstraintScope::ModelPrimaryKeyKeyIndexForeignKey];
 
@@ -168,7 +167,7 @@ impl Connector for CockroachDatamodelConnector {
         Some(NativeTypeInstance::new::<CockroachType>(*native_type))
     }
 
-    fn native_type_to_parts<'t>(&self, native_type: &'t NativeTypeInstance) -> (&'t str, Cow<'t, [String]>) {
+    fn native_type_to_parts<'t>(&self, native_type: &'t NativeTypeInstance) -> (&'t str, std::borrow::Cow<'t, [std::string::String]>) {
         native_type.downcast_ref::<CockroachType>().to_parts()
     }
 
@@ -246,7 +245,7 @@ impl Connector for CockroachDatamodelConnector {
     fn parse_native_type(
         &self,
         name: &str,
-        args: &[String],
+        args: &[std::string::String],
         span: ast::Span,
         diagnostics: &mut Diagnostics,
     ) -> Option<NativeTypeInstance> {
@@ -259,7 +258,7 @@ impl Connector for CockroachDatamodelConnector {
         }
     }
 
-    fn scalar_filter_name(&self, scalar_type_name: String, native_type_name: Option<&str>) -> Cow<'_, str> {
+    fn scalar_filter_name(&self, scalar_type_name: std::string::String, native_type_name: Option<&str>) -> std::borrow::Cow<'_, str> {
         match native_type_name {
             Some(name) if name.eq_ignore_ascii_case("uuid") => "Uuid".into(),
             _ => scalar_type_name.into(),
@@ -273,7 +272,7 @@ impl Connector for CockroachDatamodelConnector {
         }
     }
 
-    fn validate_url(&self, url: &str) -> Result<(), String> {
+    fn validate_url(&self, url: &str) -> std::result::Result<(), std::string::String> {
         if !url.starts_with("postgres://") && !url.starts_with("postgresql://") {
             return Err("must start with the protocol `postgresql://` or `postgres://`.".to_owned());
         }

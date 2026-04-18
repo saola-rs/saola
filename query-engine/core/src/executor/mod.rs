@@ -14,7 +14,7 @@ mod request_context;
 pub use self::{execute_operation::*, interpreting_executor::InterpretingExecutor};
 
 pub use request_context::*;
-pub use telemetry::TraceParent;
+pub use crate::telemetry::TraceParent;
 
 use crate::{
     BatchDocumentTransaction, TxId, protocol::EngineProtocol, query_document::Operation, response_ir::ResponseData,

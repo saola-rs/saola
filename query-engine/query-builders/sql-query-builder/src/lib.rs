@@ -15,6 +15,7 @@ mod sql_trace;
 pub mod update;
 pub mod value;
 pub mod write;
+pub mod telemetry;
 
 use std::{collections::HashMap, iter, marker::PhantomData};
 

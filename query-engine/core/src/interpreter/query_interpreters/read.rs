@@ -4,7 +4,7 @@ use connector::{ConnectionLike, error::ConnectorError};
 use futures::future::{BoxFuture, FutureExt};
 use psl::can_support_relation_load_strategy;
 use query_structure::{ManyRecords, RelationLoadStrategy, RelationSelection};
-use telemetry::TraceParent;
+use crate::telemetry::TraceParent;
 use user_facing_errors::KnownError;
 
 pub(crate) fn execute<'conn>(
@@ -47,7 +47,7 @@ fn read_one(
         match record {
             Some(record) if query.relation_load_strategy.is_query() => {
                 let records = record.into();
-                let nested = process_nested(tx, query.nested, Some(&records), traceparent).await?;
+                let nested = process_nested(tx, query.nested, Some(&records), traceparent.clone()).await?;
 
                 Ok(RecordSelection {
                     name: query.name,
@@ -137,7 +137,7 @@ fn read_many_by_queries(
         if records.records.is_empty() && query.options.contains(QueryOption::ThrowOnEmpty) {
             record_not_found()
         } else {
-            let nested: Vec<QueryResult> = process_nested(tx, query.nested, Some(&records), traceparent).await?;
+            let nested: Vec<QueryResult> = process_nested(tx, query.nested, Some(&records), traceparent.clone()).await?;
 
             Ok(RecordSelection {
                 name: query.name,
@@ -230,7 +230,7 @@ fn read_related<'conn>(
             .await?
         };
         let model = query.parent_field.related_model();
-        let nested: Vec<QueryResult> = process_nested(tx, query.nested, Some(&records), traceparent).await?;
+        let nested: Vec<QueryResult> = process_nested(tx, query.nested, Some(&records), traceparent.clone()).await?;
 
         Ok(RecordSelection {
             name: query.name,

@@ -20,9 +20,8 @@ use prisma_metrics::{
 
 use schema::{QuerySchema, QuerySchemaRef};
 use std::time::Duration;
-use telemetry::TraceParent;
+use crate::telemetry::{TraceParent, WithSubscriber};
 use tracing::Instrument;
-use tracing_futures::WithSubscriber;
 
 pub async fn execute_single_operation(
     query_schema: QuerySchemaRef,
@@ -213,7 +212,7 @@ async fn execute_self_contained_with_retry(
     let (graph, serializer) = build_graph(&query_schema, operation.clone())?;
 
     if force_transactions || graph.needs_transaction() {
-        let res = execute_in_tx(conn, graph, serializer, query_schema.as_ref(), traceparent).await;
+        let res = execute_in_tx(conn, graph, serializer, query_schema.as_ref(), traceparent.clone()).await;
 
         if !is_transient_error(&res) {
             return res;
@@ -221,7 +220,7 @@ async fn execute_self_contained_with_retry(
 
         loop {
             let (graph, serializer) = build_graph(&query_schema, operation.clone())?;
-            let res = execute_in_tx(conn, graph, serializer, query_schema.as_ref(), traceparent).await;
+            let res = execute_in_tx(conn, graph, serializer, query_schema.as_ref(), traceparent.clone()).await;
 
             if is_transient_error(&res) && retry_timeout.elapsed_time() < MAX_TX_TIMEOUT_RETRY_LIMIT {
                 crosstarget_utils::time::sleep(TX_RETRY_BACKOFF).await;

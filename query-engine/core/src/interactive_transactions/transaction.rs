@@ -8,10 +8,10 @@ use crate::{
 use connector::{Connection, Transaction};
 use crosstarget_utils::time::ElapsedTimeCounter;
 use schema::QuerySchemaRef;
-use telemetry::TraceParent;
+use crate::telemetry::TraceParent;
 use tokio::time::Duration;
 use tracing::Span;
-use tracing_futures::Instrument;
+use tracing::Instrument;
 
 // Note: it's important to maintain the correct state of the transaction throughout execution. If
 // the transaction is ever left in the `Open` state after rollback or commit operations, it means

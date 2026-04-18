@@ -3,6 +3,10 @@ edition.workspace = true
 name = "mongodb-query-connector"
 version = "0.1.0"
 
+[features]
+metrics = ["dep:prisma-metrics"]
+telemetry = ["dep:telemetry"]
+
 [dependencies]
 anyhow.workspace = true
 async-trait.workspace = true
@@ -20,7 +24,7 @@ tracing.workspace = true
 tracing-futures.workspace = true
 uuid.workspace = true
 indexmap.workspace = true
-prisma-metrics.workspace = true
+prisma-metrics = { workspace = true, optional = true }
 derive_more.workspace = true
 
 [dependencies.query-structure]
@@ -38,6 +42,7 @@ workspace = true
 
 [dependencies.telemetry]
 workspace = true
+optional = true
 
 [dependencies.chrono]
 workspace = true

@@ -33,7 +33,6 @@ authors = ["Ravi", "Prisma Team"]
 license = "MIT"
 
 [workspace.dependencies]
-saola-schema = { path = "./saola-schema", default-features = false }
 # PSL (Prisma Schema Language) - Official Prisma Parser
 psl = { path = "./psl-official/psl", default-features = false }
 psl-core = { path = "./psl-official/psl-core", default-features = false }

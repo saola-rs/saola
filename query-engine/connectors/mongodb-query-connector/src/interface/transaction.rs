@@ -2,9 +2,9 @@ use std::collections::HashMap;
 
 use connector_interface::{ConnectionLike, ReadOperations, Transaction, UpdateType, WriteOperations};
 use mongodb::options::{Acknowledgment, ReadConcern, TransactionOptions, WriteConcern};
-use prisma_metrics::{PRISMA_CLIENT_QUERIES_ACTIVE, guards::GaugeGuard};
+use crate::metrics::{PRISMA_CLIENT_QUERIES_ACTIVE, GaugeGuard};
 use query_structure::{RelationLoadStrategy, SelectionResult};
-use telemetry::TraceParent;
+use crate::telemetry::TraceParent;
 
 use super::*;
 use crate::{

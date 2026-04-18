@@ -1,7 +1,7 @@
 use std::sync::{self, atomic::AtomicUsize};
 
 use quaint::prelude::{ConnectionInfo, SqlFamily};
-use telemetry::TraceParent;
+use query_structure::telemetry::TraceParent;
 
 use crate::filter::alias::Alias;
 

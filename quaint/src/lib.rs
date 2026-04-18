@@ -129,5 +129,25 @@ pub use ast::{Value, ValueType};
 
 pub type Result<T> = std::result::Result<T, error::Error>;
 
+#[cfg(not(feature = "metrics"))]
+pub trait WithMetricsInstrumentation: Sized {
+    fn with_current_recorder(self) -> Self {
+        self
+    }
+}
+
+#[cfg(not(feature = "metrics"))]
+impl<T> WithMetricsInstrumentation for T {}
+
+#[cfg(not(feature = "telemetry"))]
+pub trait WithSubscriber: Sized {
+    fn with_current_subscriber(self) -> Self {
+        self
+    }
+}
+
+#[cfg(not(feature = "telemetry"))]
+impl<T> WithSubscriber for T {}
+
 #[cfg(test)]
 mod tests;

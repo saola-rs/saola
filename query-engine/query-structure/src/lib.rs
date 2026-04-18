@@ -19,6 +19,7 @@ mod query_arguments;
 mod record;
 mod relation;
 mod selection_result;
+pub mod telemetry;
 mod write_args;
 mod zipper;
 

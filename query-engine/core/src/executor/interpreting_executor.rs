@@ -9,9 +9,9 @@ use crate::{
 use async_trait::async_trait;
 use connector::Connector;
 use schema::QuerySchemaRef;
-use telemetry::TraceParent;
+use crate::telemetry::TraceParent;
 use tokio::time::Duration;
-use tracing_futures::Instrument;
+use tracing::Instrument;
 
 /// Central query executor and main entry point into the query core.
 pub struct InterpretingExecutor<C> {

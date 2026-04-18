@@ -3,12 +3,17 @@ edition.workspace = true
 name = "sql-query-builder"
 version = "0.1.0"
 
+[features]
+relation_joins = ["query-builder/relation_joins"]
+default_generators = ["query-structure/default_generators"]
+telemetry = ["dep:telemetry"]
+
 [dependencies]
 quaint.workspace = true
 query-structure.workspace = true
 schema.workspace = true
 query-builder.workspace = true
-telemetry.workspace = true
+telemetry = { workspace = true, optional = true }
 prisma-value.workspace = true
 psl.workspace = true
 
@@ -16,7 +21,3 @@ itertools.workspace = true
 chrono.workspace = true
 bigdecimal.workspace = true
 serde_json.workspace = true
-
-[features]
-relation_joins = ["query-builder/relation_joins"]
-default_generators = ["query-structure/default_generators"]

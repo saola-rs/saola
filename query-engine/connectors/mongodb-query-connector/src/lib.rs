@@ -13,6 +13,11 @@ mod query_builder;
 mod query_strings;
 mod root_queries;
 mod value;
+pub mod metrics;
+mod telemetry;
+
+#[cfg(feature = "metrics")]
+pub use prisma_metrics::{counter, histogram};
 
 use bson::Bson;
 use bson::Document;

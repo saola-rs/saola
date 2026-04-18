@@ -1,6 +1,12 @@
+#[cfg(all(feature = "lsp", any(feature = "postgresql", feature = "cockroachdb", feature = "mssql")))]
+use lsp_types::*;
+
 #[cfg(feature = "postgresql")]
-pub(crate) fn extensions_completion(completion_list: &mut lsp_types::CompletionList) {
-    use lsp_types::*;
+pub(crate) fn extensions_completion(
+    #[cfg(feature = "lsp")] completion_list: &mut crate::datamodel_connector::CompletionList,
+    #[cfg(not(feature = "lsp"))] _completion_list: &mut crate::datamodel_connector::CompletionList,
+) {
+    #[cfg(feature = "lsp")]
     completion_list.items.push(CompletionItem {
         label: "extensions".to_owned(),
         insert_text: Some("extensions = [$0]".to_owned()),
@@ -19,8 +25,11 @@ pub(crate) fn extensions_completion(completion_list: &mut lsp_types::CompletionL
 }
 
 #[cfg(any(feature = "postgresql", feature = "cockroachdb", feature = "mssql"))]
-pub(crate) fn schemas_completion(completion_list: &mut lsp_types::CompletionList) {
-    use lsp_types::*;
+pub(crate) fn schemas_completion(
+    #[cfg(feature = "lsp")] completion_list: &mut crate::datamodel_connector::CompletionList,
+    #[cfg(not(feature = "lsp"))] _completion_list: &mut crate::datamodel_connector::CompletionList,
+) {
+    #[cfg(feature = "lsp")]
     completion_list.items.push(CompletionItem {
         label: "schemas".to_owned(),
         insert_text: Some(r#"schemas = [$0]"#.to_owned()),

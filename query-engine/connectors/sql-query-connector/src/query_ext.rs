@@ -10,7 +10,7 @@ use sql_query_builder::value::{GeneratorCall, Placeholder};
 use sql_query_builder::{AsColumns, AsTable, ColumnMetadata, Context, FilterBuilder, SqlTraceComment, column_metadata};
 use std::{collections::HashMap, panic::AssertUnwindSafe};
 use tracing::info_span;
-use tracing_futures::Instrument;
+use tracing::Instrument;
 
 #[async_trait]
 impl<Q: Queryable + ?Sized> QueryExt for Q {

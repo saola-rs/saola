@@ -9,19 +9,18 @@ use parser_database::{ExtensionTypes, ScalarFieldType};
 use crate::{
     ValidatedSchema,
     datamodel_connector::{
-        Connector, ConnectorCapabilities, ConnectorCapability, ConstraintScope, Flavour, NativeTypeConstructor,
-        NativeTypeInstance, RelationMode,
+        CompletionItem, CompletionItemKind, CompletionList, Connector, ConnectorCapabilities,
+        ConnectorCapability, ConstraintScope, Flavour, NativeTypeConstructor, NativeTypeInstance, RelationMode,
     },
+
     diagnostics::{Diagnostics, Span},
     parser_database::{self, ParserDatabase, ReferentialAction, ScalarType, ast},
 };
+use super::completions;
 use enumflags2::BitFlags;
-use lsp_types::{CompletionItem, CompletionItemKind, CompletionList};
-
 use MsSqlType::*;
 use MsSqlTypeParameter::*;
 
-use super::completions;
 
 const CONSTRAINT_SCOPES: &[ConstraintScope] = &[
     ConstraintScope::GlobalPrimaryKeyForeignKeyDefault,

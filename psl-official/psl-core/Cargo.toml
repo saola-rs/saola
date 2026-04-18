@@ -10,6 +10,7 @@ mysql = []
 cockroachdb = ["postgresql"]
 mssql = []
 mongodb = []
+lsp = ["dep:lsp-types"]
 
 [dependencies]
 diagnostics.workspace = true
@@ -31,6 +32,6 @@ either.workspace = true
 hex.workspace = true
 
 # For the connector API.
-lsp-types.workspace = true
+lsp-types = { workspace = true, optional = true }
 url.workspace = true
 cfg-if.workspace = true

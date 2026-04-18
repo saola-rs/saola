@@ -2,8 +2,6 @@ use std::future::Future;
 
 use async_trait::async_trait;
 use mobc::{Connection as MobcPooled, Manager};
-use prisma_metrics::WithMetricsInstrumentation;
-use tracing_futures::WithSubscriber;
 
 #[cfg(feature = "mssql-native")]
 use crate::connector::MssqlUrl;
@@ -193,7 +191,17 @@ impl Manager for QuaintManager {
         T: Future + Send + 'static,
         T::Output: Send + 'static,
     {
-        tokio::spawn(task.with_current_subscriber().with_current_recorder());
+        #[cfg(feature = "telemetry")]
+        let task = tracing_futures::WithSubscriber::with_current_subscriber(task);
+        #[cfg(not(feature = "telemetry"))]
+        let task = crate::WithSubscriber::with_current_subscriber(task);
+
+        #[cfg(feature = "metrics")]
+        let task = prisma_metrics::WithMetricsInstrumentation::with_current_recorder(task);
+        #[cfg(not(feature = "metrics"))]
+        let task = crate::WithMetricsInstrumentation::with_current_recorder(task);
+
+        tokio::spawn(task);
     }
 }
 

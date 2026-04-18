@@ -6,7 +6,7 @@ use std::{
     collections::HashMap,
     sync::{Arc, LazyLock},
 };
-use telemetry::TraceParent;
+use crate::telemetry::{TraceParent, WithSubscriber};
 use tokio::{
     sync::{
         Mutex, RwLock,
@@ -14,7 +14,6 @@ use tokio::{
     },
     time::Duration,
 };
-use tracing_futures::WithSubscriber;
 
 #[cfg(not(feature = "metrics"))]
 use crate::metrics::MetricsInstrumentationStub;

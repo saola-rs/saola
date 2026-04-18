@@ -4,7 +4,6 @@
 
 pub mod builtin_connectors;
 pub mod datamodel_connector;
-
 /// `mcf`: Turns a collection of `configuration::Datasource` and `configuration::Generator` into a
 /// JSON representation. This is the `get_config()` representation.
 pub mod mcf;

@@ -3552,6 +3552,7 @@ dependencies = [
  "serde_json",
  "telemetry",
  "thiserror 2.0.18",
+ "tracing-futures",
  "user-facing-errors",
  "uuid",
 ]
@@ -3633,6 +3634,7 @@ dependencies = [
  "nanoid",
  "prisma-value",
  "psl",
+ "telemetry",
  "thiserror 2.0.18",
  "ulid",
  "uuid",

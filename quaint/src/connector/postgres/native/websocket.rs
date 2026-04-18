@@ -9,7 +9,6 @@ use bytes::Bytes;
 use futures::{FutureExt, Sink, SinkExt, Stream};
 use pin_project::pin_project;
 use postgres_native_tls::TlsConnector;
-use prisma_metrics::WithMetricsInstrumentation;
 use tokio::{
     io::{AsyncBufRead, AsyncRead, AsyncWrite, ReadBuf},
     net::TcpStream,
@@ -25,7 +24,6 @@ use tokio_tungstenite::{
     },
 };
 use tokio_util::io::StreamReader;
-use tracing_futures::WithSubscriber;
 
 use crate::{
     connector::PostgresWebSocketUrl,
@@ -51,16 +49,23 @@ pub(crate) async fn connect_via_websocket(url: PostgresWebSocketUrl) -> crate::R
     let tls = TlsConnector::new(native_tls::TlsConnector::new()?, db_host);
     let (client, connection) = config.connect_raw(ws_byte_stream, tls).await?;
 
-    let handle = tokio::spawn(
-        connection
-            .map(move |result| {
-                if let Err(err) = result {
-                    tracing::error!("Error in PostgreSQL WebSocket connection: {err:?}");
-                }
-            })
-            .with_current_subscriber()
-            .with_current_recorder(),
-    );
+    let task = connection.map(move |result| {
+        if let Err(err) = result {
+            tracing::error!("Error in PostgreSQL WebSocket connection: {err:?}");
+        }
+    });
+
+    #[cfg(feature = "telemetry")]
+    let task = tracing_futures::WithSubscriber::with_current_subscriber(task);
+    #[cfg(not(feature = "telemetry"))]
+    let task = crate::WithSubscriber::with_current_subscriber(task);
+
+    #[cfg(feature = "metrics")]
+    let task = prisma_metrics::WithMetricsInstrumentation::with_current_recorder(task);
+    #[cfg(not(feature = "metrics"))]
+    let task = crate::WithMetricsInstrumentation::with_current_recorder(task);
+
+    let handle = tokio::spawn(task);
 
     Ok((client, handle))
 }

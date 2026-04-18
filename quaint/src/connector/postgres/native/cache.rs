@@ -6,6 +6,7 @@ use std::{
 use async_trait::async_trait;
 use lru_cache::LruCache;
 use postgres_types::Type;
+#[cfg(feature = "telemetry")]
 use telemetry::formatting::strip_query_traceparent;
 use tokio::sync::Mutex;
 use tokio_postgres::{Client, Error, Statement};
@@ -112,6 +113,11 @@ impl TracingLruCache {
             cache: InnerLruCache::with_capacity(capacity),
         }
     }
+}
+
+#[cfg(not(feature = "telemetry"))]
+fn strip_query_traceparent(sql: &str) -> &str {
+    sql
 }
 
 #[async_trait]

@@ -1,9 +1,46 @@
 use std::future::Future;
 
 use crosstarget_utils::time::ElapsedTimeCounter;
+#[cfg(feature = "metrics")]
 use prisma_metrics::{counter, histogram};
+#[cfg(feature = "telemetry")]
 use telemetry::formatting::QueryForTracing;
 use tracing::{Instrument, info_span};
+
+#[cfg(not(feature = "metrics"))]
+macro_rules! counter {
+    ($($arg:tt)*) => {
+        $crate::connector::metrics::Dummy::default()
+    };
+}
+
+#[cfg(not(feature = "metrics"))]
+macro_rules! histogram {
+    ($($arg:tt)*) => {
+        $crate::connector::metrics::Dummy::default()
+    };
+}
+
+
+#[cfg(not(feature = "metrics"))]
+#[derive(Default)]
+pub struct Dummy;
+
+#[cfg(not(feature = "metrics"))]
+impl Dummy {
+    pub fn increment(&self, _: u64) {}
+    pub fn record(&self, _: std::time::Duration) {}
+}
+
+#[cfg(not(feature = "telemetry"))]
+pub struct QueryForTracing<'a>(pub &'a str);
+
+#[cfg(not(feature = "telemetry"))]
+impl std::fmt::Display for QueryForTracing<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.fmt(f)
+    }
+}
 
 use crate::ast::{Params, Value};
 
@@ -29,7 +66,7 @@ where
     do_query(tag, query, params, f).instrument(span).await
 }
 
-async fn do_query<'a, F, T, U>(tag: &'static str, query: &'a str, params: &'a [Value<'_>], f: F) -> crate::Result<T>
+async fn do_query<'a, F, T, U>(_tag: &'static str, query: &'a str, params: &'a [Value<'_>], f: F) -> crate::Result<T>
 where
     F: FnOnce() -> U + 'a,
     U: Future<Output = crate::Result<T>>,
@@ -62,7 +99,7 @@ where
         trace_query(query, params, result, &start);
     }
 
-    histogram!(format!("{tag}.query.time")).record(start.elapsed_time());
+    histogram!(format!("{_tag}.query.time")).record(start.elapsed_time());
     histogram!("prisma_datasource_queries_duration_histogram_ms").record(start.elapsed_time());
     counter!("prisma_datasource_queries_total").increment(1);
 

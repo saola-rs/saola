@@ -32,6 +32,8 @@ all-native = [
 relation_joins = ["sql-query-builder/relation_joins"]
 # Enable Driver Adapters
 driver-adapters = []
+telemetry = ["dep:telemetry", "quaint/telemetry"]
+metrics = ["quaint/metrics"]
 
 [dependencies]
 base64.workspace = true
@@ -50,7 +52,7 @@ tracing-futures.workspace = true
 uuid.workspace = true
 cuid.workspace = true
 ulid.workspace = true
-quaint.workspace = true
+quaint = { workspace = true, default-features = false }
 
 [dev-dependencies]
 expect-test.workspace = true
@@ -73,6 +75,7 @@ workspace = true
 
 [dependencies.telemetry]
 workspace = true
+optional = true
 
 [dependencies.chrono]
 workspace = true

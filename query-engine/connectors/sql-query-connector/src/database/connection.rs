@@ -18,7 +18,7 @@ use query_structure::{
 };
 use sql_query_builder::Context;
 use std::{collections::HashMap, str::FromStr};
-use telemetry::TraceParent;
+use crate::telemetry::TraceParent;
 
 pub(crate) struct SqlConnection<C> {
     inner: C,

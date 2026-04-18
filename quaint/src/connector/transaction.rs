@@ -1,7 +1,20 @@
 use std::{fmt, str::FromStr};
 
 use async_trait::async_trait;
+#[cfg(feature = "metrics")]
 use prisma_metrics::guards::GaugeGuard;
+
+#[cfg(not(feature = "metrics"))]
+#[derive(Default)]
+pub struct GaugeGuard;
+
+#[cfg(not(feature = "metrics"))]
+impl GaugeGuard {
+    pub fn increment(_: &str) -> Self {
+        Self
+    }
+    pub fn decrement(&self) {}
+}
 
 use super::*;
 use crate::{

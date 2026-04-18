@@ -9,7 +9,7 @@ use connector_interface::{Connection, ConnectionLike, ReadOperations, Transactio
 use mongodb::{ClientSession, Database};
 use query_structure::{RelationLoadStrategy, SelectionResult, prelude::*};
 use std::collections::HashMap;
-use telemetry::TraceParent;
+use crate::telemetry::TraceParent;
 
 pub struct MongoDbConnection {
     /// The session to use for operations.

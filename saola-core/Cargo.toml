@@ -20,11 +20,15 @@ query-structure = { workspace = true }
 chrono = { workspace = true }
 
 [features]
-default = [] # No default database, user must opt-in for minimal footprint
+default = ["sqlite"] # SQLite as default for easy getting started
 postgresql = ["dep:sql-query-connector",  "sql-query-connector/postgresql-native",  "psl/postgresql"]
 mysql = ["dep:sql-query-connector",  "sql-query-connector/mysql-native",  "psl/mysql"]
 sqlite = ["dep:sql-query-connector",  "sql-query-connector/sqlite-native",  "psl/sqlite"]
 mssql = ["dep:sql-query-connector",  "sql-query-connector/mssql-native",  "psl/mssql"]
 mongodb = ["dep:mongodb-query-connector", "psl/mongodb"]
 cockroachdb = ["postgresql", "psl/cockroachdb"]
-full = ["postgresql", "mysql", "sqlite", "mssql", "mongodb", "cockroachdb"]
+full = ["postgresql", "mysql", "sqlite", "mssql", "mongodb", "cockroachdb", "telemetry", "metrics"]
+
+telemetry = ["query-core/telemetry", "sql-query-connector?/telemetry"]
+metrics = ["query-core/metrics", "sql-query-connector?/metrics"]
+

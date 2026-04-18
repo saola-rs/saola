@@ -8,7 +8,7 @@ use connector::ConnectionLike;
 use futures::future::BoxFuture;
 use query_structure::prelude::*;
 use std::{collections::HashMap, fmt, slice};
-use telemetry::TraceParent;
+use crate::telemetry::TraceParent;
 use tracing::Instrument;
 
 #[derive(Debug, Clone)]
@@ -188,7 +188,7 @@ impl<'conn> QueryInterpreter<'conn> {
                     let mut results = Vec::with_capacity(seq.len());
 
                     for expr in seq {
-                        results.push(self.interpret(expr, env.clone(), level + 1, traceparent).await?);
+                        results.push(self.interpret(expr, env.clone(), level + 1, traceparent.clone()).await?);
                         self.log_line(level + 1, || ",");
                     }
 
@@ -226,7 +226,7 @@ impl<'conn> QueryInterpreter<'conn> {
                     };
 
                     self.log_line(level, || "in {");
-                    let result = self.interpret(next_expression, inner_env, level + 1, traceparent).await;
+                    let result = self.interpret(next_expression, inner_env, level + 1, traceparent.clone()).await;
                     self.log_line(level, || "}");
                     result
                 })

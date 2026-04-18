@@ -34,7 +34,6 @@ use futures::future::FutureExt;
 use native_tls::{Certificate, Identity, TlsConnector};
 use postgres_native_tls::MakeTlsConnector;
 use postgres_types::{Kind as PostgresKind, Type as PostgresType};
-use prisma_metrics::WithMetricsInstrumentation;
 use query::PreparedQuery;
 use std::{
     fmt::{Debug, Display},
@@ -46,7 +45,6 @@ use std::{
 use tokio::sync::OnceCell;
 use tokio::task::JoinHandle;
 use tokio_postgres::{Client, Config, Statement, config::ChannelBinding};
-use tracing_futures::WithSubscriber;
 use websocket::connect_via_websocket;
 
 /// The underlying postgres driver. Only available with the `expose-drivers`
@@ -264,15 +262,23 @@ impl<Cache: QueryCache> PostgreSql<Cache> {
         let is_cockroachdb = conn.parameter("crdb_version").is_some();
         let is_materialize = conn.parameter("mz_version").is_some();
 
-        let handle = tokio::spawn(
-            conn.map(|r| {
-                if let Err(e) = r {
-                    tracing::error!("Error in PostgreSQL connection: {e:?}");
-                }
-            })
-            .with_current_subscriber()
-            .with_current_recorder(),
-        );
+        let task = conn.map(|r| {
+            if let Err(e) = r {
+                tracing::error!("Error in PostgreSQL connection: {e:?}");
+            }
+        });
+
+        #[cfg(feature = "telemetry")]
+        let task = tracing_futures::WithSubscriber::with_current_subscriber(task);
+        #[cfg(not(feature = "telemetry"))]
+        let task = crate::WithSubscriber::with_current_subscriber(task);
+
+        #[cfg(feature = "metrics")]
+        let task = prisma_metrics::WithMetricsInstrumentation::with_current_recorder(task);
+        #[cfg(not(feature = "metrics"))]
+        let task = crate::WithMetricsInstrumentation::with_current_recorder(task);
+
+        let handle = tokio::spawn(task);
 
         // On Postgres, we set the SEARCH_PATH and client-encoding through client connection parameters to save a network roundtrip on connection.
         // We can't always do it for CockroachDB because it does not expect quotes for unsafe identifiers (https://github.com/cockroachdb/cockroach/issues/101328), which might change once the issue is fixed.
