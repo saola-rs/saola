@@ -289,14 +289,66 @@ pub fn generate_data_methods(
                 })
             } else {
                 // Scalar fields
-                Some(quote! {
-                    pub fn #rust_name<T>(&mut self, value: T) -> &mut Self
-                    where T: Into<saola_core::query_structure::PrismaValue>
-                    {
-                        self.data.insert(#prisma_name.to_string(), saola_core::query_core::ArgumentValue::Scalar(value.into()));
-                        self
+                let mut methods = vec![
+                    quote! {
+                        pub fn #rust_name<T>(&mut self, value: T) -> &mut Self
+                        where T: Into<saola_core::query_structure::PrismaValue>
+                        {
+                            self.data.insert(#prisma_name.to_string(), saola_core::query_core::ArgumentValue::Scalar(value.into()));
+                            self
+                        }
                     }
-                })
+                ];
+
+                let type_name = crate::utils::get_inner_type(&field.field_type);
+                let is_numeric = match type_name.as_str() {
+                    "i32" | "i64" | "f32" | "f64" | "BigDecimal" => true,
+                    _ => false,
+                };
+
+                if is_numeric {
+                    let inc_name = quote::format_ident!("{}_increment", field.rust_name);
+                    let dec_name = quote::format_ident!("{}_decrement", field.rust_name);
+                    let mul_name = quote::format_ident!("{}_multiply", field.rust_name);
+                    let div_name = quote::format_ident!("{}_divide", field.rust_name);
+
+                    methods.push(quote! {
+                        pub fn #inc_name<T>(&mut self, value: T) -> &mut Self
+                        where T: Into<saola_core::query_structure::PrismaValue>
+                        {
+                            let mut map = saola_core::IndexMap::new();
+                            map.insert("increment".to_string(), saola_core::query_core::ArgumentValue::Scalar(value.into()));
+                            self.data.insert(#prisma_name.to_string(), saola_core::query_core::ArgumentValue::Object(map));
+                            self
+                        }
+                        pub fn #dec_name<T>(&mut self, value: T) -> &mut Self
+                        where T: Into<saola_core::query_structure::PrismaValue>
+                        {
+                            let mut map = saola_core::IndexMap::new();
+                            map.insert("decrement".to_string(), saola_core::query_core::ArgumentValue::Scalar(value.into()));
+                            self.data.insert(#prisma_name.to_string(), saola_core::query_core::ArgumentValue::Object(map));
+                            self
+                        }
+                        pub fn #mul_name<T>(&mut self, value: T) -> &mut Self
+                        where T: Into<saola_core::query_structure::PrismaValue>
+                        {
+                            let mut map = saola_core::IndexMap::new();
+                            map.insert("multiply".to_string(), saola_core::query_core::ArgumentValue::Scalar(value.into()));
+                            self.data.insert(#prisma_name.to_string(), saola_core::query_core::ArgumentValue::Object(map));
+                            self
+                        }
+                        pub fn #div_name<T>(&mut self, value: T) -> &mut Self
+                        where T: Into<saola_core::query_structure::PrismaValue>
+                        {
+                            let mut map = saola_core::IndexMap::new();
+                            map.insert("divide".to_string(), saola_core::query_core::ArgumentValue::Scalar(value.into()));
+                            self.data.insert(#prisma_name.to_string(), saola_core::query_core::ArgumentValue::Object(map));
+                            self
+                        }
+                    });
+                }
+
+                Some(quote! { #(#methods)* })
             }
         })
         .collect()

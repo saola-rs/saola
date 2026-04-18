@@ -5,10 +5,8 @@ members = [
     "psl-official/diagnostics",
     "psl-official/schema-ast",
     "psl-official/parser-database",
-    "saola-schema",
     "saola-macros",
     "saola-core",
-    "saola-cli",
     "example-app",
     "quaint",
     "libs/*",
@@ -207,7 +205,6 @@ sql-schema-describer = { path = "./schema-engine/sql-schema-describer" }
 mongodb-schema-describer = { path = "./schema-engine/mongodb-schema-describer" }
 saola-core = { path = "./saola-core" }
 saola-macros = { path = "./saola-macros" }
-saola-cli = { path = "./saola-cli" }
 
 wasm-rs-dbg = { version = "0.1", default-features = false, features = ["console-error"] }
 serde-wasm-bindgen = "0.6"
@@ -229,4 +226,3 @@ level = "warn"
 check-cfg = ["cfg(wasm_bindgen_unstable_test_coverage)", "cfg(debug_assert)"]
 
 # Restored for optional wasm compilation features in utils
-

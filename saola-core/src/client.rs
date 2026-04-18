@@ -1,9 +1,8 @@
-#[cfg(not(any(feature = "postgresql", feature = "mysql", feature = "sqlite", feature = "mssql", feature = "mongodb")))]
-compile_error!("At least one database provider feature (postgresql, mysql, sqlite, mssql, mongodb) must be enabled.");
-
 /// SaolaClient - Main entry point for database operations
 use psl::parser_database::NoExtensionTypes;
-use query_core::{QueryExecutor, executor::InterpretingExecutor};
+use query_core::QueryExecutor;
+#[cfg(any(feature = "postgresql", feature = "mysql", feature = "sqlite", feature = "mssql", feature = "mongodb"))]
+use query_core::executor::InterpretingExecutor;
 #[cfg(any(feature = "postgresql", feature = "mysql", feature = "sqlite", feature = "mssql"))]
 use sql_query_connector::FromSource;
 #[cfg(feature = "postgresql")]
@@ -41,36 +40,45 @@ impl SaolaClient {
 
         let query_schema = Arc::new(schema::build(validated.clone(), true));
 
-        let executor: Arc<dyn QueryExecutor + Send + Sync> = match datasource.active_provider {
-            #[cfg(feature = "postgresql")]
-            "postgresql" | "postgres" => {
-                let connector = PostgreSql::from_source(datasource, url, psl::PreviewFeatures::empty(), false).await?;
-                Arc::new(InterpretingExecutor::new(connector, false))
-            }
-            #[cfg(feature = "mysql")]
-            "mysql" => {
-                let connector = Mysql::from_source(datasource, url, psl::PreviewFeatures::empty(), false).await?;
-                Arc::new(InterpretingExecutor::new(connector, false))
-            }
-            #[cfg(feature = "sqlite")]
-            "sqlite" => {
-                let connector = Sqlite::from_source(datasource, url, psl::PreviewFeatures::empty(), false).await?;
-                Arc::new(InterpretingExecutor::new(connector, false))
-            }
-            #[cfg(feature = "mssql")]
-            "sqlserver" => {
-                let connector = sql_query_connector::Mssql::from_source(datasource, url, psl::PreviewFeatures::empty(), false).await?;
-                Arc::new(InterpretingExecutor::new(connector, false))
-            }
-            #[cfg(feature = "mongodb")]
-            "mongodb" => {
-                let connector = MongoDb::new(datasource, url).await?;
-                Arc::new(InterpretingExecutor::new(connector, false))
-            }
-            _ => anyhow::bail!("Unsupported or disabled provider: {}. Check your saola-core features.", datasource.active_provider),
-        };
+        #[cfg(not(any(feature = "postgresql", feature = "mysql", feature = "sqlite", feature = "mssql", feature = "mongodb")))]
+        {
+            let _ = (url, query_schema, datasource);
+            anyhow::bail!("No database provider feature enabled. Please enable one of: postgresql, mysql, sqlite, mssql, mongodb");
+        }
 
-        Ok(SaolaClient { executor, query_schema })
+        #[cfg(any(feature = "postgresql", feature = "mysql", feature = "sqlite", feature = "mssql", feature = "mongodb"))]
+        {
+            let executor: Arc<dyn QueryExecutor + Send + Sync> = match datasource.active_provider {
+                #[cfg(feature = "postgresql")]
+                "postgresql" | "postgres" => {
+                    let connector = PostgreSql::from_source(datasource, url, psl::PreviewFeatures::empty(), false).await?;
+                    Arc::new(InterpretingExecutor::new(connector, false))
+                }
+                #[cfg(feature = "mysql")]
+                "mysql" => {
+                    let connector = Mysql::from_source(datasource, url, psl::PreviewFeatures::empty(), false).await?;
+                    Arc::new(InterpretingExecutor::new(connector, false))
+                }
+                #[cfg(feature = "sqlite")]
+                "sqlite" => {
+                    let connector = Sqlite::from_source(datasource, url, psl::PreviewFeatures::empty(), false).await?;
+                    Arc::new(InterpretingExecutor::new(connector, false))
+                }
+                #[cfg(feature = "mssql")]
+                "sqlserver" => {
+                    let connector = sql_query_connector::Mssql::from_source(datasource, url, psl::PreviewFeatures::empty(), false).await?;
+                    Arc::new(InterpretingExecutor::new(connector, false))
+                }
+                #[cfg(feature = "mongodb")]
+                "mongodb" => {
+                    let connector = MongoDb::new(datasource, url).await?;
+                    Arc::new(InterpretingExecutor::new(connector, false))
+                }
+                _ => anyhow::bail!("Unsupported or disabled provider: {}. Check your saola-core features.", datasource.active_provider),
+            };
+
+            Ok(SaolaClient { executor, query_schema })
+        }
     }
 
     /// Get a reference to the query executor

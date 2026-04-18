@@ -16,7 +16,7 @@ enum PostStatus {
 }
 
 model User {
-  id        String   @id @default(cuid())
+  id        String   @id @default(nanoid(7))
   email     String   @unique
   name      String
   password  String?
@@ -29,7 +29,7 @@ model User {
 }
 
 model Profile {
-  id        String   @id @default(cuid())
+  id        String   @id @default(nanoid(7))
   bio       String?
   avatar    String?
   website   String?
@@ -40,7 +40,7 @@ model Profile {
 }
 
 model Post {
-  id        String     @id @default(cuid())
+  id        String     @id @default(nanoid(4))
   title     String
   content   String
   status    PostStatus @default(DRAFT)
@@ -58,7 +58,7 @@ model Post {
 }
 
 model Comment {
-  id        String   @id @default(cuid())
+  id        String   @id @default(nanoid(20))
   text      String
   postId    String
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
@@ -68,7 +68,7 @@ model Comment {
 }
 
 model Tag {
-  id    String @id @default(cuid())
+  id    String @id @default(nanoid(40))
   name  String @unique
   posts Post[]
 }

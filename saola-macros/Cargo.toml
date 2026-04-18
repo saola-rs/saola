@@ -9,12 +9,18 @@ license.workspace = true
 proc-macro = true
 
 [dependencies]
-psl = { workspace = true }
-saola-core = { path = "../saola-core" }
-saola-schema = { path = "../saola-schema" }
+psl = { workspace = true, default-features = false }
 proc-macro2 = { workspace = true }
 quote = { workspace = true }
 syn = { version = "2.0", features = ["full", "extra-traits"] }
 schema-ast = { workspace = true }
-parser-database = { workspace = true }
 heck = { workspace = true }
+
+[features]
+default = []
+sqlite = ["psl/sqlite"]
+postgresql = ["psl/postgresql"]
+mysql = ["psl/mysql"]
+mssql = ["psl/mssql"]
+mongodb = ["psl/mongodb"]
+cockroachdb = ["psl/cockroachdb"]

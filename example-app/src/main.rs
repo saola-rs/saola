@@ -157,12 +157,13 @@ async fn main() -> anyhow::Result<()> {
             .data(|d| {
                 d.status(PostStatus::PUBLISHED);
                 d.published(true);
-                d.views(0);
+                d.views_increment(1);
             })
             .exec(&client)
             .await?;
 
-        println!("  Published: {}\n", published.title);
+        println!("  ✅ Published: {} (Views updated atomically: {})", published.title, published.views);
+
     }
 
     // ============ SCENARIO 6: Pagination & Sorting ============
