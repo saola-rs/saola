@@ -2,6 +2,11 @@
 name = "saola-metrics"
 version = "0.1.0"
 edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Metrics collection and reporting utilities for Saola ORM"
+keywords = ["metrics", "monitoring", "telemetry", "orm"]
 
 [dependencies]
 futures.workspace = true

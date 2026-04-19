@@ -62,7 +62,7 @@ cargo add saola-macros --features sqlite
 ```
 
 ```rust
-use saola::init;
+use saola_macros::init;
 use saola_core::prelude::*;
 
 init!("schema.prisma");
@@ -73,17 +73,16 @@ async fn main() -> Result<()> {
 
     // Create user with profile and posts in one call
     let user = saola::user()
-        .create("alice@example.com".to_string())
+        .create("alice@example.com".to_string(), "Alice".into())
         .data(|d| {
-            d.name("Alice".to_string());
             d.profile(|p| {
                 p.create(|prof| {
-                    prof.bio(Some("Tech writer".to_string()));
+                    prof.bio("Tech writer".to_string());
                 });
             });
             d.posts(|posts| {
                 posts.create("My First Post".to_string(), |post| {
-                    post.content("...".to_string());
+                    post.published(true);
                 });
             });
         })
@@ -92,17 +91,22 @@ async fn main() -> Result<()> {
         .exec(&client)
         .await?;
 
+    println!("userId: {}", user.id);
+
     // Query with relation filtering
     let active_writers = saola::user()
         .find_many()
         .where_clause(|w| {
             w.is_active().eq(true);
-            w.posts().some(|p| p.published().eq(true));
+            w.posts().some(|p| {
+                p.published().eq(true);
+            });
         })
-        .include(|u| u.posts_with(|p| p.published().eq(true)))
+        .include(|u| u.profile())
         .exec(&client)
         .await?;
 
+    println!("active_writers: {:?}", active_writers);
     Ok(())
 }
 ```
