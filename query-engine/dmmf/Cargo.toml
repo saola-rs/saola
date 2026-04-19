@@ -2,6 +2,11 @@
 name = "saola-dmmf"
 version = "0.1.0"
 edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Data Model Meta Format (DMMF) for Saola ORM"
+keywords = ["dmmf", "schema", "orm", "metadata"]
 
 [dependencies]
 bigdecimal.workspace = true

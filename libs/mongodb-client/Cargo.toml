@@ -2,6 +2,11 @@
 name = "saola-mongodb-client"
 version = "0.1.0"
 edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "MongoDB client handler for Saola ORM"
+keywords = ["mongodb", "client", "database", "orm"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

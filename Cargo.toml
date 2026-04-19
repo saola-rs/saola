@@ -7,7 +7,6 @@ members = [
     "psl-official/parser-database",
     "saola-macros",
     "saola-core",
-    "example-app",
     "quaint",
     "libs/*",
     "query-engine/core",
@@ -29,8 +28,10 @@ resolver = "2"
 [workspace.package]
 version = "0.1.0"
 edition = "2024"
-authors = ["Ravi", "Prisma Team"]
-license = "MIT"
+authors = ["ravikan6", "Prisma Team"]
+license = "Apache-2.0"
+repository = "https://github.com/saola-rs/saola"
+homepage = "https://github.com/saola-rs/saola"
 
 [workspace.dependencies]
 # PSL (Prisma Schema Language) - Official Prisma Parser

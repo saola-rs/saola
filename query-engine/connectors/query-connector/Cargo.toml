@@ -2,6 +2,11 @@
 edition.workspace = true
 name = "saola-query-connector"
 version = "0.1.0"
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Query connector trait interface for Saola ORM"
+keywords = ["connector", "query-engine", "trait", "orm"]
 
 [features]
 telemetry = ["dep:telemetry", "dep:tracing-futures"]

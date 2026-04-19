@@ -2,6 +2,11 @@
 edition.workspace = true
 name = "saola-query-structure"
 version = "0.1.0"
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Query structure and type definitions for Saola ORM"
+keywords = ["query", "structure", "types", "orm"]
 
 [dependencies]
 psl.workspace = true

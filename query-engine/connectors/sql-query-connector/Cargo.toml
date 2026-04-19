@@ -2,6 +2,11 @@
 edition.workspace = true
 name = "saola-sql-query-connector"
 version = "0.1.0"
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "SQL database connector for Saola query engine (PostgreSQL, MySQL, SQLite, MSSQL)"
+keywords = ["connector", "sql", "database", "orm", "query-engine"]
 
 [features]
 postgresql = ["relation_joins", "quaint/postgresql", "psl/postgresql"]

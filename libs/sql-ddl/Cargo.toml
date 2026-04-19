@@ -2,6 +2,11 @@
 name = "saola-sql-ddl"
 version = "0.1.0"
 edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "SQL DDL support for Saola ORM"
+keywords = ["sql", "ddl", "database", "orm"]
 
 [features]
 postgres = []

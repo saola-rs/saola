@@ -2,6 +2,11 @@
 edition.workspace = true
 name = "saola-query-core"
 version = "0.1.0"
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Core query execution engine for the Saola ORM"
+keywords = ["query-engine", "orm", "database", "execution"]
 
 [features]
 metrics = ["dep:prisma-metrics"]

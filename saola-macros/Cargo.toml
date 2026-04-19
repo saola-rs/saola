@@ -4,6 +4,9 @@ version.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
+repository.workspace = true
+description = "Code generation macros for the Saola type-safe ORM"
+keywords = ["orm", "macros", "code-generation", "prisma", "procedural-macro"]
 
 [lib]
 proc-macro = true

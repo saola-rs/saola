@@ -2,6 +2,11 @@
 name = "saola-user-facing-errors"
 version = "0.1.0"
 edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "User-facing error types for Saola ORM"
+keywords = ["errors", "user-facing", "orm", "diagnostics"]
 
 [dependencies]
 panic-utils.workspace = true

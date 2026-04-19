@@ -25,8 +25,8 @@ Reuses Prisma's query execution engine while providing Rust-native macros for co
 ```prisma
 // schema.prisma
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 model User {
@@ -56,18 +56,23 @@ model Profile {
 ```
 
 ### 2. Initialize & Query
+```bash
+cargo add saola-core --features sqlite
+cargo add saola-macros --features sqlite
+```
 
 ```rust
 use saola::init;
+use saola_core::prelude::*;
 
 init!("schema.prisma");
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let client = db::client().await?;
+    let client = saola::client().await?;
 
     // Create user with profile and posts in one call
-    let user = db::user()
+    let user = saola::user()
         .create("alice@example.com".to_string())
         .data(|d| {
             d.name("Alice".to_string());
@@ -88,7 +93,7 @@ async fn main() -> Result<()> {
         .await?;
 
     // Query with relation filtering
-    let active_writers = db::user()
+    let active_writers = saola::user()
         .find_many()
         .where_clause(|w| {
             w.is_active().eq(true);
@@ -101,11 +106,19 @@ async fn main() -> Result<()> {
     Ok(())
 }
 ```
+### 3. Run Migrations
+```bash
+# Using Prisma Migrate CLI
+npx prisma@6.19 migrate dev --name init --skip-generate
 
-### 3. Run
+# using bunx
+bunx prisma@6.19 migrate dev --name init --skip-generate
+```
+
+### 4. Run
 
 ```bash
-cargo run -p example-app
+cargo run
 ```
 
 ## 🏗️ Architecture: Two-Level Macro System
@@ -116,8 +129,8 @@ Compile-time macro that:
 1. **Reads** your `schema.prisma` file
 2. **Parses** with official PSL parser
 3. **Walks** models/enums (generates Rust types with `#[saola_model]`)
-4. **Extracts** datasource → auto-generates `db::client()` function
-5. **Wraps** everything in `pub mod db { ... }`
+4. **Extracts** datasource → auto-generates `saola::client()` function
+5. **Wraps** everything in `pub mod saola { ... }`
 
 ### Level 2: `#[saola_model]` - Builders & Query Factories
 
@@ -126,7 +139,7 @@ Attribute macro generating:
 - **Query Types**: `{Model}ReadBuilder`, `WriteBuilder`, `CountBuilder`, `AggregateBuilder`, `GroupByBuilder`
 - **Query Factory**: `{model}()` function with all 17 operations
 
-**Result**: `db::user().create(...)` compiles to generated implementation.
+**Result**: `saola::user().create(...)` compiles to generated implementation.
 
 ## ✅ All Features (17 Operations + Advanced)
 
@@ -202,10 +215,12 @@ user()
 
 3. **Include as Custom Type** (`_as` suffix) - Field projection:
    ```rust
-   .include(|u| u.profile_as(|p| {
-       p.bio();
-       p.avatar();
-   }))
+   .include(|u| u.profile_as(saola::select_as!({
+       bio: String,
+       user: {
+           email: String
+       }
+    })))
    ```
 
 #### Field Projections with `select_as!` Macro
@@ -255,6 +270,17 @@ let user = db::user()
     .await?;
 
 transaction.commit().await?;
+
+// or
+let result = client.transaction(|tx|  async move {
+    let user = db::user()
+        .create("alice@example.com".to_string())
+        .exec(&tx)
+        .await?;
+    Ok(user)
+})
+.await?;
+
 ```
 
 **Isolation Levels Supported**:
@@ -278,22 +304,8 @@ transaction.commit().await?;
 - PostgreSQL ✅
 - MySQL ✅
 - SQLite ✅
-
-## 📊 Performance Benchmarking
-
-Comprehensive dual-language benchmarking (Rust + TypeScript):
-
-```bash
-# Run Rust benchmarks
-cargo run -p example-app
-
-# Run TypeScript benchmarks
-cd example-app && npm run bench
-```
-
-Metrics tracked: **ops/sec**, **avg latency**, **p95**, **p99**, **min/max**
-
-See [`example-app/BENCHMARKS.md`](example-app/BENCHMARKS.md) for detailed results.
+- MSSQL ✅
+- MongoDB ✅ 
 
 ## 📁 Project Structure
 
@@ -322,19 +334,7 @@ See [`example-app/BENCHMARKS.md`](example-app/BENCHMARKS.md) for detailed result
 │   │   ├── model_analysis.rs        # Field metadata extraction
 │   │   ├── codegen_orchestrator.rs  # Coordination logic
 │   │   └── utils.rs                 # Helpers
-│   └── Cargo.toml
-│
-├── saola-schema/                    # Schema utilities
-├── saola-cli/                       # CLI tools (placeholder)
-│
-├── example-app/                     # Working demo
-│   ├── src/
-│   │   ├── main.rs                  # Clean demo
-│   │   ├── tests.rs                 # Comprehensive tests
-│   │   └── bench.rs                 # Benchmarks
-│   ├── schema.prisma                # Blog platform schema
-│   ├── BENCHMARKS.md                # Benchmark docs
-│   └── README.md                    # Example guide
+│   └── Cargo.toml                   
 │
 ├── psl-official/                    # Official PSL parser
 ├── query-engine/                    # Official query engine
@@ -342,42 +342,7 @@ See [`example-app/BENCHMARKS.md`](example-app/BENCHMARKS.md) for detailed result
 
 # Root
 Cargo.toml                            # Workspace config
-CLAUDE.md                             # Architecture guide
 README.md                             # This file
-```
-
-## 🛠️ Development Workflow
-
-### Adding a New Feature
-
-1. **Define in schema** (`example-app/schema.prisma`)
-2. **Run example** — `init!()` auto-generates code
-3. **Use in code** — Compiler enforces type safety
-
-### Key Debugging
-
-| Issue | Location |
-|-------|----------|
-| Type-safe filters | `saola-core/src/filters.rs` |
-| Builder generation | `saola-macros/src/builder_gen.rs` |
-| Schema parsing | `saola-macros/src/model_gen.rs` |
-| Runtime errors | `saola-core/src/read.rs`, `write.rs` |
-| Transactions | `saola-core/src/transaction.rs` |
-
-## 🏃 Build & Run
-
-```bash
-# Build all
-cargo build
-
-# Run example app
-cargo run -p example-app
-
-# Run tests
-cargo test --lib tests
-
-# Run benchmarks
-cargo run -p example-app
 ```
 
 ## 🔑 Key Architecture Decisions
@@ -387,36 +352,8 @@ cargo run -p example-app
 3. **Compile-time type safety** - Filter operators validated via traits
 4. **Thin wrapper builders** - Minimal overhead delegation pattern
 5. **No CLI code generation** - Pure compile-time macros
-6. **Automatic client** - `db::client()` from schema datasource
+6. **Automatic client** - `saola::client()` from schema datasource
 7. **QueryExecutorProvider trait** - Unified client/transaction interface
-
-## 📋 Implementation Status
-
-### ✅ Phase 1: Core (Complete)
-- All CRUD operations ✅
-- Type-safe filters ✅
-- Compile-time operator validation ✅
-- Enums with conversions ✅
-- Auto-initialized client ✅
-
-### ✅ Phase 2: Advanced (Complete)
-- Return type encoding (phantom types) ✅
-- Relation filtering (some/every/none) ✅
-- Nested writes & includes ✅
-- Transactions with isolation levels ✅
-- Enhanced FieldShape for optional fields ✅
-
-### ⏳ Phase 3: Planned
-- Raw queries
-- Batch optimization
-- Composite types
-- Field validation
-- Comprehensive error messages
-
-## 📚 Learning Resources
-
-- **[example-app/README.md](example-app/README.md)** - Example walkthrough
-- **[example-app/src/main.rs](example-app/src/main.rs)** - Clean demo
 
 ## 🎯 Design Philosophy
 
@@ -433,11 +370,10 @@ Contributions welcome! Start with:
 1. **New operations** - `saola-macros/src/query_gen.rs`
 2. **Filter types** - `saola-core/src/filters.rs`
 3. **Builders** - `saola-macros/src/builder_gen.rs`
-4. **Tests** - `example-app/src/tests.rs`
 
 ## 📝 License
 
-MIT License. See [LICENSE](LICENSE) for details.
+Apache License. See [LICENSE](LICENSE) for details.
 
 ## 🔗 Links
 

@@ -4,6 +4,9 @@ version.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
+repository.workspace = true
+description = "Core runtime traits and builders for the Saola type-safe ORM"
+keywords = ["orm", "database", "prisma", "type-safe", "macros"]
 
 [dependencies]
 indexmap = { workspace = true }
@@ -31,4 +34,3 @@ full = ["postgresql", "mysql", "sqlite", "mssql", "mongodb", "cockroachdb", "tel
 
 telemetry = ["query-core/telemetry", "sql-query-connector?/telemetry"]
 metrics = ["query-core/metrics", "sql-query-connector?/metrics"]
-

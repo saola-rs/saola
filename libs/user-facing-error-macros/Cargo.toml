@@ -2,6 +2,11 @@
 name = "saola-user-facing-error-macros"
 version = "0.1.0"
 edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Procedural macros for user-facing error generation in Saola ORM"
+keywords = ["macros", "errors", "proc-macro", "orm"]
 
 [lib]
 proc-macro = true

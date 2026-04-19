@@ -7,15 +7,15 @@ authors = [
   "Matthias Oertel <oertel@prisma.io>",
   "Dominic Petrick <petrick@prisma.io>",
 ]
-description = "An abstraction layer for SQL databases."
-documentation = "https://docs.rs/quaint/"
+description = "An abstraction layer for SQL databases (PostgreSQL, MySQL, SQLite, MSSQL)"
+documentation = "https://docs.rs/saola-quaint/"
 edition.workspace = true
-homepage = "https://github.com/prisma/quaint/"
-keywords = ["mysql", "postgresql", "sqlite", "sql"]
+homepage = "https://github.com/ravi-sivaraaman/prisma"
+keywords = ["mysql", "postgresql", "sqlite", "sql", "abstraction"]
 license = "Apache-2.0"
 name = "saola-quaint"
 readme = "README.md"
-repository = "https://github.com/prisma/quaint/"
+repository = "https://github.com/ravi-sivaraaman/prisma"
 version = "0.2.0-alpha.13"
 resolver = "2"
 

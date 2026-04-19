@@ -2,6 +2,11 @@
 edition.workspace = true
 name = "saola-mongodb-query-connector"
 version = "0.1.0"
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "MongoDB connector for Saola query engine"
+keywords = ["mongodb", "connector", "database", "orm", "query-engine"]
 
 [features]
 metrics = ["dep:prisma-metrics"]

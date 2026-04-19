@@ -2,6 +2,11 @@
 edition.workspace = true
 name = "saola-sql-query-builder"
 version = "0.1.0"
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "SQL query builder for Saola ORM (PostgreSQL, MySQL, SQLite, MSSQL)"
+keywords = ["sql", "query-builder", "orm", "database"]
 
 [features]
 relation_joins = ["query-builder/relation_joins"]

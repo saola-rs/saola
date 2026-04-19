@@ -2,6 +2,11 @@
 name = "saola-psl"
 version = "0.1.0"
 edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Prisma Schema Language parser and AST for Saola ORM"
+keywords = ["prisma", "schema", "orm", "psl", "parser"]
 
 [features]
 postgresql = ["psl-core/postgresql"]

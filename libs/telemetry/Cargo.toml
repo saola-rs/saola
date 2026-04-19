@@ -2,6 +2,11 @@
 edition.workspace = true
 name = "saola-telemetry"
 version = "0.1.0"
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Telemetry and tracing support for Saola ORM"
+keywords = ["telemetry", "tracing", "observability", "orm"]
 
 [dependencies]
 ahash.workspace = true

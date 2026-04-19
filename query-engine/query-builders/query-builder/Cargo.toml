@@ -2,6 +2,11 @@
 edition.workspace = true
 name = "saola-query-builder"
 version = "0.1.0"
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Generic query builder for Saola ORM"
+keywords = ["query-builder", "orm", "builder"]
 
 [dependencies]
 serde.workspace = true
