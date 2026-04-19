@@ -13,7 +13,8 @@ telemetry = { workspace = true, optional = true }
 
 getrandom = { workspace = true, optional = true }
 uuid = { workspace = true, optional = true }
-cuid = { workspace = true, optional = true }
+cuid1 = { workspace = true, optional = true }
+cuid2 = { workspace = true, optional = true }
 ulid = { workspace = true, optional = true }
 nanoid = { workspace = true, optional = true }
 chrono.workspace = true
@@ -24,5 +25,5 @@ getrandom = { workspace = true, features = ["js"] }
 
 [features]
 # Support for generating default UUID, CUID, ULID, nanoid and datetime values.
-default_generators = ["uuid/v4", "uuid/v7", "cuid", "ulid", "nanoid"]
+default_generators = ["uuid/v4", "uuid/v7", "cuid1", "cuid2", "ulid", "nanoid"]
 telemetry = ["dep:telemetry"]

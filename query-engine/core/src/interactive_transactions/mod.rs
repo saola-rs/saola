@@ -16,7 +16,7 @@ pub struct TxId(String);
 
 impl Default for TxId {
     fn default() -> Self {
-        Self(cuid::cuid2())
+        Self(cuid2::cuid())
     }
 }
 

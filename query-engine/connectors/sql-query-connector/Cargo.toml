@@ -50,7 +50,7 @@ tokio = { workspace = true, features = ["macros", "time"] }
 tracing = { workspace = true, features = ["log"] }
 tracing-futures.workspace = true
 uuid.workspace = true
-cuid.workspace = true
+
 ulid.workspace = true
 quaint = { workspace = true, default-features = false }
 
@@ -60,6 +60,7 @@ expect-test.workspace = true
 [dependencies.connector-interface]
 package = "saola-query-connector"
 path = "../query-connector"
+version = "0.1.0"
 
 [dependencies.query-structure]
 workspace = true

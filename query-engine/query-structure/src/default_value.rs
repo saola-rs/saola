@@ -322,8 +322,8 @@ impl ValueGeneratorFn {
     #[cfg(feature = "default_generators")]
     fn generate_cuid(version: u8) -> PrismaValue {
         PrismaValue::String(match version {
-            1 => cuid::cuid1(),
-            2 => cuid::cuid2(),
+            1 => cuid1::cuid(),
+            2 => cuid2::cuid(),
             _ => panic!("Unknown `cuid` version: {version}"),
         })
     }

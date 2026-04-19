@@ -112,7 +112,9 @@ bson = "2"
 bytes = "1"
 byteorder = { version = "1", default-features = false }
 crossbeam-channel = "0.5"
-cuid = { git = "https://github.com/prisma/cuid-rust", branch = "v1.3.3-wasm32-unknown-unknown" }
+cuid-util = "0.1"
+cuid1 = "0.1.1"
+cuid2 = "0.1.5"
 derive_more = "0.99"
 env_logger = "0.11"
 futures = "0.3"
@@ -127,7 +129,7 @@ metrics-util = "0.17.0"
 metrics-exporter-prometheus = { version = "0.15.3", default-features = false }
 mobc = "0.8"
 mongodb = { version = "3", features = ['zstd-compression', 'zlib-compression', 'snappy-compression'] }
-mysql_async = { git = "https://github.com/prisma/mysql_async", branch = "vendored-openssl" }
+mysql_async = { package = "saola_mysql_async", version = "0.31.3" }
 names = { version = "0.11", default-features = false }
 nanoid = "0.4"
 native-tls = "0.2"
@@ -137,8 +139,8 @@ parse-hyperlinks = "0.23"
 paste = "1"
 percent-encoding = "2"
 pin-project = "1"
-postgres-native-tls = { git = "https://github.com/prisma/rust-postgres", branch = "pgbouncer-mode" }
-postgres-types = { git = "https://github.com/prisma/rust-postgres", branch = "pgbouncer-mode" }
+postgres-native-tls = { package="saola-postgres-native-tls", version = "0.5.1" }
+postgres-types = { package = "saola-postgres-types", version = "0.2.9" }
 pretty = "0.12"
 rand = "0.8"
 reqwest = "0.11"
@@ -150,8 +152,8 @@ structopt = "0.3"
 sqlx-core = "0.8"
 sqlx-sqlite = "0.8"
 tempfile = "3"
-tiberius = { git = "https://github.com/prisma/tiberius", branch = "main", default-features = false }
-tokio-postgres = { git = "https://github.com/prisma/rust-postgres", branch = "pgbouncer-mode" }
+tiberius = { version = "0.12.3", default-features = false }
+tokio-postgres = { package="saola-tokio-postgres", version = "0.7.13"}
 tokio-tungstenite = "0.26"
 tokio-util = "0.7"
 toml = "0.8"

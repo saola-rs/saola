@@ -14,7 +14,7 @@ bigdecimal.workspace = true
 bon.workspace = true
 chrono.workspace = true
 connection-string.workspace = true
-connector = { path = "../connectors/query-connector", package = "saola-query-connector" }
+connector = { path = "../connectors/query-connector", package = "saola-query-connector", version = "0.1.0" }
 crossbeam-channel.workspace = true
 psl.workspace = true
 futures.workspace = true
@@ -37,7 +37,7 @@ tracing-futures = { workspace = true, optional = true }
 tracing-subscriber = { workspace = true, features = ["env-filter"], optional = true }
 user-facing-errors.workspace = true
 uuid.workspace = true
-cuid.workspace = true
+cuid2.workspace = true
 ulid.workspace = true
 schema.workspace = true
 crosstarget-utils.workspace = true
@@ -45,4 +45,3 @@ telemetry = { workspace = true, optional = true }
 lru.workspace = true
 enumflags2.workspace = true
 derive_more.workspace = true
-

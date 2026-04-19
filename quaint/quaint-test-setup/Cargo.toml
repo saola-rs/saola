@@ -1,5 +1,6 @@
 [package]
 name = "quaint-test-setup"
+publish=false
 version = "0.1.0"
 authors = ["Julius de Bruijn <bruijn@prisma.io>"]
 edition = "2018"
