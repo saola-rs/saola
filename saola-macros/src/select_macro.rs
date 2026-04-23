@@ -110,7 +110,7 @@ fn generate_struct_and_selects(
 
     for field in fields {
         let name = &field.name;
-        let prisma_name = name.to_string();
+        let prisma_name = ::heck::ToLowerCamelCase::to_lower_camel_case(name.to_string().as_str());
         names.push(name.clone());
         prisma_names.push(prisma_name.clone());
 
