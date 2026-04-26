@@ -1,5 +1,6 @@
 //! Logic for the select! macro which generates ad-hoc structs for partial selection
 
+use heck::ToSnakeCase;
 use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote};
 use std::collections::hash_map::DefaultHasher;
@@ -109,8 +110,8 @@ fn generate_struct_and_selects(
     let mut prisma_names = Vec::new();
 
     for field in fields {
-        let name = &field.name;
-        let prisma_name = name.to_string();
+        let prisma_name = field.name.to_string();
+        let name = format_ident!("{}", prisma_name.to_snake_case());
         names.push(name.clone());
         prisma_names.push(prisma_name.clone());
 
@@ -251,4 +252,51 @@ pub fn generate_as_type(input: proc_macro2::TokenStream) -> proc_macro2::TokenSt
     let struct_name = format_ident!("_AdHocType_{:x}", hash);
 
     quote! { #struct_name }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use quote::quote;
+
+    #[test]
+    fn test_snake_case_conversion() {
+        let input = quote! {
+            {
+                firstName: String,
+                lastName: String
+            }
+        };
+        let shape: SelectShape = syn::parse2(input).unwrap();
+        let output = select_macro_impl(shape);
+        let output_str = output.to_string();
+        
+        assert!(output_str.contains("pub first_name : String"));
+        assert!(output_str.contains("pub last_name : String"));
+        assert!(output_str.contains("rename = \"firstName\""));
+        assert!(output_str.contains("rename = \"lastName\""));
+        assert!(output_str.contains("s . first_name ()"));
+        assert!(output_str.contains("s . last_name ()"));
+    }
+
+    #[test]
+    fn test_nested_snake_case_conversion() {
+        let input = quote! {
+            {
+                authorUser: struct {
+                    firstName: String
+                }
+            }
+        };
+        let shape: SelectShape = syn::parse2(input).unwrap();
+        let output = select_macro_impl(shape);
+        let output_str = output.to_string();
+        
+        assert!(output_str.contains("pub author_user : Option < Box < _AdHoc_"));
+        assert!(output_str.contains("pub first_name : String"));
+        assert!(output_str.contains("rename = \"authorUser\""));
+        assert!(output_str.contains("rename = \"firstName\""));
+        assert!(output_str.contains("s . author_user (| s |"));
+        assert!(output_str.contains("s . first_name ()"));
+    }
 }
