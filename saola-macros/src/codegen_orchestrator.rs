@@ -10,7 +10,7 @@ use quote::{format_ident, quote};
 use std::collections::HashMap;
 
 /// Generate the complete module structure
-pub fn generate_module(schema: &psl::ValidatedSchema, schema_path: &str) -> proc_macro2::TokenStream {
+pub fn generate_module(schema: &psl::ValidatedSchema, schema_content: &str) -> proc_macro2::TokenStream {
     let db = &schema.db;
 
     // 1. Collect metadata for all models first
@@ -178,7 +178,7 @@ pub fn generate_module(schema: &psl::ValidatedSchema, schema_path: &str) -> proc
 
             pub async fn client() -> ::saola_core::Result<::saola_core::SaolaClient> {
                 ::saola_core::SaolaClient::new(
-                    include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/", #schema_path)),
+                    #schema_content,
                     #url_tokens
                 ).await
             }

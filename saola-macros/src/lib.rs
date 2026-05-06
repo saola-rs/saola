@@ -155,7 +155,9 @@ pub fn saola_model(_attr: TokenStream, item: TokenStream) -> TokenStream {
     TokenStream::from(expanded)
 }
 
-/// The `init!` macro generates the entire Saola client module from a schema file.
+/// The `init!` macro generates the entire Saola client module from a schema file or directory.
+///
+/// If a directory is provided, it will recursively find and merge all `.prisma` files.
 #[proc_macro]
 pub fn init(input: TokenStream) -> TokenStream {
     let schema_path = if input.is_empty() {
@@ -206,7 +208,7 @@ pub fn init(input: TokenStream) -> TokenStream {
         panic!("Schema validation failed: {:?}", parsed_schema.diagnostics.errors());
     }
 
-    let module = codegen_orchestrator::generate_module(&parsed_schema, &schema_path);
+    let module = codegen_orchestrator::generate_module(&parsed_schema, &schema_content);
 
     TokenStream::from(module)
 }
