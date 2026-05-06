@@ -225,7 +225,12 @@ pub fn generate_select_methods(fields: &[FieldMetadata]) -> Vec<proc_macro2::Tok
                     quote! { Option<()> }
                 };
 
+                let validate_ident = quote::format_ident!("_validate_field_{}", prisma_name);
+
                 quote! {
+                    #[allow(non_snake_case)]
+                    pub fn #validate_ident(&self) {}
+
                     pub fn #rust_name<F>(&mut self, f: F) -> saola_core::SelectionRelField<'_, #marker_type, Self>
                     where F: FnOnce(&mut #related_select_builder)
                     {
@@ -241,7 +246,11 @@ pub fn generate_select_methods(fields: &[FieldMetadata]) -> Vec<proc_macro2::Tok
                     }
                 }
             } else {
+                let validate_ident = quote::format_ident!("_validate_field_{}", prisma_name);
                 quote! {
+                    #[allow(non_snake_case)]
+                    pub fn #validate_ident(&self) {}
+
                     pub fn #rust_name(&mut self) -> saola_core::SelectionField<'_, #field_type, Self> {
                         self.selections.push(saola_core::query_core::Selection::with_name(#prisma_name.to_string()));
                         saola_core::SelectionField::new(self)

@@ -168,8 +168,36 @@ pub fn init(input: TokenStream) -> TokenStream {
     let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR not set");
     let full_path = std::path::PathBuf::from(manifest_dir).join(&schema_path);
 
-    let schema_content = std::fs::read_to_string(&full_path)
-        .unwrap_or_else(|e| panic!("Could not read schema at {:?}: {}", full_path, e));
+    let schema_content = if full_path.is_dir() {
+        fn collect_prisma_files(dir: &std::path::Path, files: &mut Vec<std::path::PathBuf>) {
+            if let Ok(entries) = std::fs::read_dir(dir) {
+                for entry in entries.filter_map(|e| e.ok()) {
+                    let path = entry.path();
+                    if path.is_dir() {
+                        collect_prisma_files(&path, files);
+                    } else if path.extension().and_then(|s| s.to_str()) == Some("prisma") {
+                        files.push(path);
+                    }
+                }
+            }
+        }
+
+        let mut files = Vec::new();
+        collect_prisma_files(&full_path, &mut files);
+        files.sort(); // Deterministic order
+
+        let mut merged = String::new();
+        for path in files {
+            let content = std::fs::read_to_string(&path)
+                .unwrap_or_else(|e| panic!("Could not read schema at {:?}: {}", path, e));
+            merged.push_str(&content);
+            merged.push_str("\n");
+        }
+        merged
+    } else {
+        std::fs::read_to_string(&full_path)
+            .unwrap_or_else(|e| panic!("Could not read schema at {:?}: {}", full_path, e))
+    };
 
     let source_file = psl::SourceFile::from(schema_content.as_str());
     let parsed_schema = psl::validate(source_file, &psl::parser_database::NoExtensionTypes);

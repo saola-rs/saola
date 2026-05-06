@@ -128,7 +128,11 @@ fn generate_struct_and_selects(
                     pub #name: #final_ty
                 });
                 // In select builder, scalars are methods that return SelectionField
-                select_calls.push(quote! { s.#name().assert_type(&_check.#name); });
+                let validate_ident = format_ident!("_validate_field_{}", prisma_name);
+                select_calls.push(quote! { 
+                    s.#validate_ident();
+                    s.#name().assert_type(&_check.#name); 
+                });
             }
             FieldType::Nested(nested) => {
                 let sub_prefix = format!("{}_{}", prefix, name);
@@ -175,7 +179,9 @@ fn generate_struct_and_selects(
                 });
 
                 // In select builder, relations return SelectionRelField
+                let validate_ident = format_ident!("_validate_field_{}", prisma_name);
                 select_calls.push(quote! {
+                    s.#validate_ident();
                     s.#name(|s| {
                         let _check: #sub_struct_name = Default::default();
                         #sub_selects
@@ -275,6 +281,8 @@ mod tests {
         assert!(output_str.contains("pub last_name : String"));
         assert!(output_str.contains("rename = \"firstName\""));
         assert!(output_str.contains("rename = \"lastName\""));
+        assert!(output_str.contains("s . _validate_field_firstName ()"));
+        assert!(output_str.contains("s . _validate_field_lastName ()"));
         assert!(output_str.contains("s . first_name ()"));
         assert!(output_str.contains("s . last_name ()"));
     }
@@ -296,6 +304,8 @@ mod tests {
         assert!(output_str.contains("pub first_name : String"));
         assert!(output_str.contains("rename = \"authorUser\""));
         assert!(output_str.contains("rename = \"firstName\""));
+        assert!(output_str.contains("s . _validate_field_authorUser ()"));
+        assert!(output_str.contains("s . _validate_field_firstName ()"));
         assert!(output_str.contains("s . author_user (| s |"));
         assert!(output_str.contains("s . first_name ()"));
     }

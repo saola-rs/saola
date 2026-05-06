@@ -16,6 +16,7 @@ use mongodb_query_connector::MongoDb;
 use std::sync::Arc;
 
 /// Main database client - initializes connection and schema
+#[derive(Clone)]
 pub struct SaolaClient {
     pub executor: Arc<dyn QueryExecutor + Send + Sync>,
     pub query_schema: Arc<schema::QuerySchema>,

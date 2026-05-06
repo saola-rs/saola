@@ -160,7 +160,7 @@ impl Transaction {
 }
 
 /// Trait to make both SaolaClient and Transaction work with execute functions
-pub trait QueryExecutorProvider {
+pub trait QueryExecutorProvider: Send + Sync + Clone {
     fn executor(&self) -> Arc<dyn QueryExecutor + Send + Sync>;
     fn query_schema(&self) -> Arc<crate::schema::QuerySchema>;
     fn tx_id(&self) -> Option<&TxId>;
