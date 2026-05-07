@@ -5,6 +5,7 @@ use connector_interface::{
     Connection, Connector,
     error::{ConnectorError, ErrorKind},
 };
+#[cfg(feature = "cockroachdb")]
 use psl::builtin_connectors::COCKROACH;
 use quaint::{connector::PostgresFlavour, pooled::Quaint, prelude::ConnectionInfo};
 use std::time::Duration;
@@ -25,6 +26,7 @@ impl PostgreSql {
 
 #[async_trait]
 impl FromSource for PostgreSql {
+    #[allow(unused_variables)]
     async fn from_source(
         source: &psl::Datasource,
         url: &str,
@@ -45,11 +47,14 @@ impl FromSource for PostgreSql {
             .map_err(SqlError::from)
             .map_err(|sql_error| sql_error.into_connector_error(err_conn_info.as_native()))?;
 
+        #[cfg(feature = "cockroachdb")]
         let flavour = if COCKROACH.is_provider(source.active_provider) {
             PostgresFlavour::Cockroach
         } else {
             PostgresFlavour::Postgres
         };
+        #[cfg(not(feature = "cockroachdb"))]
+        let flavour = PostgresFlavour::Postgres;
 
         // The postgres flavour is set in order to avoid a network roundtrip when connecting to the database.
         builder.set_postgres_flavour(flavour);
