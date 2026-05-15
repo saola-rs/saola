@@ -6,22 +6,20 @@ pub mod write;
 mod raw;
 mod update;
 
+use crate::metrics::{PRISMA_DATASOURCE_QUERIES_DURATION_HISTOGRAM_MS, PRISMA_DATASOURCE_QUERIES_TOTAL};
 use crate::query_strings::QueryString;
+use crate::{counter, histogram};
 use crate::{
     error::DecorateErrorWithFieldInformationExtension, output_meta::OutputMetaMapping, value::value_from_bson,
 };
 use bson::Bson;
 use bson::Document;
 use futures::Future;
-use crate::{counter, histogram};
-use crate::metrics::{
-    PRISMA_DATASOURCE_QUERIES_DURATION_HISTOGRAM_MS, PRISMA_DATASOURCE_QUERIES_TOTAL,
-};
 use query_structure::*;
 use std::sync::Arc;
 use std::time::Instant;
-use tracing::{debug, info_span};
 use tracing::Instrument;
+use tracing::{debug, info_span};
 
 const DB_SYSTEM_NAME: &str = "mongodb";
 

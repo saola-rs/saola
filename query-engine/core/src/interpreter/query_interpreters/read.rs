@@ -1,10 +1,10 @@
 use super::{inmemory_record_processor::InMemoryRecordProcessor, *};
+use crate::telemetry::TraceParent;
 use crate::{interpreter::InterpretationResult, query_ast::*, result_ast::*};
 use connector::{ConnectionLike, error::ConnectorError};
 use futures::future::{BoxFuture, FutureExt};
 use psl::can_support_relation_load_strategy;
 use query_structure::{ManyRecords, RelationLoadStrategy, RelationSelection};
-use crate::telemetry::TraceParent;
 use user_facing_errors::KnownError;
 
 pub(crate) fn execute<'conn>(
@@ -137,7 +137,8 @@ fn read_many_by_queries(
         if records.records.is_empty() && query.options.contains(QueryOption::ThrowOnEmpty) {
             record_not_found()
         } else {
-            let nested: Vec<QueryResult> = process_nested(tx, query.nested, Some(&records), traceparent.clone()).await?;
+            let nested: Vec<QueryResult> =
+                process_nested(tx, query.nested, Some(&records), traceparent.clone()).await?;
 
             Ok(RecordSelection {
                 name: query.name,

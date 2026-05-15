@@ -1,5 +1,5 @@
-use quaint::ast::{Delete, Insert, Select, Update};
 use crate::telemetry::TraceParent;
+use quaint::ast::{Delete, Insert, Select, Update};
 
 pub trait SqlTraceComment: Sized {
     fn add_traceparent(self, traceparent: Option<TraceParent>) -> Self;

@@ -16,6 +16,9 @@ fn pascal_case(s: &str) -> String {
 }
 
 pub fn generate_read_wrappers(model_name: &syn::Ident, model_metadata: &ModelMetadata) -> proc_macro2::TokenStream {
+    let model_name_str = model_name.to_string();
+    let data_struct_name = format_ident!("{}Data", model_name_str);
+
     let many_name = format_ident!("{}ManyReadBuilder", model_name);
     let unique_name = format_ident!("{}UniqueReadBuilder", model_name);
     let first_name = format_ident!("{}FirstReadBuilder", model_name);
@@ -46,7 +49,14 @@ pub fn generate_read_wrappers(model_name: &syn::Ident, model_metadata: &ModelMet
         }
     });
 
-    for relation in &relations {
+    // Generate transitions for each relation
+    let mut generic_params = Vec::new();
+    for (i, _) in relations.iter().enumerate() {
+        let ident = format_ident!("T{}", i);
+        generic_params.push(quote! { #ident });
+    }
+
+    for (i, relation) in relations.iter().enumerate() {
         let pascal_name = format_ident!("{}Include{}", model_name, pascal_case(&relation.prisma_name));
         let pascal_name_with = format_ident!("{}Include{}With", model_name, pascal_case(&relation.prisma_name));
         let pascal_name_as = format_ident!("{}Include{}As", model_name, pascal_case(&relation.prisma_name));
@@ -54,9 +64,11 @@ pub fn generate_read_wrappers(model_name: &syn::Ident, model_metadata: &ModelMet
         let with_suffix_name = format_ident!("{}_with", relation.rust_name);
         let as_suffix_name = format_ident!("{}_as", relation.rust_name);
         let inner_type_str = crate::utils::get_inner_type(&relation.field_type);
+        let related_model_data = format_ident!("{}Data", inner_type_str);
         let related_select_builder = format_ident!("{}SelectBuilder", inner_type_str);
         let related_include_builder = format_ident!("{}IncludeBuilder", inner_type_str);
         let related_include_marker_trait = format_ident!("{}IncludeMarker", inner_type_str);
+        let related_include_transition_trait = format_ident!("{}IncludeTransition", inner_type_str);
         let prisma_name = &relation.prisma_name;
 
         include_markers.push(quote! {
@@ -65,12 +77,32 @@ pub fn generate_read_wrappers(model_name: &syn::Ident, model_metadata: &ModelMet
                 fn into_selection(self) -> Option<::saola_core::query_core::Selection> { Some(self.selection) }
             }
 
+            impl #pascal_name {
+                pub fn model_as<U: ::saola_core::builder::SelectStruct>(mut self) -> #pascal_name_as<U> {
+                    self.selection.clear_nested_selections();
+                    for sel in U::selections() {
+                        self.selection.push_nested_selection(sel);
+                    }
+                    #pascal_name_as { selection: self.selection, _phantom: std::marker::PhantomData }
+                }
+            }
+
             pub struct #pascal_name_with<M> {
                 pub selection: ::saola_core::query_core::Selection,
                 pub _phantom: std::marker::PhantomData<M>
             }
             impl<M> #include_marker_trait for #pascal_name_with<M> {
                 fn into_selection(self) -> Option<::saola_core::query_core::Selection> { Some(self.selection) }
+            }
+
+            impl<M> #pascal_name_with<M> {
+                pub fn model_as<U: ::saola_core::builder::SelectStruct>(mut self) -> #pascal_name_as<U> {
+                    self.selection.clear_nested_selections();
+                    for sel in U::selections() {
+                        self.selection.push_nested_selection(sel);
+                    }
+                    #pascal_name_as { selection: self.selection, _phantom: std::marker::PhantomData }
+                }
             }
 
             pub struct #pascal_name_as<U> {
@@ -123,155 +155,61 @@ pub fn generate_read_wrappers(model_name: &syn::Ident, model_metadata: &ModelMet
                 #pascal_name_as { selection: sel, _phantom: std::marker::PhantomData }
             }
         });
-    }
 
-    let mut powerset = vec![vec![]];
-    for relation in &relations {
-        let mut new_subsets = Vec::new();
-        for subset in &powerset {
-            let mut new_subset = subset.clone();
-            new_subset.push(*relation);
-            new_subsets.push(new_subset);
-        }
-        powerset.extend(new_subsets);
-    }
-
-    for subset in powerset {
-        let mut sorted_subset = subset.clone();
-        sorted_subset.sort_by_key(|r| &r.prisma_name);
-
-        let combined_name = if sorted_subset.is_empty() {
-            format_ident!("{}", model_name)
+        let mut next_generic_params_simple = generic_params.clone();
+        let related_base_type = if relation.is_list {
+            quote! { Vec<#related_model_data> }
+        } else if relation.is_optional {
+            quote! { Option<Box<#related_model_data>> }
         } else {
-            let names: Vec<_> = sorted_subset.iter().map(|r| pascal_case(&r.prisma_name)).collect();
-            format_ident!("{}With{}", model_name, names.join("And"))
+            quote! { Box<#related_model_data> }
         };
+        next_generic_params_simple[i] = related_base_type;
 
-        let mut current_generics_params = Vec::new();
-        for r in &sorted_subset {
-            let g = format_ident!("T{}", pascal_case(&r.prisma_name));
-            current_generics_params.push(g);
-        }
-        let current_generics_decl = if current_generics_params.is_empty() {
-            quote! {}
+        let mut next_generic_params_with = generic_params.clone();
+        let related_with_type = if relation.is_list {
+            quote! { Vec<<#related_model_data as #related_include_transition_trait<M>>::Output> }
+        } else if relation.is_optional {
+            quote! { Option<Box<<#related_model_data as #related_include_transition_trait<M>>::Output>> }
         } else {
-            quote! { <#(#current_generics_params),*> }
+            quote! { Box<<#related_model_data as #related_include_transition_trait<M>>::Output> }
         };
+        next_generic_params_with[i] = related_with_type;
 
-        let mut impl_generics_base_list = Vec::new();
-        for g in &current_generics_params {
-            impl_generics_base_list.push(quote! {#g: ::saola_core::serde::de::DeserializeOwned + Send + Sync});
-        }
-        let impl_generics_base = if impl_generics_base_list.is_empty() {
-            quote! {}
-        } else {
-            quote! { <#(#impl_generics_base_list),*> }
-        };
+        let mut next_generic_params_as = generic_params.clone();
+        next_generic_params_as[i] = quote! { U };
 
-        // Empty transition for this type
         transitions.push(quote! {
-            impl #impl_generics_base #include_transition_trait<#empty_marker_name> for #combined_name #current_generics_decl { 
-                type Output = #combined_name #current_generics_decl; 
+            impl<#(#generic_params),*> #include_transition_trait<#pascal_name> for #data_struct_name<#(#generic_params),*>
+            where #(#generic_params: ::saola_core::serde::de::DeserializeOwned + Send + Sync),*
+            {
+                type Output = #data_struct_name<#(#next_generic_params_simple),*>;
+            }
+
+            impl<#(#generic_params),*, M> #include_transition_trait<#pascal_name_with<M>> for #data_struct_name<#(#generic_params),*>
+            where 
+                #(#generic_params: ::saola_core::serde::de::DeserializeOwned + Send + Sync),*,
+                #related_model_data: #related_include_transition_trait<M>
+            {
+                type Output = #data_struct_name<#(#next_generic_params_with),*>;
+            }
+
+            impl<#(#generic_params),*, U: ::saola_core::serde::de::DeserializeOwned + Send + Sync> #include_transition_trait<#pascal_name_as<U>> for #data_struct_name<#(#generic_params),*>
+            where #(#generic_params: ::saola_core::serde::de::DeserializeOwned + Send + Sync),*
+            {
+                type Output = #data_struct_name<#(#next_generic_params_as),*>;
             }
         });
-
-        for relation in &relations {
-            let pascal_name = format_ident!("{}Include{}", model_name, pascal_case(&relation.prisma_name));
-            let pascal_name_with = format_ident!("{}Include{}With", model_name, pascal_case(&relation.prisma_name));
-            let pascal_name_as = format_ident!("{}Include{}As", model_name, pascal_case(&relation.prisma_name));
-            let related_model = format_ident!("{}", crate::utils::get_inner_type(&relation.field_type));
-            let related_include_transition_trait = format_ident!("{}IncludeTransition", related_model);
-
-            let mut next_subset = subset.clone();
-            let is_new_relation = !next_subset.iter().any(|r| r.prisma_name == relation.prisma_name);
-            if is_new_relation {
-                next_subset.push(*relation);
-            }
-            next_subset.sort_by_key(|r| &r.prisma_name);
-
-            let next_combined_name = if next_subset.is_empty() {
-                format_ident!("{}", model_name)
-            } else {
-                let names: Vec<_> = next_subset.iter().map(|r| pascal_case(&r.prisma_name)).collect();
-                format_ident!("{}With{}", model_name, names.join("And"))
-            };
-
-            let mut next_generics_base = Vec::new();
-            for r in &next_subset {
-                if r.prisma_name == relation.prisma_name {
-                    next_generics_base.push(quote! { #related_model });
-                } else {
-                    let g = format_ident!("T{}", pascal_case(&r.prisma_name));
-                    next_generics_base.push(quote! { #g });
-                }
-            }
-            let next_generics_base_tokens = if next_generics_base.is_empty() {
-                quote! {}
-            } else {
-                quote! { <#(#next_generics_base),*> }
-            };
-
-            let mut next_generics_with = Vec::new();
-            for r in &next_subset {
-                if r.prisma_name == relation.prisma_name {
-                    next_generics_with
-                        .push(quote! { <#related_model as #related_include_transition_trait<M>>::Output });
-                } else {
-                    let g = format_ident!("T{}", pascal_case(&r.prisma_name));
-                    next_generics_with.push(quote! { #g });
-                }
-            }
-            let next_generics_with_tokens = if next_generics_with.is_empty() {
-                quote! {}
-            } else {
-                quote! { <#(#next_generics_with),*> }
-            };
-
-            let mut next_generics_as = Vec::new();
-            for r in &next_subset {
-                if r.prisma_name == relation.prisma_name {
-                    next_generics_as.push(quote! { U });
-                } else {
-                    let g = format_ident!("T{}", pascal_case(&r.prisma_name));
-                    next_generics_as.push(quote! { #g });
-                }
-            }
-            let next_generics_as_tokens = if next_generics_as.is_empty() {
-                quote! {}
-            } else {
-                quote! { <#(#next_generics_as),*> }
-            };
-
-            let mut impl_generics_with_list = vec![quote! {M}];
-            for g in &current_generics_params {
-                impl_generics_with_list.push(quote! {#g: ::saola_core::serde::de::DeserializeOwned + Send + Sync});
-            }
-            let impl_generics_with = quote! { <#(#impl_generics_with_list),*> };
-
-            let mut impl_generics_as_list = vec![quote! {U: ::saola_core::serde::de::DeserializeOwned + Send + Sync}];
-            for g in &current_generics_params {
-                impl_generics_as_list.push(quote! {#g: ::saola_core::serde::de::DeserializeOwned + Send + Sync});
-            }
-            let impl_generics_as = quote! { <#(#impl_generics_as_list),*> };
-
-            transitions.push(quote! {
-                impl #impl_generics_base #include_transition_trait<#pascal_name> for #combined_name #current_generics_decl { 
-                    type Output = #next_combined_name #next_generics_base_tokens; 
-                }
-                impl #impl_generics_with #include_transition_trait<#pascal_name_with<M>> for #combined_name #current_generics_decl 
-                where #related_model: #related_include_transition_trait<M>
-                { 
-                    type Output = #next_combined_name #next_generics_with_tokens; 
-                }
-                impl #impl_generics_as #include_transition_trait<#pascal_name_as<U>> for #combined_name #current_generics_decl { 
-                    type Output = #next_combined_name #next_generics_as_tokens; 
-                }
-            });
-        }
     }
 
-    // Empty transition for Value
     transitions.push(quote! {
+        impl<#(#generic_params),*> #include_transition_trait<#empty_marker_name> for #data_struct_name<#(#generic_params),*>
+        where #(#generic_params: ::saola_core::serde::de::DeserializeOwned + Send + Sync),*
+        {
+            type Output = #data_struct_name<#(#generic_params),*>;
+        }
+
+        // Handle Value transitions for Select
         impl #include_transition_trait<#empty_marker_name> for ::saola_core::serde_json::Value { type Output = ::saola_core::serde_json::Value; }
     });
 
@@ -345,9 +283,10 @@ pub fn generate_read_wrappers(model_name: &syn::Ident, model_metadata: &ModelMet
             }
 
             impl<T: ::saola_core::serde::de::DeserializeOwned + Send + Sync> #w_name<T> {
-                pub fn where_clause<F>(mut self, f: F) -> Self where F: FnOnce(&mut #w_where) {
+                pub fn where_clause(mut self, filter: impl ::saola_core::filters::IntoWhere<#w_where>) -> Self {
                     let mut builder = #w_where::default();
-                    f(&mut builder);
+                    filter.into_where(&mut builder);
+                    use ::saola_core::FilterBuilder;
                     let map = builder.build();
                     if !map.is_empty() {
                         use ::saola_core::Filterable;
@@ -368,18 +307,11 @@ pub fn generate_read_wrappers(model_name: &syn::Ident, model_metadata: &ModelMet
                     #w_name { inner: self.inner.with_type(), _phantom: std::marker::PhantomData }
                 }
 
-                pub fn select_as<U: ::saola_core::serde::de::DeserializeOwned + Send + Sync, F>(
+                pub fn select_as<U: ::saola_core::builder::SelectStruct>(
                     mut self,
-                    selection: (std::marker::PhantomData<U>, F)
-                ) -> #w_name<U>
-                where F: FnOnce(&mut #select_name) {
-                    let mut builder = #select_name::default();
-                    (selection.1)(&mut builder);
-                    let selections: Vec<::saola_core::query_core::Selection> = builder.into();
-                    use ::saola_core::Selectable;
-                    self.inner.state.selection.clear_nested_selections();
-                    for sel in selections { self.inner.add_nested_selection(sel); }
-                    #w_name { inner: self.inner.with_type(), _phantom: std::marker::PhantomData }
+                ) -> #w_name<U> {
+                    self.inner = self.inner.select_as::<U>();
+                    #w_name { inner: self.inner, _phantom: std::marker::PhantomData }
                 }
 
                 pub fn include<M, F>(mut self, f: F) -> #w_name<<T as #include_transition_trait<M>>::Output>
@@ -412,8 +344,12 @@ pub fn generate_read_wrappers(model_name: &syn::Ident, model_metadata: &ModelMet
                     #w_name { inner: self.inner.with_type(), _phantom: std::marker::PhantomData }
                 }
 
-                pub async fn exec(self, provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_)) -> ::saola_core::Result<#r_type> {
-                    self.inner.exec_inferred(provider).await
+                pub async fn exec_with(self, provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_)) -> ::saola_core::Result<#r_type> {
+                    self.inner.exec_with(provider).await
+                }
+
+                pub async fn exec(self) -> ::saola_core::Result<#r_type> {
+                    self.inner.exec().await
                 }
             }
         });
@@ -523,11 +459,10 @@ pub fn generate_write_wrapper(model_name: &syn::Ident, model_metadata: &ModelMet
         }
 
         impl<T: ::saola_core::serde::de::DeserializeOwned + Send + Sync> #write_wrapper_name<T> {
-            pub fn where_clause<F>(mut self, f: F) -> Self
-            where F: FnOnce(&mut #unique_where_builder_name)
-            {
+            pub fn where_clause(mut self, filter: impl ::saola_core::filters::IntoWhere<#unique_where_builder_name>) -> Self {
                 let mut builder = #unique_where_builder_name::default();
-                f(&mut builder);
+                filter.into_where(&mut builder);
+                use ::saola_core::FilterBuilder;
                 let map = builder.build();
                 if !map.is_empty() {
                     use ::saola_core::Filterable;
@@ -574,18 +509,11 @@ pub fn generate_write_wrapper(model_name: &syn::Ident, model_metadata: &ModelMet
                 }
             }
 
-            pub fn select_as<U: ::saola_core::serde::de::DeserializeOwned + Send + Sync, F>(
+            pub fn select_as<U: ::saola_core::builder::SelectStruct>(
                 mut self,
-                selection: (std::marker::PhantomData<U>, F)
-            ) -> #write_wrapper_name<U>
-            where F: FnOnce(&mut #select_builder_name) {
-                let mut builder = #select_builder_name::default();
-                (selection.1)(&mut builder);
-                let selections: Vec<::saola_core::query_core::Selection> = builder.into();
-                use ::saola_core::Selectable;
-                self.inner.state.selection.clear_nested_selections();
-                for sel in selections { self.inner.add_nested_selection(sel); }
-                #write_wrapper_name { inner: self.inner.with_type(), _phantom: std::marker::PhantomData }
+            ) -> #write_wrapper_name<U> {
+                self.inner = self.inner.select_as::<U>();
+                #write_wrapper_name { inner: self.inner, _phantom: std::marker::PhantomData }
             }
 
             pub fn include<M, F>(mut self, f: F) -> #write_wrapper_name<<T as #include_transition_trait<M>>::Output>
@@ -620,8 +548,12 @@ pub fn generate_write_wrapper(model_name: &syn::Ident, model_metadata: &ModelMet
                 }
             }
 
-            pub async fn exec(self, provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_)) -> ::saola_core::Result<T> {
-                self.inner.exec_inferred(provider).await
+            pub async fn exec_with(self, provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_)) -> ::saola_core::Result<T> {
+                self.inner.exec_with(provider).await
+            }
+
+            pub async fn exec(self) -> ::saola_core::Result<T> {
+                self.inner.exec().await
             }
         }
     }
@@ -677,8 +609,12 @@ pub fn generate_upsert_wrapper(model_name: &syn::Ident, model_metadata: &ModelMe
                 self
             }
 
-            pub async fn exec(self, provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_)) -> ::saola_core::Result<#model_name> {
-                self.inner.exec_inferred(provider).await
+            pub async fn exec_with(self, provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_)) -> ::saola_core::Result<#model_name> {
+                self.inner.exec_with(provider).await
+            }
+
+            pub async fn exec(self) -> ::saola_core::Result<#model_name> {
+                self.inner.exec().await
             }
         }
     }
@@ -719,8 +655,12 @@ pub fn generate_create_many_wrapper(
                 self
             }
 
-            pub async fn exec(self, provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_)) -> ::saola_core::Result<i64> {
-                self.inner.exec(provider).await
+            pub async fn exec_with(self, provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_)) -> ::saola_core::Result<T> {
+                self.inner.exec_with(provider).await
+            }
+
+            pub async fn exec(self) -> ::saola_core::Result<T> {
+                self.inner.exec().await
             }
         }
     }
@@ -773,7 +713,7 @@ pub fn generate_create_many_and_return_wrapper(
                 self
             }
 
-            pub async fn exec(self, provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_)) -> ::saola_core::Result<Vec<#model_name>> {
+            pub async fn exec_with(self, provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_)) -> ::saola_core::Result<Vec<#model_name>> {
                 let mut builder = self;
                 if builder.inner.state.selection.nested_selections().is_empty() {
                     for field in &[#(#scalar_field_names),*] {
@@ -781,7 +721,18 @@ pub fn generate_create_many_and_return_wrapper(
                         builder.inner.add_nested_selection(::saola_core::query_core::Selection::with_name(field.to_string()));
                     }
                 }
-                builder.inner.exec(provider).await
+                builder.inner.exec_with(provider).await
+            }
+
+            pub async fn exec(self) -> ::saola_core::Result<Vec<#model_name>> {
+                let mut builder = self;
+                if builder.inner.state.selection.nested_selections().is_empty() {
+                    for field in &[#(#scalar_field_names),*] {
+                        use ::saola_core::Selectable;
+                        builder.inner.add_nested_selection(::saola_core::query_core::Selection::with_name(field.to_string()));
+                    }
+                }
+                builder.inner.exec().await
             }
         }
     }
@@ -801,11 +752,10 @@ pub fn generate_update_many_wrapper(
         }
 
         impl #wrapper_name {
-            pub fn where_clause<F>(mut self, f: F) -> Self
-            where F: FnOnce(&mut #where_builder_name)
-            {
+            pub fn where_clause(mut self, filter: impl ::saola_core::filters::IntoWhere<#where_builder_name>) -> Self {
                 let mut builder = #where_builder_name::default();
-                f(&mut builder);
+                filter.into_where(&mut builder);
+                use ::saola_core::FilterBuilder;
                 let map = builder.build();
                 if !map.is_empty() {
                     use ::saola_core::Filterable;
@@ -824,8 +774,12 @@ pub fn generate_update_many_wrapper(
                 self
             }
 
-            pub async fn exec(self, provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_)) -> ::saola_core::Result<i64> {
-                self.inner.exec(provider).await
+            pub async fn exec_with(self, provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_)) -> ::saola_core::Result<T> {
+                self.inner.exec_with(provider).await
+            }
+
+            pub async fn exec(self) -> ::saola_core::Result<T> {
+                self.inner.exec().await
             }
         }
     }
@@ -847,11 +801,10 @@ pub fn generate_update_many_and_return_wrapper(
         }
 
         impl #wrapper_name {
-            pub fn where_clause<F>(mut self, f: F) -> Self
-            where F: FnOnce(&mut #where_builder_name)
-            {
+            pub fn where_clause(mut self, filter: impl ::saola_core::filters::IntoWhere<#where_builder_name>) -> Self {
                 let mut builder = #where_builder_name::default();
-                f(&mut builder);
+                filter.into_where(&mut builder);
+                use ::saola_core::FilterBuilder;
                 let map = builder.build();
                 if !map.is_empty() {
                     use ::saola_core::Filterable;
@@ -880,7 +833,7 @@ pub fn generate_update_many_and_return_wrapper(
                 self
             }
 
-            pub async fn exec(self, provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_)) -> ::saola_core::Result<Vec<#model_name>> {
+            pub async fn exec_with(self, provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_)) -> ::saola_core::Result<Vec<#model_name>> {
                 let mut builder = self;
                 if builder.inner.state.selection.nested_selections().is_empty() {
                     for field in &[#(#scalar_field_names),*] {
@@ -888,7 +841,18 @@ pub fn generate_update_many_and_return_wrapper(
                         builder.inner.add_nested_selection(::saola_core::query_core::Selection::with_name(field.to_string()));
                     }
                 }
-                builder.inner.exec(provider).await
+                builder.inner.exec_with(provider).await
+            }
+
+            pub async fn exec(self) -> ::saola_core::Result<Vec<#model_name>> {
+                let mut builder = self;
+                if builder.inner.state.selection.nested_selections().is_empty() {
+                    for field in &[#(#scalar_field_names),*] {
+                        use ::saola_core::Selectable;
+                        builder.inner.add_nested_selection(::saola_core::query_core::Selection::with_name(field.to_string()));
+                    }
+                }
+                builder.inner.exec().await
             }
         }
     }
@@ -907,11 +871,10 @@ pub fn generate_delete_many_wrapper(
         }
 
         impl #wrapper_name {
-            pub fn where_clause<F>(mut self, f: F) -> Self
-            where F: FnOnce(&mut #where_builder_name)
-            {
+            pub fn where_clause(mut self, filter: impl ::saola_core::filters::IntoWhere<#where_builder_name>) -> Self {
                 let mut builder = #where_builder_name::default();
-                f(&mut builder);
+                filter.into_where(&mut builder);
+                use ::saola_core::FilterBuilder;
                 let map = builder.build();
                 if !map.is_empty() {
                     use ::saola_core::Filterable;
@@ -920,8 +883,12 @@ pub fn generate_delete_many_wrapper(
                 self
             }
 
-            pub async fn exec(self, provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_)) -> ::saola_core::Result<i64> {
-                self.inner.exec(provider).await
+            pub async fn exec_with(self, provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_)) -> ::saola_core::Result<T> {
+                self.inner.exec_with(provider).await
+            }
+
+            pub async fn exec(self) -> ::saola_core::Result<T> {
+                self.inner.exec().await
             }
         }
     }
@@ -937,11 +904,10 @@ pub fn generate_count_wrapper(model_name: &syn::Ident) -> proc_macro2::TokenStre
         }
 
         impl #count_wrapper_name {
-            pub fn where_clause<F>(mut self, f: F) -> Self
-            where F: FnOnce(&mut #where_builder_name)
-            {
+            pub fn where_clause(mut self, filter: impl ::saola_core::filters::IntoWhere<#where_builder_name>) -> Self {
                 let mut builder = #where_builder_name::default();
-                f(&mut builder);
+                filter.into_where(&mut builder);
+                use ::saola_core::FilterBuilder;
                 let map = builder.build();
                 if !map.is_empty() {
                     use ::saola_core::Filterable;
@@ -950,9 +916,12 @@ pub fn generate_count_wrapper(model_name: &syn::Ident) -> proc_macro2::TokenStre
                 self
             }
 
-            pub async fn exec(self, provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_)) -> ::saola_core::Result<i64> {
-                use ::saola_core::Executable;
-                self.inner.exec(provider).await
+            pub async fn exec_with(self, provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_)) -> ::saola_core::Result<i64> {
+                self.inner.exec_with(provider).await
+            }
+
+            pub async fn exec(self) -> ::saola_core::Result<i64> {
+                self.inner.exec().await
             }
         }
     }
@@ -975,11 +944,10 @@ pub fn generate_aggregate_wrapper(model_name: &syn::Ident) -> proc_macro2::Token
         }
 
         impl #aggregate_wrapper_name {
-            pub fn where_clause<F>(mut self, f: F) -> Self
-            where F: FnOnce(&mut #where_builder_name)
-            {
+            pub fn where_clause(mut self, filter: impl ::saola_core::filters::IntoWhere<#where_builder_name>) -> Self {
                 let mut builder = #where_builder_name::default();
-                f(&mut builder);
+                filter.into_where(&mut builder);
+                use ::saola_core::FilterBuilder;
                 let map = builder.build();
                 if !map.is_empty() {
                     use ::saola_core::Filterable;
@@ -1058,8 +1026,12 @@ pub fn generate_aggregate_wrapper(model_name: &syn::Ident) -> proc_macro2::Token
                 self
             }
 
-            pub async fn exec(self, provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_)) -> ::saola_core::Result<#aggregate_result_name> {
-                self.inner.exec_inferred(provider).await
+            pub async fn exec_with(self, provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_)) -> ::saola_core::Result<#aggregate_result_name> {
+                self.inner.exec_with(provider).await
+            }
+
+            pub async fn exec(self) -> ::saola_core::Result<#aggregate_result_name> {
+                self.inner.exec().await
             }
         }
     }
@@ -1084,11 +1056,10 @@ pub fn generate_group_by_wrapper(model_name: &syn::Ident) -> proc_macro2::TokenS
         }
 
         impl #group_by_wrapper_name {
-            pub fn where_clause<F>(mut self, f: F) -> Self
-            where F: FnOnce(&mut #where_builder_name)
-            {
+            pub fn where_clause(mut self, filter: impl ::saola_core::filters::IntoWhere<#where_builder_name>) -> Self {
                 let mut builder = #where_builder_name::default();
-                f(&mut builder);
+                filter.into_where(&mut builder);
+                use ::saola_core::FilterBuilder;
                 let map = builder.build();
                 if !map.is_empty() {
                     use ::saola_core::Filterable;
@@ -1097,11 +1068,10 @@ pub fn generate_group_by_wrapper(model_name: &syn::Ident) -> proc_macro2::TokenS
                 self
             }
 
-            pub fn having<F>(mut self, f: F) -> Self
-            where F: FnOnce(&mut #where_builder_name)
-            {
+            pub fn having(mut self, filter: impl ::saola_core::filters::IntoWhere<#where_builder_name>) -> Self {
                 let mut builder = #where_builder_name::default();
-                f(&mut builder);
+                filter.into_where(&mut builder);
+                use ::saola_core::FilterBuilder;
                 let map = builder.build();
                 if !map.is_empty() {
                     use ::saola_core::Filterable;
@@ -1122,7 +1092,7 @@ pub fn generate_group_by_wrapper(model_name: &syn::Ident) -> proc_macro2::TokenS
                 self
             }
 
-            pub fn order_by<F>(mut self, f: F) -> Self 
+            pub fn order_by<F>(mut self, f: F) -> Self
             where F: FnOnce(&mut #order_by_name)
             {
                 let mut builder = #order_by_name::default();
@@ -1226,8 +1196,12 @@ pub fn generate_group_by_wrapper(model_name: &syn::Ident) -> proc_macro2::TokenS
                 self
             }
 
-            pub async fn exec(self, provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_)) -> ::saola_core::Result<Vec<#group_by_result_name>> {
-                self.inner.exec_inferred(provider).await
+            pub async fn exec_with(self, provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_)) -> ::saola_core::Result<Vec<#group_by_result_name>> {
+                self.inner.exec_with(provider).await
+            }
+
+            pub async fn exec(self) -> ::saola_core::Result<Vec<#group_by_result_name>> {
+                self.inner.exec().await
             }
         }
     }

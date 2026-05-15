@@ -4,12 +4,12 @@ mod validations;
 pub use native_types::CockroachType;
 use parser_database::{ExtensionTypes, ScalarFieldType};
 
+use super::completions;
 use crate::{
     ValidatedSchema,
     datamodel_connector::{
-        CompletionItem, CompletionItemKind, CompletionList, Connector, ConnectorCapabilities,
-        ConnectorCapability, ConstraintScope, Flavour, NativeTypeConstructor, NativeTypeInstance, RelationMode,
-        StringFilter,
+        CompletionItem, CompletionItemKind, CompletionList, Connector, ConnectorCapabilities, ConnectorCapability,
+        ConstraintScope, Flavour, NativeTypeConstructor, NativeTypeInstance, RelationMode, StringFilter,
     },
     diagnostics::{DatamodelError, Diagnostics},
     parser_database::{
@@ -19,10 +19,8 @@ use crate::{
         walkers::ModelWalker,
     },
 };
-use super::completions;
 use chrono::*;
 use enumflags2::BitFlags;
-
 
 const CONSTRAINT_SCOPES: &[ConstraintScope] = &[ConstraintScope::ModelPrimaryKeyKeyIndexForeignKey];
 
@@ -167,7 +165,10 @@ impl Connector for CockroachDatamodelConnector {
         Some(NativeTypeInstance::new::<CockroachType>(*native_type))
     }
 
-    fn native_type_to_parts<'t>(&self, native_type: &'t NativeTypeInstance) -> (&'t str, std::borrow::Cow<'t, [std::string::String]>) {
+    fn native_type_to_parts<'t>(
+        &self,
+        native_type: &'t NativeTypeInstance,
+    ) -> (&'t str, std::borrow::Cow<'t, [std::string::String]>) {
         native_type.downcast_ref::<CockroachType>().to_parts()
     }
 
@@ -258,7 +259,11 @@ impl Connector for CockroachDatamodelConnector {
         }
     }
 
-    fn scalar_filter_name(&self, scalar_type_name: std::string::String, native_type_name: Option<&str>) -> std::borrow::Cow<'_, str> {
+    fn scalar_filter_name(
+        &self,
+        scalar_type_name: std::string::String,
+        native_type_name: Option<&str>,
+    ) -> std::borrow::Cow<'_, str> {
         match native_type_name {
             Some(name) if name.eq_ignore_ascii_case("uuid") => "Uuid".into(),
             _ => scalar_type_name.into(),

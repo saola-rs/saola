@@ -1,7 +1,7 @@
 #[cfg(feature = "metrics")]
 pub use prisma_metrics::{
-    PRISMA_DATASOURCE_QUERIES_DURATION_HISTOGRAM_MS, PRISMA_DATASOURCE_QUERIES_TOTAL, PRISMA_CLIENT_QUERIES_ACTIVE,
-    counter, histogram, guards::GaugeGuard
+    PRISMA_CLIENT_QUERIES_ACTIVE, PRISMA_DATASOURCE_QUERIES_DURATION_HISTOGRAM_MS, PRISMA_DATASOURCE_QUERIES_TOTAL,
+    counter, guards::GaugeGuard, histogram,
 };
 
 #[cfg(not(feature = "metrics"))]
@@ -14,23 +14,19 @@ pub const PRISMA_CLIENT_QUERIES_ACTIVE: &str = "prisma_client_queries_active";
 #[cfg(not(feature = "metrics"))]
 #[macro_export]
 macro_rules! counter {
-    ($name:expr) => {
-        {
-            let _ = $name;
-            $crate::metrics::Dummy::default()
-        }
-    };
+    ($name:expr) => {{
+        let _ = $name;
+        $crate::metrics::Dummy::default()
+    }};
 }
 
 #[cfg(not(feature = "metrics"))]
 #[macro_export]
 macro_rules! histogram {
-    ($name:expr) => {
-        {
-            let _ = $name;
-            $crate::metrics::Dummy::default()
-        }
-    };
+    ($name:expr) => {{
+        let _ = $name;
+        $crate::metrics::Dummy::default()
+    }};
 }
 
 #[cfg(not(feature = "metrics"))]

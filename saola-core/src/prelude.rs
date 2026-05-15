@@ -6,17 +6,20 @@
 
 // Re-export all filter operator traits
 pub use crate::filters::{
-    BoolFieldOps, DateTimeFieldOps, EnumFieldOps, FloatFieldOps, IntFieldOps, RelationFilterOps, StringFieldOps,
+    BoolField, DateTimeField, EnumField, FloatField, IntField, IntoWhere, RelationFilterOps, SelectField, StringField,
 };
 
 // Re-export filter builder types
 pub use crate::filter_builders::{BoolFilter, DateTimeFilter, EnumFilter, FloatFilter, IntFilter, StringFilter};
 
 // Re-export core builder types
-pub use crate::builder::{Executable, FilterBuilder, Filterable, Selectable};
+pub use crate::builder::{
+    Create, CreateMany, Delete, DeleteMany, Executable, FilterBuilder, Filterable, FindFirst, FindFirstOrThrow,
+    FindMany, FindUnique, FindUniqueOrThrow, ModelMarker, Query, Selectable, Update, UpdateMany, Upsert,
+};
 
 // Re-export common operation types
-pub use crate::{AggregateBuilder, CountBuilder, GroupByBuilder, ReadBuilder, WriteBuilder, SortOrder};
+pub use crate::{AggregateBuilder, CountBuilder, GroupByBuilder, ReadBuilder, SortOrder, WriteBuilder};
 
 // // Re-export result type
 // pub use crate::Result;

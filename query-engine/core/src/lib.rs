@@ -30,10 +30,10 @@ mod error;
 mod interactive_transactions;
 mod interpreter;
 mod metrics;
-mod telemetry;
 mod query_ast;
 mod query_graph;
 mod result_ast;
+mod telemetry;
 
 use self::{
     executor::*,

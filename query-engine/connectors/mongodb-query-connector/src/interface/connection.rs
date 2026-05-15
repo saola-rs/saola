@@ -1,4 +1,5 @@
 use super::catch;
+use crate::telemetry::TraceParent;
 use crate::{
     MongoDbTransaction,
     error::MongoError,
@@ -9,7 +10,6 @@ use connector_interface::{Connection, ConnectionLike, ReadOperations, Transactio
 use mongodb::{ClientSession, Database};
 use query_structure::{RelationLoadStrategy, SelectionResult, prelude::*};
 use std::collections::HashMap;
-use crate::telemetry::TraceParent;
 
 pub struct MongoDbConnection {
     /// The session to use for operations.

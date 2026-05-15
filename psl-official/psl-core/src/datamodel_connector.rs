@@ -24,17 +24,16 @@ pub use self::{
     relation_mode::RelationMode,
 };
 
+#[cfg(not(feature = "lsp"))]
+pub use self::completions::{
+    CompletionItem, CompletionItemKind, CompletionList, Documentation, InsertTextFormat, MarkupContent, MarkupKind,
+};
 use crate::{Configuration, Datasource, PreviewFeature, ValidatedSchema, configuration::DatasourceConnectorData};
 use chrono::{DateTime, FixedOffset};
 use diagnostics::{DatamodelError, Diagnostics, NativeTypeErrorFactory, Span};
 use enumflags2::BitFlags;
 #[cfg(feature = "lsp")]
 pub use lsp_types::{CompletionItem, CompletionItemKind, CompletionList, InsertTextFormat};
-#[cfg(not(feature = "lsp"))]
-pub use self::completions::{
-    CompletionItem, CompletionItemKind, CompletionList, Documentation, InsertTextFormat, MarkupContent,
-    MarkupKind,
-};
 use parser_database::{
     ExtensionTypes, IndexAlgorithm, ParserDatabase, ReferentialAction, ScalarFieldType, ScalarType,
     ast::{self, SchemaPosition},

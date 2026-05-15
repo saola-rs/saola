@@ -1,4 +1,4 @@
-use crate::builder::{BuilderState, Executable, Filterable, Selectable, execute};
+use crate::builder::{BuilderState, Executable, Filterable, FromResponseIr, Selectable, execute_raw};
 use crate::transaction::QueryExecutorProvider;
 use query_core::{ArgumentValue, Selection};
 use std::marker::PhantomData;
@@ -62,21 +62,23 @@ impl<T> Selectable for ReadBuilder<T> {
     fn add_nested_selection(&mut self, selection: Selection) {
         self.state.selection.push_nested_selection(selection);
     }
-}
-
-impl<T: serde::de::DeserializeOwned + Send + Sync> Executable for ReadBuilder<T> {
-    async fn exec<Ret: serde::de::DeserializeOwned, P: QueryExecutorProvider + ?Sized>(
-        self,
-        provider: &P,
-    ) -> crate::Result<Ret> {
-        let operation = self.state.into_operation(false);
-        execute(operation, provider).await
+    fn into_selections(self) -> Vec<Selection> {
+        self.state.selection.nested_selections().to_vec()
     }
 }
 
-impl<T: serde::de::DeserializeOwned + Send + Sync> ReadBuilder<T> {
-    pub async fn exec_inferred<P: QueryExecutorProvider + ?Sized>(self, provider: &P) -> crate::Result<T> {
+impl<T: FromResponseIr> Executable for ReadBuilder<T> {
+    type Output = T;
+
+    async fn exec<P: QueryExecutorProvider + ?Sized>(self, provider: &P) -> crate::Result<T> {
         let operation = self.state.into_operation(false);
-        execute(operation, provider).await
+        let item = execute_raw(operation, provider).await?;
+        T::from_ir(item)
+    }
+}
+
+impl<T: FromResponseIr + Send + Sync> ReadBuilder<T> {
+    pub async fn exec_inferred<P: QueryExecutorProvider + ?Sized>(self, provider: &P) -> crate::Result<T> {
+        self.exec(provider).await
     }
 }

@@ -1,5 +1,5 @@
 /// Aggregation query builders - count, aggregate, groupBy operations
-use crate::builder::{BuilderState, Executable, Filterable, Selectable, execute_raw};
+use crate::builder::{BuilderState, Executable, Filterable, FromResponseIr, Selectable, execute_raw};
 use crate::transaction::QueryExecutorProvider;
 use query_core::{ArgumentValue, Selection};
 use std::marker::PhantomData;
@@ -31,26 +31,27 @@ impl Selectable for CountBuilder {
     fn add_nested_selection(&mut self, selection: Selection) {
         self.state.selection.push_nested_selection(selection);
     }
+    fn into_selections(self) -> Vec<Selection> {
+        self.state.selection.nested_selections().to_vec()
+    }
 }
 
 impl Executable for CountBuilder {
-    async fn exec<T: serde::de::DeserializeOwned, P: QueryExecutorProvider + ?Sized>(
-        self,
-        provider: &P,
-    ) -> crate::Result<T> {
+    type Output = i64;
+
+    async fn exec<P: QueryExecutorProvider + ?Sized>(self, provider: &P) -> crate::Result<i64> {
         let operation = self.state.into_operation(false);
-        // Extract op_name BEFORE moving operation into execute_raw
-        let op_name = match &operation {
-            query_core::Operation::Read(s) => s.name().to_string(),
-            _ => String::new(),
+        let item = execute_raw(operation, provider).await?;
+
+        // Count operations return `{ "_count": { "_all": n } }` or just `{ "_count": n }`
+        // We try to drill down to the actual count value if possible
+        let count_item = if let query_core::response_ir::Item::Map(map) = &item {
+            map.get("_count").cloned().unwrap_or(item)
+        } else {
+            item
         };
 
-        let res = execute_raw(operation, provider).await?;
-
-        let data = res.get(&op_name).unwrap_or(&res);
-        let count_val = data.get("_count").and_then(|c| c.get("_all")).unwrap_or(data);
-
-        Ok(serde_json::from_value(count_val.clone())?)
+        i64::from_ir(count_item)
     }
 }
 
@@ -88,36 +89,24 @@ impl<T> Selectable for AggregateBuilder<T> {
     fn add_nested_selection(&mut self, selection: Selection) {
         self.state.selection.push_nested_selection(selection);
     }
-}
-
-impl<T: serde::de::DeserializeOwned + Send + Sync> Executable for AggregateBuilder<T> {
-    async fn exec<Ret: serde::de::DeserializeOwned, P: QueryExecutorProvider + ?Sized>(
-        self,
-        provider: &P,
-    ) -> crate::Result<Ret> {
-        let operation = self.state.into_operation(false);
-        let op_name = match &operation {
-            query_core::Operation::Read(s) => s.name().to_string(),
-            _ => String::new(),
-        };
-        let res = execute_raw(operation, provider).await?;
-
-        let data = res.get(&op_name).cloned().unwrap_or(res);
-        Ok(serde_json::from_value(data)?)
+    fn into_selections(self) -> Vec<Selection> {
+        self.state.selection.nested_selections().to_vec()
     }
 }
 
-impl<T: serde::de::DeserializeOwned + Send + Sync> AggregateBuilder<T> {
-    pub async fn exec_inferred<P: QueryExecutorProvider + ?Sized>(self, provider: &P) -> crate::Result<T> {
-        let operation = self.state.into_operation(false);
-        let op_name = match &operation {
-            query_core::Operation::Read(s) => s.name().to_string(),
-            _ => String::new(),
-        };
-        let res = execute_raw(operation, provider).await?;
+impl<T: FromResponseIr> Executable for AggregateBuilder<T> {
+    type Output = T;
 
-        let data = res.get(&op_name).cloned().unwrap_or(res);
-        Ok(serde_json::from_value(data)?)
+    async fn exec<P: QueryExecutorProvider + ?Sized>(self, provider: &P) -> crate::Result<T> {
+        let operation = self.state.into_operation(false);
+        let item = execute_raw(operation, provider).await?;
+        T::from_ir(item)
+    }
+}
+
+impl<T: FromResponseIr + Send + Sync> AggregateBuilder<T> {
+    pub async fn exec_inferred<P: QueryExecutorProvider + ?Sized>(self, provider: &P) -> crate::Result<T> {
+        self.exec(provider).await
     }
 }
 
@@ -155,35 +144,23 @@ impl<T> Selectable for GroupByBuilder<T> {
     fn add_nested_selection(&mut self, selection: Selection) {
         self.state.selection.push_nested_selection(selection);
     }
-}
-
-impl<T: serde::de::DeserializeOwned + Send + Sync> Executable for GroupByBuilder<T> {
-    async fn exec<Ret: serde::de::DeserializeOwned, P: QueryExecutorProvider + ?Sized>(
-        self,
-        provider: &P,
-    ) -> crate::Result<Ret> {
-        let operation = self.state.into_operation(false);
-        let op_name = match &operation {
-            query_core::Operation::Read(s) => s.name().to_string(),
-            _ => String::new(),
-        };
-        let res = execute_raw(operation, provider).await?;
-
-        let data = res.get(&op_name).cloned().unwrap_or(res);
-        Ok(serde_json::from_value(data)?)
+    fn into_selections(self) -> Vec<Selection> {
+        self.state.selection.nested_selections().to_vec()
     }
 }
 
-impl<T: serde::de::DeserializeOwned + Send + Sync> GroupByBuilder<T> {
-    pub async fn exec_inferred<P: QueryExecutorProvider + ?Sized>(self, provider: &P) -> crate::Result<Vec<T>> {
-        let operation = self.state.into_operation(false);
-        let op_name = match &operation {
-            query_core::Operation::Read(s) => s.name().to_string(),
-            _ => String::new(),
-        };
-        let res = execute_raw(operation, provider).await?;
+impl<T: FromResponseIr> Executable for GroupByBuilder<T> {
+    type Output = Vec<T>;
 
-        let list = res.get(&op_name).cloned().unwrap_or(res);
-        Ok(serde_json::from_value(list)?)
+    async fn exec<P: QueryExecutorProvider + ?Sized>(self, provider: &P) -> crate::Result<Vec<T>> {
+        let operation = self.state.into_operation(false);
+        let item = execute_raw(operation, provider).await?;
+        Vec::<T>::from_ir(item)
+    }
+}
+
+impl<T: FromResponseIr + Send + Sync> GroupByBuilder<T> {
+    pub async fn exec_inferred<P: QueryExecutorProvider + ?Sized>(self, provider: &P) -> crate::Result<Vec<T>> {
+        self.exec(provider).await
     }
 }

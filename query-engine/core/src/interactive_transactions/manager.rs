@@ -1,3 +1,4 @@
+use crate::telemetry::{TraceParent, WithSubscriber};
 use crate::{ClosedTransaction, InteractiveTransaction, Operation, ResponseData};
 use connector::Connection;
 use lru::LruCache;
@@ -6,7 +7,6 @@ use std::{
     collections::HashMap,
     sync::{Arc, LazyLock},
 };
-use crate::telemetry::{TraceParent, WithSubscriber};
 use tokio::{
     sync::{
         Mutex, RwLock,

@@ -1,4 +1,7 @@
-#[cfg(all(feature = "lsp", any(feature = "postgresql", feature = "cockroachdb", feature = "mssql")))]
+#[cfg(all(
+    feature = "lsp",
+    any(feature = "postgresql", feature = "cockroachdb", feature = "mssql")
+))]
 use lsp_types::*;
 
 #[cfg(feature = "postgresql")]

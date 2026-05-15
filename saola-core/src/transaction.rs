@@ -133,7 +133,8 @@ impl Transaction {
                 )
                 .with_new_transaction_id(),
             )
-            .await?;
+            .await
+            .map_err(crate::Error::from_core)?;
 
         Ok(Transaction {
             tx_id,
@@ -147,7 +148,7 @@ impl Transaction {
         self.executor
             .commit_tx(self.tx_id)
             .await
-            .map_err(|e| anyhow::anyhow!("Failed to commit transaction: {}", e))
+            .map_err(|e| crate::Error::DatabaseError(e))
     }
 
     /// Rollback the transaction
@@ -155,7 +156,7 @@ impl Transaction {
         self.executor
             .rollback_tx(self.tx_id)
             .await
-            .map_err(|e| anyhow::anyhow!("Failed to rollback transaction: {}", e))
+            .map_err(|e| crate::Error::DatabaseError(e))
     }
 }
 

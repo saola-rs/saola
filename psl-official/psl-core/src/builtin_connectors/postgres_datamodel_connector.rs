@@ -5,22 +5,21 @@ mod validations;
 pub use native_types::{KnownPostgresType, PostgresType};
 use parser_database::{ExtensionTypes, ScalarFieldType};
 
+use super::completions;
 use crate::{
     Configuration, Datasource, DatasourceConnectorData, PreviewFeature, ValidatedSchema,
     datamodel_connector::{
-        CompletionItem, CompletionItemKind, CompletionList, Connector, ConnectorCapabilities,
-        ConnectorCapability, ConstraintScope, Flavour, InsertTextFormat, NativeTypeConstructor, NativeTypeInstance,
-        NativeTypeParseError, RelationMode, StringFilter,
+        CompletionItem, CompletionItemKind, CompletionList, Connector, ConnectorCapabilities, ConnectorCapability,
+        ConstraintScope, Flavour, InsertTextFormat, NativeTypeConstructor, NativeTypeInstance, NativeTypeParseError,
+        RelationMode, StringFilter,
     },
     diagnostics::Diagnostics,
     parser_database::{IndexAlgorithm, OperatorClass, ParserDatabase, ReferentialAction, ScalarType, ast, walkers},
 };
-use super::completions;
 use KnownPostgresType::*;
 use chrono::*;
 use enumflags2::BitFlags;
 use std::{borrow::Cow, collections::HashMap, sync::Arc};
-
 
 const CONSTRAINT_SCOPES: &[ConstraintScope] = &[
     ConstraintScope::GlobalPrimaryKeyKeyIndex,

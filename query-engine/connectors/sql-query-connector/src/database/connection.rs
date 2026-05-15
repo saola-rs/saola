@@ -1,6 +1,7 @@
 #![cfg_attr(target_arch = "wasm32", allow(dead_code))]
 
 use super::{catch, transaction::SqlConnectorTransaction};
+use crate::telemetry::TraceParent;
 use crate::{SqlError, database::operations::*};
 use async_trait::async_trait;
 use connector::ConnectionLike;
@@ -18,7 +19,6 @@ use query_structure::{
 };
 use sql_query_builder::Context;
 use std::{collections::HashMap, str::FromStr};
-use crate::telemetry::TraceParent;
 
 pub(crate) struct SqlConnection<C> {
     inner: C,

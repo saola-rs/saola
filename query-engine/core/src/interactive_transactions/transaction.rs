@@ -2,16 +2,16 @@
 
 use std::pin::Pin;
 
+use crate::telemetry::TraceParent;
 use crate::{
     CoreError, Operation, ResponseData, TransactionError, TxId, execute_many_operations, execute_single_operation,
 };
 use connector::{Connection, Transaction};
 use crosstarget_utils::time::ElapsedTimeCounter;
 use schema::QuerySchemaRef;
-use crate::telemetry::TraceParent;
 use tokio::time::Duration;
-use tracing::Span;
 use tracing::Instrument;
+use tracing::Span;
 
 // Note: it's important to maintain the correct state of the transaction throughout execution. If
 // the transaction is ever left in the `Open` state after rollback or commit operations, it means

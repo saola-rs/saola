@@ -6,8 +6,8 @@ mod error;
 mod query_ext;
 mod row;
 mod ser_raw;
-mod value;
 mod telemetry;
+mod value;
 
 use self::{query_ext::QueryExt, row::*};
 use quaint::prelude::Queryable;

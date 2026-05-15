@@ -18,9 +18,9 @@ use prisma_metrics::{
     histogram,
 };
 
+use crate::telemetry::{TraceParent, WithSubscriber};
 use schema::{QuerySchema, QuerySchemaRef};
 use std::time::Duration;
-use crate::telemetry::{TraceParent, WithSubscriber};
 use tracing::Instrument;
 
 pub async fn execute_single_operation(

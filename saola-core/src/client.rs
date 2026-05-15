@@ -1,18 +1,24 @@
+#[cfg(feature = "mongodb")]
+use mongodb_query_connector::MongoDb;
 /// SaolaClient - Main entry point for database operations
 use psl::parser_database::NoExtensionTypes;
 use query_core::QueryExecutor;
-#[cfg(any(feature = "postgresql", feature = "mysql", feature = "sqlite", feature = "mssql", feature = "mongodb"))]
+#[cfg(any(
+    feature = "postgresql",
+    feature = "mysql",
+    feature = "sqlite",
+    feature = "mssql",
+    feature = "mongodb"
+))]
 use query_core::executor::InterpretingExecutor;
 #[cfg(any(feature = "postgresql", feature = "mysql", feature = "sqlite", feature = "mssql"))]
 use sql_query_connector::FromSource;
-#[cfg(feature = "postgresql")]
-use sql_query_connector::PostgreSql;
 #[cfg(feature = "mysql")]
 use sql_query_connector::Mysql;
+#[cfg(feature = "postgresql")]
+use sql_query_connector::PostgreSql;
 #[cfg(feature = "sqlite")]
 use sql_query_connector::Sqlite;
-#[cfg(feature = "mongodb")]
-use mongodb_query_connector::MongoDb;
 use std::sync::Arc;
 
 /// Main database client - initializes connection and schema
@@ -29,7 +35,10 @@ impl SaolaClient {
         let validated = psl::validate(source_file, &NoExtensionTypes);
 
         if !validated.diagnostics.errors().is_empty() {
-            anyhow::bail!("Schema validation failed: {:?}", validated.diagnostics.errors());
+            return Err(crate::Error::ConfigError(format!(
+                "Schema validation failed: {:?}",
+                validated.diagnostics.errors()
+            )));
         }
 
         let validated = Arc::new(validated);
@@ -37,37 +46,61 @@ impl SaolaClient {
             .configuration
             .datasources
             .first()
-            .ok_or_else(|| anyhow::anyhow!("No datasource found in schema"))?;
+            .ok_or_else(|| crate::Error::ConfigError("No datasource found in schema".to_string()))?;
 
         let query_schema = Arc::new(schema::build(validated.clone(), true));
 
-        #[cfg(not(any(feature = "postgresql", feature = "mysql", feature = "sqlite", feature = "mssql", feature = "mongodb")))]
+        #[cfg(not(any(
+            feature = "postgresql",
+            feature = "mysql",
+            feature = "sqlite",
+            feature = "mssql",
+            feature = "mongodb"
+        )))]
         {
             let _ = (url, query_schema, datasource);
-            anyhow::bail!("No database provider feature enabled. Please enable one of: postgresql, mysql, sqlite, mssql, mongodb");
+            return Err(crate::Error::ConfigError(
+                "No database provider feature enabled. Please enable one of: postgresql, mysql, sqlite, mssql, mongodb"
+                    .to_string(),
+            ));
         }
 
-        #[cfg(any(feature = "postgresql", feature = "mysql", feature = "sqlite", feature = "mssql", feature = "mongodb"))]
+        #[cfg(any(
+            feature = "postgresql",
+            feature = "mysql",
+            feature = "sqlite",
+            feature = "mssql",
+            feature = "mongodb"
+        ))]
         {
             let executor: Arc<dyn QueryExecutor + Send + Sync> = match datasource.active_provider {
                 #[cfg(feature = "postgresql")]
                 "postgresql" | "postgres" => {
-                    let connector = PostgreSql::from_source(datasource, url, psl::PreviewFeatures::empty(), false).await?;
+                    let connector = PostgreSql::from_source(datasource, url, psl::PreviewFeatures::empty(), false)
+                        .await
+                        .map_err(|e| crate::Error::RuntimeError(e.to_string()))?;
                     Arc::new(InterpretingExecutor::new(connector, false))
                 }
                 #[cfg(feature = "mysql")]
                 "mysql" => {
-                    let connector = Mysql::from_source(datasource, url, psl::PreviewFeatures::empty(), false).await?;
+                    let connector = Mysql::from_source(datasource, url, psl::PreviewFeatures::empty(), false)
+                        .await
+                        .map_err(|e| crate::Error::RuntimeError(e.to_string()))?;
                     Arc::new(InterpretingExecutor::new(connector, false))
                 }
                 #[cfg(feature = "sqlite")]
                 "sqlite" => {
-                    let connector = Sqlite::from_source(datasource, url, psl::PreviewFeatures::empty(), false).await?;
+                    let connector = Sqlite::from_source(datasource, url, psl::PreviewFeatures::empty(), false)
+                        .await
+                        .map_err(|e| crate::Error::RuntimeError(e.to_string()))?;
                     Arc::new(InterpretingExecutor::new(connector, false))
                 }
                 #[cfg(feature = "mssql")]
                 "sqlserver" => {
-                    let connector = sql_query_connector::Mssql::from_source(datasource, url, psl::PreviewFeatures::empty(), false).await?;
+                    let connector =
+                        sql_query_connector::Mssql::from_source(datasource, url, psl::PreviewFeatures::empty(), false)
+                            .await
+                            .map_err(|e| crate::Error::RuntimeError(e.to_string()))?;
                     Arc::new(InterpretingExecutor::new(connector, false))
                 }
                 #[cfg(feature = "mongodb")]
@@ -75,7 +108,12 @@ impl SaolaClient {
                     let connector = MongoDb::new(datasource, url).await?;
                     Arc::new(InterpretingExecutor::new(connector, false))
                 }
-                _ => anyhow::bail!("Unsupported or disabled provider: {}. Check your saola-core features.", datasource.active_provider),
+                _ => {
+                    return Err(crate::Error::ConfigError(format!(
+                        "Unsupported or disabled provider: {}. Check your saola-core features.",
+                        datasource.active_provider
+                    )));
+                }
             };
 
             Ok(SaolaClient { executor, query_schema })

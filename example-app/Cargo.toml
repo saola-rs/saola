@@ -1,0 +1,10 @@
+[package]
+name = "example-app"
+version = "0.1.1"
+edition = "2024"
+
+[dependencies]
+saola-core = { features = ["sqlite"], path = "../saola-core" }
+tokio = { version = "1.0", features = ["full"] }
+anyhow = "1.0"
+

@@ -21,6 +21,9 @@ anyhow = { workspace = true }
 psl = { workspace = true }
 query-structure = { workspace = true }
 chrono = { workspace = true }
+bigdecimal = { workspace = true }
+thiserror = { workspace = true }
+user-facing-errors = { workspace = true }
 
 [features]
 default = ["sqlite"] # SQLite as default for easy getting started

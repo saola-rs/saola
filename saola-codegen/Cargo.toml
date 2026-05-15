@@ -1,0 +1,17 @@
+[package]
+name = "saola-codegen"
+version = "0.1.0"
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+psl = { workspace = true }
+proc-macro2 = { workspace = true }
+quote = { workspace = true }
+syn = { workspace = true }
+heck = { workspace = true }
+anyhow = { workspace = true }
+indoc = { workspace = true }
+# We need saola-core metadata to avoid duplication
+saola-core = { path = "../saola-core", features = ["postgresql"] }

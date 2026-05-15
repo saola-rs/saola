@@ -1,4 +1,4 @@
-use crate::builder::{BuilderState, Executable, Filterable, Selectable, execute};
+use crate::builder::{BuilderState, Executable, Filterable, FromResponseIr, Selectable, execute_raw};
 use crate::transaction::QueryExecutorProvider;
 use query_core::{ArgumentValue, Selection};
 use std::marker::PhantomData;
@@ -69,11 +69,23 @@ impl CreateManyBuilder {
 
     pub async fn exec<P: QueryExecutorProvider + ?Sized>(self, provider: &P) -> crate::Result<i64> {
         let operation = self.state.into_operation(true);
-        let res = crate::builder::execute_raw(operation, provider).await?;
+        let item = execute_raw(operation, provider).await?;
 
-        // For bulk operations, count is at the top level, not nested under operation name
-        let count = res.get("count").and_then(|v| v.as_i64()).unwrap_or(0);
-        Ok(count)
+        if let query_core::response_ir::Item::Map(map) = item {
+            map.get("count")
+                .and_then(|i| {
+                    if let query_core::response_ir::Item::Value(query_structure::PrismaValue::Int(n)) = i {
+                        Some(*n)
+                    } else {
+                        None
+                    }
+                })
+                .ok_or_else(|| crate::Error::RuntimeError("Failed to extract count from createMany".to_string()))
+        } else {
+            Err(crate::Error::RuntimeError(
+                "Unexpected response format from createMany".to_string(),
+            ))
+        }
     }
 }
 
@@ -106,25 +118,11 @@ impl<T> CreateManyAndReturnBuilder<T> {
     }
 }
 
-impl<T: serde::de::DeserializeOwned + Send + Sync> CreateManyAndReturnBuilder<T> {
+impl<T: FromResponseIr + Send + Sync> CreateManyAndReturnBuilder<T> {
     pub async fn exec<P: QueryExecutorProvider + ?Sized>(self, provider: &P) -> crate::Result<Vec<T>> {
         let operation = self.state.into_operation(true);
-        let op_name = match &operation {
-            query_core::Operation::Write(s) => s.name().to_string(),
-            _ => String::new(),
-        };
-        let res = crate::builder::execute_raw(operation, provider).await?;
-
-        // For bulk CreateManyAndReturn operations, the result is either directly an array
-        // or nested under the operation name
-        let list = if let serde_json::Value::Array(_) = res {
-            res
-        } else {
-            res.get(&op_name)
-                .cloned()
-                .unwrap_or(serde_json::Value::Array(Vec::new()))
-        };
-        Ok(serde_json::from_value(list)?)
+        let item = execute_raw(operation, provider).await?;
+        Vec::<T>::from_ir(item)
     }
 }
 
@@ -142,11 +140,23 @@ impl UpdateManyBuilder {
 
     pub async fn exec<P: QueryExecutorProvider + ?Sized>(self, provider: &P) -> crate::Result<i64> {
         let operation = self.state.into_operation(true);
-        let res = crate::builder::execute_raw(operation, provider).await?;
+        let item = execute_raw(operation, provider).await?;
 
-        // For bulk operations, count is at the top level, not nested under operation name
-        let count = res.get("count").and_then(|v| v.as_i64()).unwrap_or(0);
-        Ok(count)
+        if let query_core::response_ir::Item::Map(map) = item {
+            map.get("count")
+                .and_then(|i| {
+                    if let query_core::response_ir::Item::Value(query_structure::PrismaValue::Int(n)) = i {
+                        Some(*n)
+                    } else {
+                        None
+                    }
+                })
+                .ok_or_else(|| crate::Error::RuntimeError("Failed to extract count from updateMany".to_string()))
+        } else {
+            Err(crate::Error::RuntimeError(
+                "Unexpected response format from updateMany".to_string(),
+            ))
+        }
     }
 }
 
@@ -171,25 +181,11 @@ impl<T> UpdateManyAndReturnBuilder<T> {
     }
 }
 
-impl<T: serde::de::DeserializeOwned + Send + Sync> UpdateManyAndReturnBuilder<T> {
+impl<T: FromResponseIr + Send + Sync> UpdateManyAndReturnBuilder<T> {
     pub async fn exec<P: QueryExecutorProvider + ?Sized>(self, provider: &P) -> crate::Result<Vec<T>> {
         let operation = self.state.into_operation(true);
-        let op_name = match &operation {
-            query_core::Operation::Write(s) => s.name().to_string(),
-            _ => String::new(),
-        };
-        let res = crate::builder::execute_raw(operation, provider).await?;
-
-        // For bulk UpdateManyAndReturn operations, the result is either directly an array
-        // or nested under the operation name
-        let list = if let serde_json::Value::Array(_) = res {
-            res
-        } else {
-            res.get(&op_name)
-                .cloned()
-                .unwrap_or(serde_json::Value::Array(Vec::new()))
-        };
-        Ok(serde_json::from_value(list)?)
+        let item = execute_raw(operation, provider).await?;
+        Vec::<T>::from_ir(item)
     }
 }
 
@@ -202,6 +198,9 @@ impl<M> Filterable for UpdateManyAndReturnBuilder<M> {
 impl<M> Selectable for UpdateManyAndReturnBuilder<M> {
     fn add_nested_selection(&mut self, selection: Selection) {
         self.state.selection.push_nested_selection(selection);
+    }
+    fn into_selections(self) -> Vec<Selection> {
+        self.state.selection.nested_selections().to_vec()
     }
 }
 
@@ -219,11 +218,23 @@ impl DeleteManyBuilder {
 
     pub async fn exec<P: QueryExecutorProvider + ?Sized>(self, provider: &P) -> crate::Result<i64> {
         let operation = self.state.into_operation(true);
-        let res = crate::builder::execute_raw(operation, provider).await?;
+        let item = execute_raw(operation, provider).await?;
 
-        // For bulk operations, count is at the top level, not nested under operation name
-        let count = res.get("count").and_then(|v| v.as_i64()).unwrap_or(0);
-        Ok(count)
+        if let query_core::response_ir::Item::Map(map) = item {
+            map.get("count")
+                .and_then(|i| {
+                    if let query_core::response_ir::Item::Value(query_structure::PrismaValue::Int(n)) = i {
+                        Some(*n)
+                    } else {
+                        None
+                    }
+                })
+                .ok_or_else(|| crate::Error::RuntimeError("Failed to extract count from deleteMany".to_string()))
+        } else {
+            Err(crate::Error::RuntimeError(
+                "Unexpected response format from deleteMany".to_string(),
+            ))
+        }
     }
 }
 
@@ -242,6 +253,9 @@ impl<M> Filterable for CreateManyAndReturnBuilder<M> {
 impl<M> Selectable for CreateManyAndReturnBuilder<M> {
     fn add_nested_selection(&mut self, selection: Selection) {
         self.state.selection.push_nested_selection(selection);
+    }
+    fn into_selections(self) -> Vec<Selection> {
+        self.state.selection.nested_selections().to_vec()
     }
 }
 
@@ -267,21 +281,23 @@ impl<T> Selectable for WriteBuilder<T> {
     fn add_nested_selection(&mut self, selection: Selection) {
         self.state.selection.push_nested_selection(selection);
     }
-}
-
-impl<T: serde::de::DeserializeOwned + Send + Sync> Executable for WriteBuilder<T> {
-    async fn exec<Ret: serde::de::DeserializeOwned, P: QueryExecutorProvider + ?Sized>(
-        self,
-        provider: &P,
-    ) -> crate::Result<Ret> {
-        let operation = self.state.into_operation(true);
-        execute(operation, provider).await
+    fn into_selections(self) -> Vec<Selection> {
+        self.state.selection.nested_selections().to_vec()
     }
 }
 
-impl<T: serde::de::DeserializeOwned + Send + Sync> WriteBuilder<T> {
-    pub async fn exec_inferred<P: QueryExecutorProvider + ?Sized>(self, provider: &P) -> crate::Result<T> {
+impl<T: FromResponseIr> Executable for WriteBuilder<T> {
+    type Output = T;
+
+    async fn exec<P: QueryExecutorProvider + ?Sized>(self, provider: &P) -> crate::Result<T> {
         let operation = self.state.into_operation(true);
-        execute(operation, provider).await
+        let item = execute_raw(operation, provider).await?;
+        T::from_ir(item)
+    }
+}
+
+impl<T: FromResponseIr + Send + Sync> WriteBuilder<T> {
+    pub async fn exec_inferred<P: QueryExecutorProvider + ?Sized>(self, provider: &P) -> crate::Result<T> {
+        self.exec(provider).await
     }
 }

@@ -1,3 +1,4 @@
+use crate::telemetry::TraceParent;
 use crate::{
     QueryResult, RecordSelection,
     interpreter::{InterpretationResult, InterpreterError},
@@ -6,7 +7,6 @@ use crate::{
 use connector::{ConnectionLike, NativeUpsert};
 use query_structure::{ManyRecords, RawJson};
 use sql_query_builder::write::split_write_args_by_shape;
-use crate::telemetry::TraceParent;
 
 pub(crate) async fn execute(
     tx: &mut dyn ConnectionLike,

@@ -12,16 +12,16 @@ pub fn generate_where_builder(model_name: &syn::Ident, model_metadata: &ModelMet
     quote! {
         #[derive(Default)]
         pub struct #where_builder_name {
-            pub args: Vec<(String, saola_core::query_core::ArgumentValue)>,
+            pub args: Vec<(String, ::saola_core::query_core::ArgumentValue)>,
         }
 
-        impl saola_core::FilterBuilder for #where_builder_name {
-            fn add_arg(&mut self, name: String, value: saola_core::query_core::ArgumentValue) {
+        impl ::saola_core::FilterBuilder for #where_builder_name {
+            fn add_arg(&mut self, name: String, value: ::saola_core::query_core::ArgumentValue) {
                 self.args.push((name, value));
             }
 
-            fn build(mut self) -> saola_core::IndexMap<String, saola_core::query_core::ArgumentValue> {
-                let mut map = saola_core::IndexMap::new();
+            fn build(mut self) -> ::saola_core::IndexMap<String, ::saola_core::query_core::ArgumentValue> {
+                let mut map = ::saola_core::IndexMap::new();
                 for (k, v) in std::mem::take(&mut self.args) {
                     map.insert(k, v);
                 }
@@ -36,11 +36,11 @@ pub fn generate_where_builder(model_name: &syn::Ident, model_metadata: &ModelMet
                 let mut builder = Self::default();
                 f(&mut builder);
                 if !builder.args.is_empty() {
-                    let mut map = saola_core::IndexMap::new();
+                    let mut map = ::saola_core::IndexMap::new();
                     for (k, v) in std::mem::take(&mut builder.args) {
                         map.insert(k, v);
                     }
-                    self.args.push(("AND".to_string(), saola_core::query_core::ArgumentValue::Object(map)));
+                    self.args.push(("AND".to_string(), ::saola_core::query_core::ArgumentValue::Object(map)));
                 }
                 self
             }
@@ -53,11 +53,11 @@ pub fn generate_where_builder(model_name: &syn::Ident, model_metadata: &ModelMet
                 if !builder.args.is_empty() {
                     let mut vec = Vec::new();
                     for (k, v) in std::mem::take(&mut builder.args) {
-                        let mut map = saola_core::IndexMap::new();
+                        let mut map = ::saola_core::IndexMap::new();
                         map.insert(k, v);
-                        vec.push(saola_core::query_core::ArgumentValue::Object(map));
+                        vec.push(::saola_core::query_core::ArgumentValue::Object(map));
                     }
-                    self.args.push(("OR".to_string(), saola_core::query_core::ArgumentValue::List(vec)));
+                    self.args.push(("OR".to_string(), ::saola_core::query_core::ArgumentValue::List(vec)));
                 }
                 self
             }
@@ -68,11 +68,11 @@ pub fn generate_where_builder(model_name: &syn::Ident, model_metadata: &ModelMet
                 let mut builder = Self::default();
                 f(&mut builder);
                 if !builder.args.is_empty() {
-                    let mut map = saola_core::IndexMap::new();
+                    let mut map = ::saola_core::IndexMap::new();
                     for (k, v) in std::mem::take(&mut builder.args) {
                         map.insert(k, v);
                     }
-                    self.args.push(("NOT".to_string(), saola_core::query_core::ArgumentValue::Object(map)));
+                    self.args.push(("NOT".to_string(), ::saola_core::query_core::ArgumentValue::Object(map)));
                 }
                 self
             }
@@ -92,16 +92,16 @@ pub fn generate_unique_where_builder(
     quote! {
         #[derive(Default)]
         pub struct #unique_where_builder_name {
-            pub args: Vec<(String, saola_core::query_core::ArgumentValue)>,
+            pub args: Vec<(String, ::saola_core::query_core::ArgumentValue)>,
         }
 
-        impl saola_core::FilterBuilder for #unique_where_builder_name {
-            fn add_arg(&mut self, name: String, value: saola_core::query_core::ArgumentValue) {
+        impl ::saola_core::FilterBuilder for #unique_where_builder_name {
+            fn add_arg(&mut self, name: String, value: ::saola_core::query_core::ArgumentValue) {
                 self.args.push((name, value));
             }
 
-            fn build(mut self) -> saola_core::IndexMap<String, saola_core::query_core::ArgumentValue> {
-                let mut map = saola_core::IndexMap::new();
+            fn build(mut self) -> ::saola_core::IndexMap<String, ::saola_core::query_core::ArgumentValue> {
+                let mut map = ::saola_core::IndexMap::new();
                 for (k, v) in std::mem::take(&mut self.args) {
                     map.insert(k, v);
                 }
@@ -123,13 +123,25 @@ pub fn generate_select_builder(model_name: &syn::Ident, model_metadata: &ModelMe
     quote! {
         #[derive(Default)]
         pub struct #select_builder_name {
-            pub selections: Vec<saola_core::query_core::Selection>,
+            pub selections: Vec<::saola_core::query_core::Selection>,
+        }
+
+        impl ::saola_core::Selectable for #select_builder_name {
+            fn add_nested_selection(&mut self, selection: ::saola_core::query_core::Selection) {
+                self.selections.push(selection);
+            }
+            fn into_selections(mut self) -> Vec<::saola_core::query_core::Selection> {
+                if self.selections.is_empty() {
+                    self.all();
+                }
+                self.selections
+            }
         }
 
         impl #select_builder_name {
             pub fn all(&mut self) -> &mut Self {
                 for field in &[#(#scalar_field_names),*] {
-                    self.selections.push(saola_core::query_core::Selection::with_name(field.to_string()));
+                    self.selections.push(::saola_core::query_core::Selection::with_name(field.to_string()));
                 }
                 self
             }
@@ -137,14 +149,202 @@ pub fn generate_select_builder(model_name: &syn::Ident, model_metadata: &ModelMe
             #(#select_methods)*
         }
 
-        impl From<#select_builder_name> for Vec<saola_core::query_core::Selection> {
+        impl From<#select_builder_name> for Vec<::saola_core::query_core::Selection> {
             fn from(b: #select_builder_name) -> Self { b.selections }
         }
     }
 }
 
-pub fn generate_include_builder(_model_name: &syn::Ident, _model_metadata: &ModelMetadata) -> proc_macro2::TokenStream {
-    quote::quote! {}
+pub fn generate_include_builder(model_name: &syn::Ident, model_metadata: &ModelMetadata) -> proc_macro2::TokenStream {
+    let include_builder_name = format_ident!("{}IncludeBuilder", model_name);
+    let mut include_methods = Vec::new();
+
+    for field in &model_metadata.fields {
+        if !field.is_relation {
+            continue;
+        }
+        let rust_name = format_ident!("{}", field.rust_name);
+        let marker_name = format_ident!("{}Include{}", model_name, rust_name.to_string().to_upper_camel_case());
+        let marker_name_as = format_ident!("{}Include{}As", model_name, rust_name.to_string().to_upper_camel_case());
+        let prisma_name = &field.prisma_name;
+        let related_model_name = crate::utils::get_inner_type(&field.field_type);
+        let related_marker = format_ident!("{}Marker", related_model_name);
+        let related_snake = heck::ToSnakeCase::to_snake_case(related_model_name.as_str());
+        let related_dir = format_ident!("{}_dir", related_snake);
+
+        let as_suffix_name = format_ident!("{}_as", field.rust_name);
+
+        include_methods.push(quote! {
+            pub fn #rust_name(&mut self) -> #marker_name {
+                let mut sel = ::saola_core::query_core::Selection::with_name(#prisma_name.to_string());
+                for f in super::super::#related_dir::builders::#related_marker::SCALAR_FIELDS {
+                    sel.push_nested_selection(::saola_core::query_core::Selection::with_name(f.to_string()));
+                }
+                #marker_name { selection: sel }
+            }
+
+            pub fn #as_suffix_name<U: ::saola_core::builder::SelectStruct>(&mut self) -> #marker_name_as<U> {
+                let mut sel = ::saola_core::query_core::Selection::with_name(#prisma_name.to_string());
+                for f in U::selections() {
+                    sel.push_nested_selection(f);
+                }
+                #marker_name_as { selection: sel, _phantom: std::marker::PhantomData }
+            }
+        });
+    }
+
+    let markers = generate_include_markers(model_name, model_metadata);
+    let transitions = generate_include_transitions(model_name, model_metadata);
+
+    quote! {
+        #[derive(Default)]
+        pub struct #include_builder_name {
+            pub args: Vec<(String, ::saola_core::query_core::ArgumentValue)>,
+        }
+
+        impl #include_builder_name {
+            #(#include_methods)*
+        }
+
+        #markers
+        #transitions
+    }
+}
+
+fn generate_include_transitions(model_name: &syn::Ident, model_metadata: &ModelMetadata) -> proc_macro2::TokenStream {
+    let mut impls = Vec::new();
+    let data_name = format_ident!("{}Data", model_name);
+    let relations: Vec<_> = model_metadata.fields.iter().filter(|f| f.is_relation).collect();
+
+    let mut all_generics = Vec::new();
+    for (i, _) in relations.iter().enumerate() {
+        let g = format_ident!("T{}", i);
+        all_generics.push(quote! { #g });
+    }
+
+    for (i, relation) in relations.iter().enumerate() {
+        let marker_name = format_ident!("{}Include{}", model_name, relation.rust_name.to_upper_camel_case());
+        let marker_name_as = format_ident!("{}Include{}As", model_name, relation.rust_name.to_upper_camel_case());
+        let inner_type_str = crate::utils::get_inner_type(&relation.field_type);
+        let related_data_name = format_ident!("{}Data", inner_type_str);
+
+        let mut next_generics = all_generics.clone();
+        let target_type = if relation.is_list {
+            quote! { Vec<#related_data_name> }
+        } else if relation.is_optional {
+            quote! { Option<Box<#related_data_name>> }
+        } else {
+            quote! { Box<#related_data_name> }
+        };
+        next_generics[i] = target_type;
+
+        impls.push(quote! {
+            impl<#(#all_generics),*> ::saola_core::builder::IncludeTransition<#marker_name> for #data_name<#(#all_generics),*>
+            where #(#all_generics: ::saola_core::builder::FromResponseIr + Default + Send + Sync),*
+            {
+                type Output = #data_name<#(#next_generics),*>;
+            }
+        });
+
+        let mut next_generics_as = all_generics.clone();
+        let target_type_as = if relation.is_list {
+            quote! { Vec<U> }
+        } else if relation.is_optional {
+            quote! { Option<U> }
+        } else {
+            quote! { U }
+        };
+        next_generics_as[i] = target_type_as;
+
+        impls.push(quote! {
+            impl<U: ::saola_core::builder::SelectStruct, #(#all_generics),*> ::saola_core::builder::IncludeTransition<#marker_name_as<U>> for #data_name<#(#all_generics),*>
+            where #(#all_generics: ::saola_core::builder::FromResponseIr + Default + Send + Sync),*
+            {
+                type Output = #data_name<#(#next_generics_as),*>;
+            }
+        });
+    }
+
+    impls.push(quote! {
+        impl<U, #(#all_generics),*> ::saola_core::builder::SelectAsTransition<U> for #data_name<#(#all_generics),*> {
+            type Output = U;
+        }
+
+        impl<SM, #(#all_generics),*> ::saola_core::builder::SelectTransition<SM> for #data_name<#(#all_generics),*> {
+            type Output = ::saola_core::serde_json::Value;
+        }
+    });
+
+    quote! { #(#impls)* }
+}
+
+fn generate_include_markers(model_name: &syn::Ident, model_metadata: &ModelMetadata) -> proc_macro2::TokenStream {
+    let mut markers = Vec::new();
+
+    for field in &model_metadata.fields {
+        if !field.is_relation {
+            continue;
+        }
+        let rust_name = format_ident!("{}", field.rust_name);
+        let marker_name = format_ident!("{}Include{}", model_name, rust_name.to_string().to_upper_camel_case());
+        let marker_name_as = format_ident!("{}Include{}As", model_name, rust_name.to_string().to_upper_camel_case());
+
+        markers.push(quote! {
+            pub struct #marker_name { pub selection: ::saola_core::query_core::Selection }
+            impl ::saola_core::builder::IncludeMarker for #marker_name {
+                fn into_selection(self) -> Option<::saola_core::query_core::Selection> { Some(self.selection) }
+            }
+
+            impl #marker_name {
+                pub fn model_as<U: ::saola_core::builder::SelectStruct>(mut self) -> #marker_name_as<U> {
+                    self.selection.clear_nested_selections();
+                    for sel in U::selections() {
+                        self.selection.push_nested_selection(sel);
+                    }
+                    #marker_name_as { selection: self.selection, _phantom: std::marker::PhantomData }
+                }
+            }
+
+            pub struct #marker_name_as<U> {
+                pub selection: ::saola_core::query_core::Selection,
+                pub _phantom: std::marker::PhantomData<U>
+            }
+            impl<U> ::saola_core::builder::IncludeMarker for #marker_name_as<U> {
+                fn into_selection(self) -> Option<::saola_core::query_core::Selection> { Some(self.selection) }
+            }
+        });
+    }
+
+    quote! { #(#markers)* }
+}
+
+pub fn generate_model_marker(model_name: &syn::Ident, model_metadata: &ModelMetadata) -> proc_macro2::TokenStream {
+    let marker_name = format_ident!("{}Marker", model_name);
+    let data_name = format_ident!("{}Data", model_name);
+    let where_builder = format_ident!("{}WhereBuilder", model_name);
+    let unique_where_builder = format_ident!("{}UniqueWhereBuilder", model_name);
+    let order_by_builder = format_ident!("{}OrderByBuilder", model_name);
+    let include_builder = format_ident!("{}IncludeBuilder", model_name);
+    let select_builder = format_ident!("{}SelectBuilder", model_name);
+    let data_builder = format_ident!("{}DataBuilder", model_name);
+    let model_name_str = model_name.to_string();
+    let scalar_fields = &model_metadata.scalar_field_names;
+
+    quote! {
+        pub struct #marker_name;
+        impl ::saola_core::ModelMarker for #marker_name {
+            type Data = #data_name;
+            type Where = #where_builder;
+            type UniqueWhere = #unique_where_builder;
+            type OrderBy = #order_by_builder;
+            type Include = #include_builder;
+            type Select = #select_builder;
+            type DataBuilder = #data_builder;
+
+            const NAME: &'static str = #model_name_str;
+            const SCALAR_FIELDS: &'static [&'static str] = &[#(#scalar_fields),*];
+        }
+    }
 }
 
 pub fn generate_data_builder(
@@ -163,22 +363,34 @@ pub fn generate_data_builder(
     quote! {
         #[derive(Default)]
         pub struct #data_builder_name {
-            pub data: saola_core::IndexMap<String, saola_core::query_core::ArgumentValue>,
+            pub data: ::saola_core::IndexMap<String, ::saola_core::query_core::ArgumentValue>,
+        }
+
+        impl ::saola_core::builder::DataBuilderTrait for #data_builder_name {
+            fn build(self) -> ::saola_core::IndexMap<String, ::saola_core::query_core::ArgumentValue> {
+                self.data
+            }
         }
 
         impl #data_builder_name {
             #(#full_data_methods)*
         }
 
-        impl From<#data_builder_name> for saola_core::query_structure::PrismaValue {
+        impl From<#data_builder_name> for ::saola_core::query_structure::PrismaValue {
             fn from(_b: #data_builder_name) -> Self {
-                saola_core::query_structure::PrismaValue::Null
+                ::saola_core::query_structure::PrismaValue::Null
             }
         }
 
         #[derive(Default)]
         pub struct #scalar_data_builder_name {
-            pub data: saola_core::IndexMap<String, saola_core::query_core::ArgumentValue>,
+            pub data: ::saola_core::IndexMap<String, ::saola_core::query_core::ArgumentValue>,
+        }
+
+        impl ::saola_core::builder::DataBuilderTrait for #scalar_data_builder_name {
+            fn build(self) -> ::saola_core::IndexMap<String, ::saola_core::query_core::ArgumentValue> {
+                self.data
+            }
         }
 
         impl #scalar_data_builder_name {
@@ -247,7 +459,7 @@ pub fn generate_relation_write_builders(
                 quote! {
                     #[derive(Default)]
                     pub struct #builder_name {
-                        pub data: saola_core::IndexMap<String, saola_core::query_core::ArgumentValue>,
+                        pub data: ::saola_core::IndexMap<String, ::saola_core::query_core::ArgumentValue>,
                     }
 
                     impl #builder_name {
@@ -256,12 +468,12 @@ pub fn generate_relation_write_builders(
                             let mut builder = #related_data_builder::default();
                             #create_inserts
                             f(&mut builder);
-                            let val = saola_core::query_core::ArgumentValue::Object(builder.data);
+                            let val = ::saola_core::query_core::ArgumentValue::Object(builder.data);
 
                             let list = self.data.entry("create".to_string())
-                                .or_insert_with(|| saola_core::query_core::ArgumentValue::List(Vec::new()));
+                                .or_insert_with(|| ::saola_core::query_core::ArgumentValue::List(Vec::new()));
 
-                            if let saola_core::query_core::ArgumentValue::List(l) = list {
+                            if let ::saola_core::query_core::ArgumentValue::List(l) = list {
                                 l.push(val.clone());
                             }
                             self
@@ -271,17 +483,17 @@ pub fn generate_relation_write_builders(
                         where F: FnOnce(&mut #related_data_builder) {
                             let mut builder = #related_data_builder::default();
                             f(&mut builder);
-                            let val = saola_core::query_core::ArgumentValue::Object(builder.data);
+                            let val = ::saola_core::query_core::ArgumentValue::Object(builder.data);
 
                             let list = self.data.entry("createMany".to_string())
                                 .or_insert_with(|| {
-                                    let mut map = saola_core::IndexMap::new();
-                                    map.insert("data".to_string(), saola_core::query_core::ArgumentValue::List(Vec::new()));
-                                    saola_core::query_core::ArgumentValue::Object(map)
+                                    let mut map = ::saola_core::IndexMap::new();
+                                    map.insert("data".to_string(), ::saola_core::query_core::ArgumentValue::List(Vec::new()));
+                                    ::saola_core::query_core::ArgumentValue::Object(map)
                                 });
 
-                            if let saola_core::query_core::ArgumentValue::Object(map) = list {
-                                if let Some(saola_core::query_core::ArgumentValue::List(l)) = map.get_mut("data") {
+                            if let ::saola_core::query_core::ArgumentValue::Object(map) = list {
+                                if let Some(::saola_core::query_core::ArgumentValue::List(l)) = map.get_mut("data") {
                                     l.push(val);
                                 }
                             }
@@ -292,13 +504,13 @@ pub fn generate_relation_write_builders(
                         where F: FnOnce(&mut #related_unique_where_builder) {
                             let mut builder = #related_unique_where_builder::default();
                             f(&mut builder);
-                            use saola_core::FilterBuilder;
-                            let val = saola_core::query_core::ArgumentValue::Object(builder.build());
+                            use ::saola_core::FilterBuilder;
+                            let val = ::saola_core::query_core::ArgumentValue::Object(builder.build());
 
                             let list = self.data.entry("connect".to_string())
-                                .or_insert_with(|| saola_core::query_core::ArgumentValue::List(Vec::new()));
+                                .or_insert_with(|| ::saola_core::query_core::ArgumentValue::List(Vec::new()));
 
-                            if let saola_core::query_core::ArgumentValue::List(l) = list {
+                            if let ::saola_core::query_core::ArgumentValue::List(l) = list {
                                 l.push(val.clone());
                             }
                             self
@@ -308,13 +520,13 @@ pub fn generate_relation_write_builders(
                         where F: FnOnce(&mut #related_unique_where_builder) {
                             let mut builder = #related_unique_where_builder::default();
                             f(&mut builder);
-                            use saola_core::FilterBuilder;
-                            let val = saola_core::query_core::ArgumentValue::Object(builder.build());
+                            use ::saola_core::FilterBuilder;
+                            let val = ::saola_core::query_core::ArgumentValue::Object(builder.build());
 
                             let list = self.data.entry("set".to_string())
-                                .or_insert_with(|| saola_core::query_core::ArgumentValue::List(Vec::new()));
+                                .or_insert_with(|| ::saola_core::query_core::ArgumentValue::List(Vec::new()));
 
-                            if let saola_core::query_core::ArgumentValue::List(l) = list {
+                            if let ::saola_core::query_core::ArgumentValue::List(l) = list {
                                 l.push(val.clone());
                             }
                             self
@@ -324,13 +536,13 @@ pub fn generate_relation_write_builders(
                         where F: FnOnce(&mut #related_unique_where_builder) {
                             let mut builder = #related_unique_where_builder::default();
                             f(&mut builder);
-                            use saola_core::FilterBuilder;
-                            let val = saola_core::query_core::ArgumentValue::Object(builder.build());
+                            use ::saola_core::FilterBuilder;
+                            let val = ::saola_core::query_core::ArgumentValue::Object(builder.build());
 
                             let list = self.data.entry("disconnect".to_string())
-                                .or_insert_with(|| saola_core::query_core::ArgumentValue::List(Vec::new()));
+                                .or_insert_with(|| ::saola_core::query_core::ArgumentValue::List(Vec::new()));
 
-                            if let saola_core::query_core::ArgumentValue::List(l) = list {
+                            if let ::saola_core::query_core::ArgumentValue::List(l) = list {
                                 l.push(val.clone());
                             }
                             self
@@ -340,13 +552,13 @@ pub fn generate_relation_write_builders(
                         where F: FnOnce(&mut #related_unique_where_builder) {
                             let mut builder = #related_unique_where_builder::default();
                             f(&mut builder);
-                            use saola_core::FilterBuilder;
-                            let val = saola_core::query_core::ArgumentValue::Object(builder.build());
+                            use ::saola_core::FilterBuilder;
+                            let val = ::saola_core::query_core::ArgumentValue::Object(builder.build());
 
                             let list = self.data.entry("delete".to_string())
-                                .or_insert_with(|| saola_core::query_core::ArgumentValue::List(Vec::new()));
+                                .or_insert_with(|| ::saola_core::query_core::ArgumentValue::List(Vec::new()));
 
-                            if let saola_core::query_core::ArgumentValue::List(l) = list {
+                            if let ::saola_core::query_core::ArgumentValue::List(l) = list {
                                 l.push(val.clone());
                             }
                             self
@@ -359,16 +571,16 @@ pub fn generate_relation_write_builders(
                             let mut d_builder = #related_data_builder::default();
                             data_f(&mut d_builder);
                             
-                            let mut map = saola_core::IndexMap::new();
-                            use saola_core::FilterBuilder;
-                            map.insert("where".to_string(), saola_core::query_core::ArgumentValue::Object(w_builder.build()));
-                            map.insert("data".to_string(), saola_core::query_core::ArgumentValue::Object(std::mem::take(&mut d_builder.data)));
+                            let mut map = ::saola_core::IndexMap::new();
+                            use ::saola_core::FilterBuilder;
+                            map.insert("where".to_string(), ::saola_core::query_core::ArgumentValue::Object(w_builder.build()));
+                            map.insert("data".to_string(), ::saola_core::query_core::ArgumentValue::Object(std::mem::take(&mut d_builder.data)));
                             
                             let list = self.data.entry("update".to_string())
-                                .or_insert_with(|| saola_core::query_core::ArgumentValue::List(Vec::new()));
+                                .or_insert_with(|| ::saola_core::query_core::ArgumentValue::List(Vec::new()));
 
-                            if let saola_core::query_core::ArgumentValue::List(l) = list {
-                                l.push(saola_core::query_core::ArgumentValue::Object(map));
+                            if let ::saola_core::query_core::ArgumentValue::List(l) = list {
+                                l.push(::saola_core::query_core::ArgumentValue::Object(map));
                             }
                             self
                         }
@@ -380,20 +592,20 @@ pub fn generate_relation_write_builders(
                             let mut d_builder = #related_data_builder::default();
                             data_f(&mut d_builder);
                             
-                            let mut map = saola_core::IndexMap::new();
-                            use saola_core::FilterBuilder;
-                            map.insert("where".to_string(), saola_core::query_core::ArgumentValue::Object(w_builder.build()));
-                            map.insert("data".to_string(), saola_core::query_core::ArgumentValue::Object(std::mem::take(&mut d_builder.data)));
+                            let mut map = ::saola_core::IndexMap::new();
+                            use ::saola_core::FilterBuilder;
+                            map.insert("where".to_string(), ::saola_core::query_core::ArgumentValue::Object(w_builder.build()));
+                            map.insert("data".to_string(), ::saola_core::query_core::ArgumentValue::Object(std::mem::take(&mut d_builder.data)));
                             
-                            self.data.insert("updateMany".to_string(), saola_core::query_core::ArgumentValue::Object(map));
+                            self.data.insert("updateMany".to_string(), ::saola_core::query_core::ArgumentValue::Object(map));
                             self
                         }
 
                         pub fn delete_many(&mut self, f: impl FnOnce(&mut #related_where_builder)) -> &mut Self {
                             let mut w_builder = #related_where_builder::default();
                             f(&mut w_builder);
-                            use saola_core::FilterBuilder;
-                            self.data.insert("deleteMany".to_string(), saola_core::query_core::ArgumentValue::Object(w_builder.build()));
+                            use ::saola_core::FilterBuilder;
+                            self.data.insert("deleteMany".to_string(), ::saola_core::query_core::ArgumentValue::Object(w_builder.build()));
                             self
                         }
 
@@ -409,17 +621,17 @@ pub fn generate_relation_write_builders(
                             let mut update_builder = #related_data_builder::default();
                             update_f(&mut update_builder);
                             
-                            let mut map = saola_core::IndexMap::new();
-                            use saola_core::FilterBuilder;
-                            map.insert("where".to_string(), saola_core::query_core::ArgumentValue::Object(w_builder.build()));
-                            map.insert("create".to_string(), saola_core::query_core::ArgumentValue::Object(std::mem::take(&mut create_builder.data)));
-                            map.insert("update".to_string(), saola_core::query_core::ArgumentValue::Object(std::mem::take(&mut update_builder.data)));
+                            let mut map = ::saola_core::IndexMap::new();
+                            use ::saola_core::FilterBuilder;
+                            map.insert("where".to_string(), ::saola_core::query_core::ArgumentValue::Object(w_builder.build()));
+                            map.insert("create".to_string(), ::saola_core::query_core::ArgumentValue::Object(std::mem::take(&mut create_builder.data)));
+                            map.insert("update".to_string(), ::saola_core::query_core::ArgumentValue::Object(std::mem::take(&mut update_builder.data)));
                             
                             let list = self.data.entry("upsert".to_string())
-                                .or_insert_with(|| saola_core::query_core::ArgumentValue::List(Vec::new()));
+                                .or_insert_with(|| ::saola_core::query_core::ArgumentValue::List(Vec::new()));
 
-                            if let saola_core::query_core::ArgumentValue::List(l) = list {
-                                l.push(saola_core::query_core::ArgumentValue::Object(map));
+                            if let ::saola_core::query_core::ArgumentValue::List(l) = list {
+                                l.push(::saola_core::query_core::ArgumentValue::Object(map));
                             }
                             self
                         }
@@ -430,7 +642,7 @@ pub fn generate_relation_write_builders(
                 quote! {
                     #[derive(Default)]
                     pub struct #builder_name {
-                        pub data: saola_core::IndexMap<String, saola_core::query_core::ArgumentValue>,
+                        pub data: ::saola_core::IndexMap<String, ::saola_core::query_core::ArgumentValue>,
                     }
 
                     impl #builder_name {
@@ -439,9 +651,9 @@ pub fn generate_relation_write_builders(
                             let mut builder = #related_data_builder::default();
                             #create_inserts
                             f(&mut builder);
-                            let val = saola_core::query_core::ArgumentValue::Object(builder.data);
+                            let val = ::saola_core::query_core::ArgumentValue::Object(builder.data);
                             
-                            let mut wrap = saola_core::IndexMap::new();
+                            let mut wrap = ::saola_core::IndexMap::new();
                             wrap.insert("create".to_string(), val);
                             self.data = wrap;
                             self
@@ -451,25 +663,25 @@ pub fn generate_relation_write_builders(
                         where F: FnOnce(&mut #related_unique_where_builder) {
                             let mut builder = #related_unique_where_builder::default();
                             f(&mut builder);
-                            use saola_core::FilterBuilder;
-                            let val = saola_core::query_core::ArgumentValue::Object(builder.build());
+                            use ::saola_core::FilterBuilder;
+                            let val = ::saola_core::query_core::ArgumentValue::Object(builder.build());
                             
-                            let mut wrap = saola_core::IndexMap::new();
+                            let mut wrap = ::saola_core::IndexMap::new();
                             wrap.insert("connect".to_string(), val);
                             self.data = wrap;
                             self
                         }
 
                         pub fn disconnect(&mut self) -> &mut Self {
-                            let mut wrap = saola_core::IndexMap::new();
-                            wrap.insert("disconnect".to_string(), saola_core::query_core::ArgumentValue::Scalar(saola_core::query_structure::PrismaValue::Boolean(true)));
+                            let mut wrap = ::saola_core::IndexMap::new();
+                            wrap.insert("disconnect".to_string(), ::saola_core::query_core::ArgumentValue::Scalar(::saola_core::query_structure::PrismaValue::Boolean(true)));
                             self.data = wrap;
                             self
                         }
 
                         pub fn delete(&mut self) -> &mut Self {
-                            let mut wrap = saola_core::IndexMap::new();
-                            wrap.insert("delete".to_string(), saola_core::query_core::ArgumentValue::Scalar(saola_core::query_structure::PrismaValue::Boolean(true)));
+                            let mut wrap = ::saola_core::IndexMap::new();
+                            wrap.insert("delete".to_string(), ::saola_core::query_core::ArgumentValue::Scalar(::saola_core::query_structure::PrismaValue::Boolean(true)));
                             self.data = wrap;
                             self
                         }
@@ -479,8 +691,8 @@ pub fn generate_relation_write_builders(
                             let mut builder = #related_data_builder::default();
                             f(&mut builder);
                             
-                            let mut wrap = saola_core::IndexMap::new();
-                            wrap.insert("update".to_string(), saola_core::query_core::ArgumentValue::Object(std::mem::take(&mut builder.data)));
+                            let mut wrap = ::saola_core::IndexMap::new();
+                            wrap.insert("update".to_string(), ::saola_core::query_core::ArgumentValue::Object(std::mem::take(&mut builder.data)));
                             self.data = wrap;
                             self
                         }
@@ -494,12 +706,12 @@ pub fn generate_relation_write_builders(
                             let mut update_builder = #related_data_builder::default();
                             update_f(&mut update_builder);
                             
-                            let mut map = saola_core::IndexMap::new();
-                            map.insert("create".to_string(), saola_core::query_core::ArgumentValue::Object(std::mem::take(&mut create_builder.data)));
-                            map.insert("update".to_string(), saola_core::query_core::ArgumentValue::Object(std::mem::take(&mut update_builder.data)));
+                            let mut map = ::saola_core::IndexMap::new();
+                            map.insert("create".to_string(), ::saola_core::query_core::ArgumentValue::Object(std::mem::take(&mut create_builder.data)));
+                            map.insert("update".to_string(), ::saola_core::query_core::ArgumentValue::Object(std::mem::take(&mut update_builder.data)));
                             
-                            let mut wrap = saola_core::IndexMap::new();
-                            wrap.insert("upsert".to_string(), saola_core::query_core::ArgumentValue::Object(map));
+                            let mut wrap = ::saola_core::IndexMap::new();
+                            wrap.insert("upsert".to_string(), ::saola_core::query_core::ArgumentValue::Object(map));
                             self.data = wrap;
                             self
                         }
@@ -643,7 +855,7 @@ pub fn generate_order_by_builder(model_name: &syn::Ident, model_metadata: &Model
     quote! {
         #[derive(Default)]
         pub struct #order_by_builder_name {
-            pub args: Vec<saola_core::ArgumentValue>,
+            pub args: Vec<::saola_core::ArgumentValue>,
         }
 
         impl #order_by_builder_name {

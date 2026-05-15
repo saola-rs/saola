@@ -21,7 +21,6 @@ macro_rules! histogram {
     };
 }
 
-
 #[cfg(not(feature = "metrics"))]
 #[derive(Default)]
 pub struct Dummy;

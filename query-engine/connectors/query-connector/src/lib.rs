@@ -4,8 +4,8 @@ pub mod error;
 
 mod coerce;
 mod interface;
-mod upsert;
 pub mod telemetry;
+mod upsert;
 
 pub use coerce::*;
 pub use interface::*;

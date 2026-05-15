@@ -1,6 +1,6 @@
+use crate::telemetry::TraceParent;
 use crate::{Env, Expressionista, IrSerializer, QueryGraph, QueryInterpreter, ResponseData};
 use schema::QuerySchema;
-use crate::telemetry::TraceParent;
 use tracing::Instrument;
 
 #[derive(Debug)]

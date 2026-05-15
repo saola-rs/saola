@@ -1,1 +1,1 @@
-pub use connector_interface::telemetry::{TraceParent};
+pub use connector_interface::telemetry::TraceParent;

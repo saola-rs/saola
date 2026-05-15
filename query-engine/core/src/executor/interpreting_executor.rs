@@ -6,10 +6,10 @@ use crate::{
     TransactionOptions, TxId, protocol::EngineProtocol,
 };
 
+use crate::telemetry::TraceParent;
 use async_trait::async_trait;
 use connector::Connector;
 use schema::QuerySchemaRef;
-use crate::telemetry::TraceParent;
 use tokio::time::Duration;
 use tracing::Instrument;
 

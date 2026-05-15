@@ -5,7 +5,6 @@ members = [
     "psl-official/diagnostics",
     "psl-official/schema-ast",
     "psl-official/parser-database",
-    "saola-macros",
     "saola-core",
     "quaint",
     "libs/*",
@@ -21,7 +20,8 @@ members = [
     "schema-engine/connectors/*",
     "schema-engine/datamodel-renderer",
     "schema-engine/mongodb-schema-describer",
-    "schema-engine/sql-schema-describer",
+    "schema-engine/sql-schema-describer", "saola-codegen", "saola-cli",
+    "example-app",
 ]
 resolver = "2"
 
@@ -206,7 +206,6 @@ mongodb-schema-connector = { path = "./schema-engine/connectors/mongodb-schema-c
 sql-schema-describer = { path = "./schema-engine/sql-schema-describer", version = "0.1.0" }
 mongodb-schema-describer = { path = "./schema-engine/mongodb-schema-describer", version = "0.1.0" }
 saola-core = { path = "./saola-core", version = "0.1.4" }
-saola-macros = { path = "./saola-macros", version = "0.1.3" }
 
 wasm-rs-dbg = { version = "0.1", default-features = false, features = ["console-error"] }
 serde-wasm-bindgen = "0.6"

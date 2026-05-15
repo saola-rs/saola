@@ -1,4 +1,5 @@
 use super::catch;
+use crate::telemetry::TraceParent;
 use crate::{SqlError, database::operations::*};
 use async_trait::async_trait;
 use connector::ConnectionLike;
@@ -11,7 +12,6 @@ use query_structure::{
 };
 use sql_query_builder::Context;
 use std::collections::HashMap;
-use crate::telemetry::TraceParent;
 
 pub struct SqlConnectorTransaction<'tx> {
     inner: Box<dyn quaint::connector::Transaction + 'tx>,
