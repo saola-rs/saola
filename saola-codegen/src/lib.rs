@@ -55,8 +55,26 @@ impl Generator {
                     psl::parser_database::ScalarFieldType::BuiltInScalar(psl::parser_database::ScalarType::Int) => {
                         "i32"
                     }
+                    psl::parser_database::ScalarFieldType::BuiltInScalar(psl::parser_database::ScalarType::BigInt) => {
+                        "i64"
+                    }
+                    psl::parser_database::ScalarFieldType::BuiltInScalar(psl::parser_database::ScalarType::Float) => {
+                        "f64"
+                    }
+                    psl::parser_database::ScalarFieldType::BuiltInScalar(psl::parser_database::ScalarType::Decimal) => {
+                        "::saola_core::query_structure::BigDecimal"
+                    }
                     psl::parser_database::ScalarFieldType::BuiltInScalar(psl::parser_database::ScalarType::Boolean) => {
                         "bool"
+                    }
+                    psl::parser_database::ScalarFieldType::BuiltInScalar(psl::parser_database::ScalarType::DateTime) => {
+                        "::saola_core::chrono::DateTime<::saola_core::chrono::Utc>"
+                    }
+                    psl::parser_database::ScalarFieldType::BuiltInScalar(psl::parser_database::ScalarType::Json) => {
+                        "::saola_core::serde_json::Value"
+                    }
+                    psl::parser_database::ScalarFieldType::BuiltInScalar(psl::parser_database::ScalarType::Bytes) => {
+                        "Vec<u8>"
                     }
                     psl::parser_database::ScalarFieldType::Enum(id) => db.walk(id).name(),
                     _ => "String",
@@ -435,6 +453,61 @@ impl Generator {
             f,
             "{}",
             crate::query_gen::generate_query_factory(&model_name, &model_name_snake, model_metadata)
+        )?;
+        write!(
+            f,
+            "{}",
+            crate::wrapper_gen::generate_read_wrappers(&model_name, model_metadata)
+        )?;
+        write!(
+            f,
+            "{}",
+            crate::wrapper_gen::generate_write_wrapper(&model_name, model_metadata)
+        )?;
+        write!(
+            f,
+            "{}",
+            crate::wrapper_gen::generate_upsert_wrapper(&model_name, model_metadata)
+        )?;
+        write!(
+            f,
+            "{}",
+            crate::wrapper_gen::generate_create_many_wrapper(&model_name, model_metadata)
+        )?;
+        write!(
+            f,
+            "{}",
+            crate::wrapper_gen::generate_create_many_and_return_wrapper(&model_name, model_metadata)
+        )?;
+        write!(
+            f,
+            "{}",
+            crate::wrapper_gen::generate_update_many_wrapper(&model_name, model_metadata)
+        )?;
+        write!(
+            f,
+            "{}",
+            crate::wrapper_gen::generate_update_many_and_return_wrapper(&model_name, model_metadata)
+        )?;
+        write!(
+            f,
+            "{}",
+            crate::wrapper_gen::generate_delete_many_wrapper(&model_name, model_metadata)
+        )?;
+        write!(
+            f,
+            "{}",
+            crate::wrapper_gen::generate_count_wrapper(&model_name)
+        )?;
+        write!(
+            f,
+            "{}",
+            crate::wrapper_gen::generate_aggregate_wrapper(&model_name)
+        )?;
+        write!(
+            f,
+            "{}",
+            crate::wrapper_gen::generate_group_by_wrapper(&model_name)
         )?;
 
         Ok(())

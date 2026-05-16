@@ -6,7 +6,7 @@
 
 // Re-export all filter operator traits
 pub use crate::filters::{
-    BoolField, DateTimeField, EnumField, FloatField, IntField, IntoWhere, RelationFilterOps, SelectField, StringField,
+    BoolField, DateTimeField, EnumField, FloatField, IntField, RelationFilterOps, SelectField, StringField,
 };
 
 // Re-export filter builder types

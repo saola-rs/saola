@@ -155,167 +155,8 @@ pub fn generate_select_builder(model_name: &syn::Ident, model_metadata: &ModelMe
     }
 }
 
-pub fn generate_include_builder(model_name: &syn::Ident, model_metadata: &ModelMetadata) -> proc_macro2::TokenStream {
-    let include_builder_name = format_ident!("{}IncludeBuilder", model_name);
-    let mut include_methods = Vec::new();
-
-    for field in &model_metadata.fields {
-        if !field.is_relation {
-            continue;
-        }
-        let rust_name = format_ident!("{}", field.rust_name);
-        let marker_name = format_ident!("{}Include{}", model_name, rust_name.to_string().to_upper_camel_case());
-        let marker_name_as = format_ident!("{}Include{}As", model_name, rust_name.to_string().to_upper_camel_case());
-        let prisma_name = &field.prisma_name;
-        let related_model_name = crate::utils::get_inner_type(&field.field_type);
-        let related_marker = format_ident!("{}Marker", related_model_name);
-        let related_snake = heck::ToSnakeCase::to_snake_case(related_model_name.as_str());
-        let related_dir = format_ident!("{}_dir", related_snake);
-
-        let as_suffix_name = format_ident!("{}_as", field.rust_name);
-
-        include_methods.push(quote! {
-            pub fn #rust_name(&mut self) -> #marker_name {
-                let mut sel = ::saola_core::query_core::Selection::with_name(#prisma_name.to_string());
-                for f in super::super::#related_dir::builders::#related_marker::SCALAR_FIELDS {
-                    sel.push_nested_selection(::saola_core::query_core::Selection::with_name(f.to_string()));
-                }
-                #marker_name { selection: sel }
-            }
-
-            pub fn #as_suffix_name<U: ::saola_core::builder::SelectStruct>(&mut self) -> #marker_name_as<U> {
-                let mut sel = ::saola_core::query_core::Selection::with_name(#prisma_name.to_string());
-                for f in U::selections() {
-                    sel.push_nested_selection(f);
-                }
-                #marker_name_as { selection: sel, _phantom: std::marker::PhantomData }
-            }
-        });
-    }
-
-    let markers = generate_include_markers(model_name, model_metadata);
-    let transitions = generate_include_transitions(model_name, model_metadata);
-
-    quote! {
-        #[derive(Default)]
-        pub struct #include_builder_name {
-            pub args: Vec<(String, ::saola_core::query_core::ArgumentValue)>,
-        }
-
-        impl #include_builder_name {
-            #(#include_methods)*
-        }
-
-        #markers
-        #transitions
-    }
-}
-
-fn generate_include_transitions(model_name: &syn::Ident, model_metadata: &ModelMetadata) -> proc_macro2::TokenStream {
-    let mut impls = Vec::new();
-    let data_name = format_ident!("{}Data", model_name);
-    let relations: Vec<_> = model_metadata.fields.iter().filter(|f| f.is_relation).collect();
-
-    let mut all_generics = Vec::new();
-    for (i, _) in relations.iter().enumerate() {
-        let g = format_ident!("T{}", i);
-        all_generics.push(quote! { #g });
-    }
-
-    for (i, relation) in relations.iter().enumerate() {
-        let marker_name = format_ident!("{}Include{}", model_name, relation.rust_name.to_upper_camel_case());
-        let marker_name_as = format_ident!("{}Include{}As", model_name, relation.rust_name.to_upper_camel_case());
-        let inner_type_str = crate::utils::get_inner_type(&relation.field_type);
-        let related_data_name = format_ident!("{}Data", inner_type_str);
-
-        let mut next_generics = all_generics.clone();
-        let target_type = if relation.is_list {
-            quote! { Vec<#related_data_name> }
-        } else if relation.is_optional {
-            quote! { Option<Box<#related_data_name>> }
-        } else {
-            quote! { Box<#related_data_name> }
-        };
-        next_generics[i] = target_type;
-
-        impls.push(quote! {
-            impl<#(#all_generics),*> ::saola_core::builder::IncludeTransition<#marker_name> for #data_name<#(#all_generics),*>
-            where #(#all_generics: ::saola_core::builder::FromResponseIr + Default + Send + Sync),*
-            {
-                type Output = #data_name<#(#next_generics),*>;
-            }
-        });
-
-        let mut next_generics_as = all_generics.clone();
-        let target_type_as = if relation.is_list {
-            quote! { Vec<U> }
-        } else if relation.is_optional {
-            quote! { Option<U> }
-        } else {
-            quote! { U }
-        };
-        next_generics_as[i] = target_type_as;
-
-        impls.push(quote! {
-            impl<U: ::saola_core::builder::SelectStruct, #(#all_generics),*> ::saola_core::builder::IncludeTransition<#marker_name_as<U>> for #data_name<#(#all_generics),*>
-            where #(#all_generics: ::saola_core::builder::FromResponseIr + Default + Send + Sync),*
-            {
-                type Output = #data_name<#(#next_generics_as),*>;
-            }
-        });
-    }
-
-    impls.push(quote! {
-        impl<U, #(#all_generics),*> ::saola_core::builder::SelectAsTransition<U> for #data_name<#(#all_generics),*> {
-            type Output = U;
-        }
-
-        impl<SM, #(#all_generics),*> ::saola_core::builder::SelectTransition<SM> for #data_name<#(#all_generics),*> {
-            type Output = ::saola_core::serde_json::Value;
-        }
-    });
-
-    quote! { #(#impls)* }
-}
-
-fn generate_include_markers(model_name: &syn::Ident, model_metadata: &ModelMetadata) -> proc_macro2::TokenStream {
-    let mut markers = Vec::new();
-
-    for field in &model_metadata.fields {
-        if !field.is_relation {
-            continue;
-        }
-        let rust_name = format_ident!("{}", field.rust_name);
-        let marker_name = format_ident!("{}Include{}", model_name, rust_name.to_string().to_upper_camel_case());
-        let marker_name_as = format_ident!("{}Include{}As", model_name, rust_name.to_string().to_upper_camel_case());
-
-        markers.push(quote! {
-            pub struct #marker_name { pub selection: ::saola_core::query_core::Selection }
-            impl ::saola_core::builder::IncludeMarker for #marker_name {
-                fn into_selection(self) -> Option<::saola_core::query_core::Selection> { Some(self.selection) }
-            }
-
-            impl #marker_name {
-                pub fn model_as<U: ::saola_core::builder::SelectStruct>(mut self) -> #marker_name_as<U> {
-                    self.selection.clear_nested_selections();
-                    for sel in U::selections() {
-                        self.selection.push_nested_selection(sel);
-                    }
-                    #marker_name_as { selection: self.selection, _phantom: std::marker::PhantomData }
-                }
-            }
-
-            pub struct #marker_name_as<U> {
-                pub selection: ::saola_core::query_core::Selection,
-                pub _phantom: std::marker::PhantomData<U>
-            }
-            impl<U> ::saola_core::builder::IncludeMarker for #marker_name_as<U> {
-                fn into_selection(self) -> Option<::saola_core::query_core::Selection> { Some(self.selection) }
-            }
-        });
-    }
-
-    quote! { #(#markers)* }
+pub fn generate_include_builder(_model_name: &syn::Ident, _model_metadata: &ModelMetadata) -> proc_macro2::TokenStream {
+    quote! {}
 }
 
 pub fn generate_model_marker(model_name: &syn::Ident, model_metadata: &ModelMetadata) -> proc_macro2::TokenStream {
@@ -856,6 +697,12 @@ pub fn generate_order_by_builder(model_name: &syn::Ident, model_metadata: &Model
         #[derive(Default)]
         pub struct #order_by_builder_name {
             pub args: Vec<::saola_core::ArgumentValue>,
+        }
+
+        impl ::saola_core::builder::OrderByBuilderTrait for #order_by_builder_name {
+            fn build(self) -> Vec<::saola_core::ArgumentValue> {
+                self.args
+            }
         }
 
         impl #order_by_builder_name {

@@ -78,28 +78,6 @@ impl WhereClause {
     }
 }
 
-/// Trait to allow both closures and WhereClause in where_clause()
-pub trait IntoWhere<W> {
-    fn into_where(self, builder: &mut W);
-}
-
-impl<W, F> IntoWhere<W> for F
-where
-    F: FnOnce(&mut W),
-{
-    fn into_where(self, builder: &mut W) {
-        self(builder);
-    }
-}
-
-impl<W: crate::builder::FilterBuilder> IntoWhere<W> for WhereClause {
-    fn into_where(self, builder: &mut W) {
-        for (k, v) in self.map {
-            builder.add_arg(k, v);
-        }
-    }
-}
-
 // New Trait-based API for Fields and Builders
 pub trait StringField<R> {
     fn equals(self, val: impl Into<String>) -> R;

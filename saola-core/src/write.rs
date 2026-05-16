@@ -2,10 +2,12 @@ use crate::builder::{BuilderState, Executable, Filterable, FromResponseIr, Selec
 use crate::transaction::QueryExecutorProvider;
 use query_core::{ArgumentValue, Selection};
 use std::marker::PhantomData;
+use std::sync::Arc;
 
 /// Generic Write builder - base for all create/update/delete operations
 pub struct WriteBuilder<T> {
     pub state: BuilderState,
+    pub provider: Option<Arc<dyn QueryExecutorProvider>>,
     _phantom: PhantomData<T>,
 }
 
@@ -14,8 +16,14 @@ impl<T> WriteBuilder<T> {
     pub fn new(model_name: String, operation: &str, default_selections: Vec<String>) -> Self {
         Self {
             state: BuilderState::write(model_name, operation, default_selections),
+            provider: None,
             _phantom: PhantomData,
         }
+    }
+
+    pub fn with_provider(mut self, provider: Arc<dyn QueryExecutorProvider>) -> Self {
+        self.provider = Some(provider);
+        self
     }
 
     /// Create a create operation (createOne{Model})
@@ -42,21 +50,60 @@ impl<T> WriteBuilder<T> {
     pub fn with_type<U>(self) -> WriteBuilder<U> {
         WriteBuilder {
             state: self.state,
+            provider: self.provider,
             _phantom: PhantomData,
         }
+    }
+
+    pub fn select_as<U: crate::builder::SelectStruct, R>(mut self) -> WriteBuilder<R> {
+        let selections = U::selections();
+        self.state.selection.clear_nested_selections();
+        for sel in selections {
+            self.state.selection.push_nested_selection(sel);
+        }
+        WriteBuilder {
+            state: self.state,
+            provider: self.provider,
+            _phantom: PhantomData,
+        }
+    }
+
+    pub async fn exec(self) -> crate::Result<T>
+    where
+        T: FromResponseIr,
+    {
+        let provider = self.provider.clone().ok_or_else(|| {
+            crate::Error::RuntimeError("Builder is not bound to a provider.".to_string())
+        })?;
+        self.exec_with(provider.as_ref()).await
+    }
+
+    pub async fn exec_with<P: QueryExecutorProvider + ?Sized>(self, provider: &P) -> crate::Result<T>
+    where
+        T: FromResponseIr,
+    {
+        let operation = self.state.into_operation(true);
+        let item = execute_raw(operation, provider).await?;
+        T::from_ir(item)
     }
 }
 
 /// Builder for bulk create operations (returns count)
 pub struct CreateManyBuilder {
     pub state: BuilderState,
+    pub provider: Option<Arc<dyn QueryExecutorProvider>>,
 }
 
 impl CreateManyBuilder {
     pub fn new(model_name: String) -> Self {
         let mut state = BuilderState::write(model_name, "createMany", Vec::new());
         state.selection.push_nested_selection(Selection::with_name("count"));
-        Self { state }
+        Self { state, provider: None }
+    }
+
+    pub fn with_provider(mut self, provider: Arc<dyn QueryExecutorProvider>) -> Self {
+        self.provider = Some(provider);
+        self
     }
 
     pub fn skip_duplicates(mut self, skip: bool) -> Self {
@@ -67,7 +114,14 @@ impl CreateManyBuilder {
         self
     }
 
-    pub async fn exec<P: QueryExecutorProvider + ?Sized>(self, provider: &P) -> crate::Result<i64> {
+    pub async fn exec(self) -> crate::Result<i64> {
+        let provider = self.provider.clone().ok_or_else(|| {
+            crate::Error::RuntimeError("Builder is not bound to a provider.".to_string())
+        })?;
+        self.exec_with(provider.as_ref()).await
+    }
+
+    pub async fn exec_with<P: QueryExecutorProvider + ?Sized>(self, provider: &P) -> crate::Result<i64> {
         let operation = self.state.into_operation(true);
         let item = execute_raw(operation, provider).await?;
 
@@ -92,6 +146,7 @@ impl CreateManyBuilder {
 /// Builder for bulk create operations and return records
 pub struct CreateManyAndReturnBuilder<T> {
     pub state: BuilderState,
+    pub provider: Option<Arc<dyn QueryExecutorProvider>>,
     _phantom: PhantomData<T>,
 }
 
@@ -105,8 +160,14 @@ impl<T> CreateManyAndReturnBuilder<T> {
                 arguments: crate::IndexMap::new(),
                 default_selections,
             },
+            provider: None,
             _phantom: PhantomData,
         }
+    }
+
+    pub fn with_provider(mut self, provider: Arc<dyn QueryExecutorProvider>) -> Self {
+        self.provider = Some(provider);
+        self
     }
 
     pub fn skip_duplicates(mut self, skip: bool) -> Self {
@@ -116,10 +177,38 @@ impl<T> CreateManyAndReturnBuilder<T> {
         );
         self
     }
+
+    pub fn with_type<U>(self) -> CreateManyAndReturnBuilder<U> {
+        CreateManyAndReturnBuilder {
+            state: self.state,
+            provider: self.provider,
+            _phantom: PhantomData,
+        }
+    }
+
+    pub fn select_as<U: crate::builder::SelectStruct, R>(mut self) -> CreateManyAndReturnBuilder<R> {
+        let selections = U::selections();
+        self.state.selection.clear_nested_selections();
+        for sel in selections {
+            self.state.selection.push_nested_selection(sel);
+        }
+        CreateManyAndReturnBuilder {
+            state: self.state,
+            provider: self.provider,
+            _phantom: PhantomData,
+        }
+    }
 }
 
 impl<T: FromResponseIr + Send + Sync> CreateManyAndReturnBuilder<T> {
-    pub async fn exec<P: QueryExecutorProvider + ?Sized>(self, provider: &P) -> crate::Result<Vec<T>> {
+    pub async fn exec(self) -> crate::Result<Vec<T>> {
+        let provider = self.provider.clone().ok_or_else(|| {
+            crate::Error::RuntimeError("Builder is not bound to a provider.".to_string())
+        })?;
+        self.exec_with(provider.as_ref()).await
+    }
+
+    pub async fn exec_with<P: QueryExecutorProvider + ?Sized>(self, provider: &P) -> crate::Result<Vec<T>> {
         let operation = self.state.into_operation(true);
         let item = execute_raw(operation, provider).await?;
         Vec::<T>::from_ir(item)
@@ -129,16 +218,29 @@ impl<T: FromResponseIr + Send + Sync> CreateManyAndReturnBuilder<T> {
 /// Builder for bulk update operations
 pub struct UpdateManyBuilder {
     pub state: BuilderState,
+    pub provider: Option<Arc<dyn QueryExecutorProvider>>,
 }
 
 impl UpdateManyBuilder {
     pub fn new(model_name: String) -> Self {
         let mut state = BuilderState::write(model_name, "updateMany", Vec::new());
         state.selection.push_nested_selection(Selection::with_name("count"));
-        Self { state }
+        Self { state, provider: None }
     }
 
-    pub async fn exec<P: QueryExecutorProvider + ?Sized>(self, provider: &P) -> crate::Result<i64> {
+    pub fn with_provider(mut self, provider: Arc<dyn QueryExecutorProvider>) -> Self {
+        self.provider = Some(provider);
+        self
+    }
+
+    pub async fn exec(self) -> crate::Result<i64> {
+        let provider = self.provider.clone().ok_or_else(|| {
+            crate::Error::RuntimeError("Builder is not bound to a provider.".to_string())
+        })?;
+        self.exec_with(provider.as_ref()).await
+    }
+
+    pub async fn exec_with<P: QueryExecutorProvider + ?Sized>(self, provider: &P) -> crate::Result<i64> {
         let operation = self.state.into_operation(true);
         let item = execute_raw(operation, provider).await?;
 
@@ -163,6 +265,7 @@ impl UpdateManyBuilder {
 /// Builder for bulk update operations and return records
 pub struct UpdateManyAndReturnBuilder<T> {
     pub state: BuilderState,
+    pub provider: Option<Arc<dyn QueryExecutorProvider>>,
     _phantom: PhantomData<T>,
 }
 
@@ -176,13 +279,47 @@ impl<T> UpdateManyAndReturnBuilder<T> {
                 arguments: crate::IndexMap::new(),
                 default_selections,
             },
+            provider: None,
+            _phantom: PhantomData,
+        }
+    }
+
+    pub fn with_provider(mut self, provider: Arc<dyn QueryExecutorProvider>) -> Self {
+        self.provider = Some(provider);
+        self
+    }
+
+    pub fn with_type<U>(self) -> UpdateManyAndReturnBuilder<U> {
+        UpdateManyAndReturnBuilder {
+            state: self.state,
+            provider: self.provider,
+            _phantom: PhantomData,
+        }
+    }
+
+    pub fn select_as<U: crate::builder::SelectStruct, R>(mut self) -> UpdateManyAndReturnBuilder<R> {
+        let selections = U::selections();
+        self.state.selection.clear_nested_selections();
+        for sel in selections {
+            self.state.selection.push_nested_selection(sel);
+        }
+        UpdateManyAndReturnBuilder {
+            state: self.state,
+            provider: self.provider,
             _phantom: PhantomData,
         }
     }
 }
 
 impl<T: FromResponseIr + Send + Sync> UpdateManyAndReturnBuilder<T> {
-    pub async fn exec<P: QueryExecutorProvider + ?Sized>(self, provider: &P) -> crate::Result<Vec<T>> {
+    pub async fn exec(self) -> crate::Result<Vec<T>> {
+        let provider = self.provider.clone().ok_or_else(|| {
+            crate::Error::RuntimeError("Builder is not bound to a provider.".to_string())
+        })?;
+        self.exec_with(provider.as_ref()).await
+    }
+
+    pub async fn exec_with<P: QueryExecutorProvider + ?Sized>(self, provider: &P) -> crate::Result<Vec<T>> {
         let operation = self.state.into_operation(true);
         let item = execute_raw(operation, provider).await?;
         Vec::<T>::from_ir(item)
@@ -207,16 +344,29 @@ impl<M> Selectable for UpdateManyAndReturnBuilder<M> {
 /// Builder for bulk delete operations
 pub struct DeleteManyBuilder {
     pub state: BuilderState,
+    pub provider: Option<Arc<dyn QueryExecutorProvider>>,
 }
 
 impl DeleteManyBuilder {
     pub fn new(model_name: String) -> Self {
         let mut state = BuilderState::write(model_name, "deleteMany", Vec::new());
         state.selection.push_nested_selection(Selection::with_name("count"));
-        Self { state }
+        Self { state, provider: None }
     }
 
-    pub async fn exec<P: QueryExecutorProvider + ?Sized>(self, provider: &P) -> crate::Result<i64> {
+    pub fn with_provider(mut self, provider: Arc<dyn QueryExecutorProvider>) -> Self {
+        self.provider = Some(provider);
+        self
+    }
+
+    pub async fn exec(self) -> crate::Result<i64> {
+        let provider = self.provider.clone().ok_or_else(|| {
+            crate::Error::RuntimeError("Builder is not bound to a provider.".to_string())
+        })?;
+        self.exec_with(provider.as_ref()).await
+    }
+
+    pub async fn exec_with<P: QueryExecutorProvider + ?Sized>(self, provider: &P) -> crate::Result<i64> {
         let operation = self.state.into_operation(true);
         let item = execute_raw(operation, provider).await?;
 
@@ -290,14 +440,7 @@ impl<T: FromResponseIr> Executable for WriteBuilder<T> {
     type Output = T;
 
     async fn exec<P: QueryExecutorProvider + ?Sized>(self, provider: &P) -> crate::Result<T> {
-        let operation = self.state.into_operation(true);
-        let item = execute_raw(operation, provider).await?;
-        T::from_ir(item)
+        self.exec_with(provider).await
     }
 }
 
-impl<T: FromResponseIr + Send + Sync> WriteBuilder<T> {
-    pub async fn exec_inferred<P: QueryExecutorProvider + ?Sized>(self, provider: &P) -> crate::Result<T> {
-        self.exec(provider).await
-    }
-}

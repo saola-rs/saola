@@ -273,6 +273,12 @@ impl<M: ModelMarker, Op, T> Query<M, Op, T> {
 pub trait FilterBuilder: Sized {
     fn add_arg(&mut self, name: String, value: ArgumentValue);
     fn build(self) -> crate::IndexMap<String, ArgumentValue>;
+    
+    fn apply_where(&mut self, clause: crate::filters::WhereClause) {
+        for (k, v) in clause.map {
+            self.add_arg(k, v);
+        }
+    }
 }
 
 /// Helper for compile-time type checking in selection macros
@@ -400,11 +406,11 @@ impl<M: ModelMarker, Op, T: FromResponseIr> Query<M, Op, T> {
             )
         })?;
 
-        let op_name = std::any::type_name::<Op>();
-        let is_write = op_name.contains("Create")
-            || op_name.contains("Update")
-            || op_name.contains("Upsert")
-            || op_name.contains("Delete");
+        let op_name = self.state.selection.name().to_string();
+        let is_write = op_name.contains("create")
+            || op_name.contains("update")
+            || op_name.contains("upsert")
+            || op_name.contains("delete");
 
         let operation = self.state.into_operation(is_write);
         let tx_id = provider.tx_id().cloned();
@@ -414,23 +420,27 @@ impl<M: ModelMarker, Op, T: FromResponseIr> Query<M, Op, T> {
             .await
             .map_err(Error::from_core)?;
 
-        let item = match response.data {
-            query_core::response_ir::Item::Map(mut map) => map
-                .shift_remove_index(0)
-                .map(|(_, v)| v)
-                .ok_or_else(|| crate::Error::RuntimeError("Inconsistent query result: No data returned".to_string()))?,
+        let data = unwrap_prisma_item(response.data);
+        let item = match data {
+            query_core::response_ir::Item::Map(mut map) => {
+                if map.contains_key(&op_name) {
+                    map.shift_remove(&op_name).unwrap()
+                } else {
+                    query_core::response_ir::Item::Map(map)
+                }
+            }
             item => item,
         };
 
-        T::from_ir(unwrap_prisma_item(item))
+        T::from_ir(item)
     }
 
     pub async fn exec_with<P: QueryExecutorProvider + ?Sized>(self, provider: &P) -> crate::Result<T> {
-        let op_name = std::any::type_name::<Op>();
-        let is_write = op_name.contains("Create")
-            || op_name.contains("Update")
-            || op_name.contains("Upsert")
-            || op_name.contains("Delete");
+        let op_name = self.state.selection.name().to_string();
+        let is_write = op_name.contains("create")
+            || op_name.contains("update")
+            || op_name.contains("upsert")
+            || op_name.contains("delete");
 
         let operation = self.state.into_operation(is_write);
         let tx_id = provider.tx_id().cloned();
@@ -440,15 +450,19 @@ impl<M: ModelMarker, Op, T: FromResponseIr> Query<M, Op, T> {
             .await
             .map_err(Error::from_core)?;
 
-        let item = match response.data {
-            query_core::response_ir::Item::Map(mut map) => map
-                .shift_remove_index(0)
-                .map(|(_, v)| v)
-                .ok_or_else(|| crate::Error::RuntimeError("Inconsistent query result: No data returned".to_string()))?,
+        let data = unwrap_prisma_item(response.data);
+        let item = match data {
+            query_core::response_ir::Item::Map(mut map) => {
+                if map.contains_key(&op_name) {
+                    map.shift_remove(&op_name).unwrap()
+                } else {
+                    query_core::response_ir::Item::Map(map)
+                }
+            }
             item => item,
         };
 
-        T::from_ir(unwrap_prisma_item(item))
+        T::from_ir(item)
     }
 }
 
@@ -573,16 +587,64 @@ impl<M: ModelMarker, Op, T> Query<M, Op, T> {
         }
         self
     }
+
+    pub fn order_by<F>(mut self, f: F) -> Self
+    where
+        F: FnOnce(&mut M::OrderBy),
+        M::OrderBy: Default + OrderByBuilderTrait,
+    {
+        let mut builder = M::OrderBy::default();
+        f(&mut builder);
+        let args = builder.build();
+        if !args.is_empty() {
+            self.state
+                .arguments
+                .insert("orderBy".to_string(), ArgumentValue::List(args));
+        }
+        self
+    }
+
+    pub fn take(mut self, take: i64) -> Self {
+        self.state.arguments.insert("take".to_string(), ArgumentValue::Scalar(crate::query_structure::PrismaValue::Int(take)));
+        self
+    }
+
+    pub fn skip(mut self, skip: i64) -> Self {
+        self.state.arguments.insert("skip".to_string(), ArgumentValue::Scalar(crate::query_structure::PrismaValue::Int(skip)));
+        self
+    }
+
+    pub fn cursor<F>(mut self, f: F) -> Self
+    where
+        F: FnOnce(&mut M::UniqueWhere),
+    {
+        let mut builder = M::UniqueWhere::default();
+        f(&mut builder);
+        let map = builder.build();
+        if !map.is_empty() {
+            self.state.arguments.insert("cursor".to_string(), ArgumentValue::Object(map));
+        }
+        self
+    }
 }
 
 pub trait DataBuilderTrait {
     fn build(self) -> crate::IndexMap<String, ArgumentValue>;
 }
 
+pub trait OrderByBuilderTrait {
+    fn build(self) -> Vec<ArgumentValue>;
+}
+
 pub async fn execute_raw<P: crate::transaction::QueryExecutorProvider + ?Sized>(
     operation: Operation,
     provider: &P,
 ) -> crate::Result<query_core::response_ir::Item> {
+    let op_name = match &operation {
+        Operation::Read(s) => s.name().to_string(),
+        Operation::Write(s) => s.name().to_string(),
+    };
+
     let tx_id = provider.tx_id().cloned();
     let response = provider
         .executor()
@@ -590,34 +652,19 @@ pub async fn execute_raw<P: crate::transaction::QueryExecutorProvider + ?Sized>(
         .await
         .map_err(Error::from_core)?;
 
-    let item = match response.data {
-        query_core::response_ir::Item::Map(mut map) => map
-            .shift_remove_index(0)
-            .map(|(_, v)| v)
-            .ok_or_else(|| crate::Error::RuntimeError("Inconsistent query result: No data returned".to_string()))?,
+    let data = unwrap_prisma_item(response.data);
+    let item = match data {
+        query_core::response_ir::Item::Map(mut map) => {
+            if map.contains_key(&op_name) {
+                map.shift_remove(&op_name).unwrap()
+            } else {
+                query_core::response_ir::Item::Map(map)
+            }
+        }
         item => item,
     };
 
-    Ok(unwrap_prisma_item(item))
-}
-
-// Pagination and Ordering (FindMany/FindFirst)
-impl<M: ModelMarker, Op, T> Query<M, Op, T> {
-    pub fn take(mut self, n: i64) -> Self {
-        self.state.arguments.insert(
-            "take".to_string(),
-            ArgumentValue::Scalar(crate::query_structure::PrismaValue::Int(n)),
-        );
-        self
-    }
-    pub fn skip(mut self, n: i64) -> Self {
-        self.state.arguments.insert(
-            "skip".to_string(),
-            ArgumentValue::Scalar(crate::query_structure::PrismaValue::Int(n)),
-        );
-        self
-    }
-    // Note: order_by needs a trait or specific impl because every model has its own OrderBy builder
+    Ok(item)
 }
 
 /// Generic trait for relation loading transitions
@@ -645,12 +692,17 @@ impl IncludeMarker for IncludeEmpty {
     }
 }
 
+pub trait IncludeBuilderTrait {
+    fn build(self) -> Vec<(String, ArgumentValue)>;
+}
+
 impl<M: ModelMarker, Op, T> Query<M, Op, T> {
     pub fn include<IM, F>(mut self, f: F) -> Query<M, Op, <T as IncludeTransition<IM>>::Output>
     where
         F: FnOnce(&mut M::Include) -> IM,
         IM: IncludeMarker,
         T: IncludeTransition<IM>,
+        M::Include: IncludeBuilderTrait + Default,
     {
         let mut builder = M::Include::default();
         let marker = f(&mut builder);
@@ -664,12 +716,13 @@ impl<M: ModelMarker, Op, T> Query<M, Op, T> {
             }
         }
 
-        if let Some(nested) = marker.into_selection() {
+        if let Some(mut nested) = marker.into_selection() {
+            // Apply arguments from the include builder if any
+            for (k, v) in builder.build() {
+                nested.push_argument(k, v);
+            }
             self.state.selection.push_nested_selection(nested);
         }
-
-        // Note: Include builders can also have arguments (like where/take on nested relations)
-        // We'll need a way to extract them if the builder populates them.
 
         self.with_type()
     }

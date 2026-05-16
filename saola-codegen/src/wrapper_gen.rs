@@ -181,21 +181,21 @@ pub fn generate_read_wrappers(model_name: &syn::Ident, model_metadata: &ModelMet
 
         transitions.push(quote! {
             impl<#(#generic_params),*> #include_transition_trait<#pascal_name> for #data_struct_name<#(#generic_params),*>
-            where #(#generic_params: ::saola_core::serde::de::DeserializeOwned + Send + Sync),*
+            where #(#generic_params: ::saola_core::serde::de::DeserializeOwned + Send + Sync + Default),*
             {
                 type Output = #data_struct_name<#(#next_generic_params_simple),*>;
             }
 
             impl<#(#generic_params),*, M> #include_transition_trait<#pascal_name_with<M>> for #data_struct_name<#(#generic_params),*>
             where 
-                #(#generic_params: ::saola_core::serde::de::DeserializeOwned + Send + Sync),*,
+                #(#generic_params: ::saola_core::serde::de::DeserializeOwned + Send + Sync + Default),*,
                 #related_model_data: #related_include_transition_trait<M>
             {
                 type Output = #data_struct_name<#(#next_generic_params_with),*>;
             }
 
-            impl<#(#generic_params),*, U: ::saola_core::serde::de::DeserializeOwned + Send + Sync> #include_transition_trait<#pascal_name_as<U>> for #data_struct_name<#(#generic_params),*>
-            where #(#generic_params: ::saola_core::serde::de::DeserializeOwned + Send + Sync),*
+            impl<#(#generic_params),*, U: ::saola_core::serde::de::DeserializeOwned + Send + Sync + Default> #include_transition_trait<#pascal_name_as<U>> for #data_struct_name<#(#generic_params),*>
+            where #(#generic_params: ::saola_core::serde::de::DeserializeOwned + Send + Sync + Default),*
             {
                 type Output = #data_struct_name<#(#next_generic_params_as),*>;
             }
@@ -204,7 +204,7 @@ pub fn generate_read_wrappers(model_name: &syn::Ident, model_metadata: &ModelMet
 
     transitions.push(quote! {
         impl<#(#generic_params),*> #include_transition_trait<#empty_marker_name> for #data_struct_name<#(#generic_params),*>
-        where #(#generic_params: ::saola_core::serde::de::DeserializeOwned + Send + Sync),*
+        where #(#generic_params: ::saola_core::serde::de::DeserializeOwned + Send + Sync + Default),*
         {
             type Output = #data_struct_name<#(#generic_params),*>;
         }
@@ -227,14 +227,14 @@ pub fn generate_read_wrappers(model_name: &syn::Ident, model_metadata: &ModelMet
     let mut wrapper_impls = Vec::new();
 
     let wrappers = [
-        (&many_name, &where_name, quote! { Vec<T> }),
-        (&unique_name, &unique_where_name, quote! { Option<T> }),
-        (&first_name, &where_name, quote! { Option<T> }),
-        (&unique_throw_name, &unique_where_name, quote! { T }),
-        (&first_throw_name, &where_name, quote! { T }),
+        (&many_name, &where_name, quote! { Vec<T> }, quote! { Vec<U> }),
+        (&unique_name, &unique_where_name, quote! { Option<T> }, quote! { Option<U> }),
+        (&first_name, &where_name, quote! { Option<T> }, quote! { Option<U> }),
+        (&unique_throw_name, &unique_where_name, quote! { T }, quote! { U }),
+        (&first_throw_name, &where_name, quote! { T }, quote! { U }),
     ];
 
-    for (w_name, w_where, r_type) in wrappers {
+    for (w_name, w_where, r_type, r_type_u) in wrappers {
         let select_name = format_ident!("{}SelectBuilder", model_name);
 
         let pagination_methods = if w_name == &many_name || w_name == &first_name || w_name == &first_throw_name {
@@ -282,10 +282,10 @@ pub fn generate_read_wrappers(model_name: &syn::Ident, model_metadata: &ModelMet
                 pub _phantom: std::marker::PhantomData<T>,
             }
 
-            impl<T: ::saola_core::serde::de::DeserializeOwned + Send + Sync> #w_name<T> {
-                pub fn where_clause(mut self, filter: impl ::saola_core::filters::IntoWhere<#w_where>) -> Self {
+            impl<T: ::saola_core::serde::de::DeserializeOwned + Send + Sync + ::saola_core::builder::FromResponseIr> #w_name<T> {
+                pub fn where_clause<F>(mut self, f: F) -> Self where F: FnOnce(&mut #w_where) {
                     let mut builder = #w_where::default();
-                    filter.into_where(&mut builder);
+                    f(&mut builder);
                     use ::saola_core::FilterBuilder;
                     let map = builder.build();
                     if !map.is_empty() {
@@ -293,6 +293,10 @@ pub fn generate_read_wrappers(model_name: &syn::Ident, model_metadata: &ModelMet
                         self.inner.add_filter_arg("where".to_string(), ::saola_core::query_core::ArgumentValue::Object(map));
                     }
                     self
+                }
+
+                pub fn where_unique<F>(self, f: F) -> Self where F: FnOnce(&mut #w_where) {
+                    self.where_clause(f)
                 }
 
                 #pagination_methods
@@ -308,10 +312,10 @@ pub fn generate_read_wrappers(model_name: &syn::Ident, model_metadata: &ModelMet
                 }
 
                 pub fn select_as<U: ::saola_core::builder::SelectStruct>(
-                    mut self,
+                    self,
                 ) -> #w_name<U> {
-                    self.inner = self.inner.select_as::<U>();
-                    #w_name { inner: self.inner, _phantom: std::marker::PhantomData }
+                    let new_inner = self.inner.select_as::<U, #r_type_u>();
+                    #w_name { inner: new_inner, _phantom: std::marker::PhantomData }
                 }
 
                 pub fn include<M, F>(mut self, f: F) -> #w_name<<T as #include_transition_trait<M>>::Output>
@@ -365,7 +369,7 @@ pub fn generate_read_wrappers(model_name: &syn::Ident, model_metadata: &ModelMet
         }
 
         pub trait #include_transition_trait<M> {
-            type Output: ::saola_core::serde::de::DeserializeOwned + Send + Sync;
+            type Output: ::saola_core::serde::de::DeserializeOwned + Send + Sync + Default;
         }
 
         #(#include_markers)*
@@ -458,10 +462,10 @@ pub fn generate_write_wrapper(model_name: &syn::Ident, model_metadata: &ModelMet
             pub _phantom: std::marker::PhantomData<T>,
         }
 
-        impl<T: ::saola_core::serde::de::DeserializeOwned + Send + Sync> #write_wrapper_name<T> {
-            pub fn where_clause(mut self, filter: impl ::saola_core::filters::IntoWhere<#unique_where_builder_name>) -> Self {
+        impl<T: ::saola_core::serde::de::DeserializeOwned + Send + Sync + ::saola_core::builder::FromResponseIr> #write_wrapper_name<T> {
+            pub fn where_clause<F>(mut self, f: F) -> Self where F: FnOnce(&mut #unique_where_builder_name) {
                 let mut builder = #unique_where_builder_name::default();
-                filter.into_where(&mut builder);
+                f(&mut builder);
                 use ::saola_core::FilterBuilder;
                 let map = builder.build();
                 if !map.is_empty() {
@@ -469,6 +473,10 @@ pub fn generate_write_wrapper(model_name: &syn::Ident, model_metadata: &ModelMet
                     self.inner.add_filter_arg("where".to_string(), ::saola_core::query_core::ArgumentValue::Object(map));
                 }
                 self
+            }
+
+            pub fn where_unique<F>(self, f: F) -> Self where F: FnOnce(&mut #unique_where_builder_name) {
+                self.where_clause(f)
             }
 
             pub fn data<F>(mut self, f: F) -> Self
@@ -510,10 +518,10 @@ pub fn generate_write_wrapper(model_name: &syn::Ident, model_metadata: &ModelMet
             }
 
             pub fn select_as<U: ::saola_core::builder::SelectStruct>(
-                mut self,
+                self,
             ) -> #write_wrapper_name<U> {
-                self.inner = self.inner.select_as::<U>();
-                #write_wrapper_name { inner: self.inner, _phantom: std::marker::PhantomData }
+                let new_inner = self.inner.select_as::<U, U>();
+                #write_wrapper_name { inner: new_inner, _phantom: std::marker::PhantomData }
             }
 
             pub fn include<M, F>(mut self, f: F) -> #write_wrapper_name<<T as #include_transition_trait<M>>::Output>
@@ -590,6 +598,12 @@ pub fn generate_upsert_wrapper(model_name: &syn::Ident, model_metadata: &ModelMe
                 self
             }
 
+            pub fn where_unique<F>(self, f: F) -> Self
+            where F: FnOnce(&mut #where_unique_builder_name)
+            {
+                self.where_clause(f)
+            }
+
             pub fn update<F>(mut self, f: F) -> Self
             where F: FnOnce(&mut #data_builder_name)
             {
@@ -655,11 +669,11 @@ pub fn generate_create_many_wrapper(
                 self
             }
 
-            pub async fn exec_with(self, provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_)) -> ::saola_core::Result<T> {
+            pub async fn exec_with(self, provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_)) -> ::saola_core::Result<i64> {
                 self.inner.exec_with(provider).await
             }
 
-            pub async fn exec(self) -> ::saola_core::Result<T> {
+            pub async fn exec(self) -> ::saola_core::Result<i64> {
                 self.inner.exec().await
             }
         }
@@ -676,11 +690,12 @@ pub fn generate_create_many_and_return_wrapper(
     let scalar_field_names = &model_metadata.scalar_field_names;
 
     quote! {
-        pub struct #wrapper_name {
-            pub inner: ::saola_core::CreateManyAndReturnBuilder<#model_name>,
+        pub struct #wrapper_name<T = #model_name> {
+            pub inner: ::saola_core::CreateManyAndReturnBuilder<T>,
+            pub _phantom: std::marker::PhantomData<T>,
         }
 
-        impl #wrapper_name {
+        impl<T: ::saola_core::serde::de::DeserializeOwned + Send + Sync + ::saola_core::builder::FromResponseIr> #wrapper_name<T> {
             pub fn data<F>(mut self, f: F) -> Self
             where F: FnOnce(&mut #scalar_data_builder_name)
             {
@@ -703,17 +718,24 @@ pub fn generate_create_many_and_return_wrapper(
                 self
             }
 
-            pub fn select<F>(mut self, f: F) -> #wrapper_name where F: FnOnce(&mut #select_builder_name) {
+            pub fn select<F>(mut self, f: F) -> #wrapper_name<::saola_core::serde_json::Value> where F: FnOnce(&mut #select_builder_name) {
                 let mut builder = #select_builder_name::default();
                 f(&mut builder);
                 let selections: Vec<::saola_core::query_core::Selection> = builder.into();
                 use ::saola_core::Selectable;
                 self.inner.state.selection.clear_nested_selections();
                 for sel in selections { self.inner.add_nested_selection(sel); }
-                self
+                #wrapper_name { inner: self.inner.with_type(), _phantom: std::marker::PhantomData }
             }
 
-            pub async fn exec_with(self, provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_)) -> ::saola_core::Result<Vec<#model_name>> {
+            pub fn select_as<U: ::saola_core::builder::SelectStruct>(
+                self,
+            ) -> #wrapper_name<U> {
+                let new_inner = self.inner.select_as::<U, U>();
+                #wrapper_name { inner: new_inner, _phantom: std::marker::PhantomData }
+            }
+
+            pub async fn exec_with(self, provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_)) -> ::saola_core::Result<Vec<T>> {
                 let mut builder = self;
                 if builder.inner.state.selection.nested_selections().is_empty() {
                     for field in &[#(#scalar_field_names),*] {
@@ -724,7 +746,7 @@ pub fn generate_create_many_and_return_wrapper(
                 builder.inner.exec_with(provider).await
             }
 
-            pub async fn exec(self) -> ::saola_core::Result<Vec<#model_name>> {
+            pub async fn exec(self) -> ::saola_core::Result<Vec<T>> {
                 let mut builder = self;
                 if builder.inner.state.selection.nested_selections().is_empty() {
                     for field in &[#(#scalar_field_names),*] {
@@ -752,17 +774,17 @@ pub fn generate_update_many_wrapper(
         }
 
         impl #wrapper_name {
-            pub fn where_clause(mut self, filter: impl ::saola_core::filters::IntoWhere<#where_builder_name>) -> Self {
-                let mut builder = #where_builder_name::default();
-                filter.into_where(&mut builder);
-                use ::saola_core::FilterBuilder;
-                let map = builder.build();
-                if !map.is_empty() {
-                    use ::saola_core::Filterable;
-                    self.inner.add_filter_arg("where".to_string(), ::saola_core::query_core::ArgumentValue::Object(map));
+                pub fn where_clause<F>(mut self, f: F) -> Self where F: FnOnce(&mut #where_builder_name) {
+                    let mut builder = #where_builder_name::default();
+                    f(&mut builder);
+                    use ::saola_core::FilterBuilder;
+                    let map = builder.build();
+                    if !map.is_empty() {
+                        use ::saola_core::Filterable;
+                        self.inner.add_filter_arg("where".to_string(), ::saola_core::query_core::ArgumentValue::Object(map));
+                    }
+                    self
                 }
-                self
-            }
 
             pub fn data<F>(mut self, f: F) -> Self
             where F: FnOnce(&mut #scalar_data_builder_name)
@@ -774,11 +796,11 @@ pub fn generate_update_many_wrapper(
                 self
             }
 
-            pub async fn exec_with(self, provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_)) -> ::saola_core::Result<T> {
+            pub async fn exec_with(self, provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_)) -> ::saola_core::Result<i64> {
                 self.inner.exec_with(provider).await
             }
 
-            pub async fn exec(self) -> ::saola_core::Result<T> {
+            pub async fn exec(self) -> ::saola_core::Result<i64> {
                 self.inner.exec().await
             }
         }
@@ -796,22 +818,23 @@ pub fn generate_update_many_and_return_wrapper(
     let scalar_field_names = &model_metadata.scalar_field_names;
 
     quote! {
-        pub struct #wrapper_name {
-            pub inner: ::saola_core::UpdateManyAndReturnBuilder<#model_name>,
+        pub struct #wrapper_name<T = #model_name> {
+            pub inner: ::saola_core::UpdateManyAndReturnBuilder<T>,
+            pub _phantom: std::marker::PhantomData<T>,
         }
 
-        impl #wrapper_name {
-            pub fn where_clause(mut self, filter: impl ::saola_core::filters::IntoWhere<#where_builder_name>) -> Self {
-                let mut builder = #where_builder_name::default();
-                filter.into_where(&mut builder);
-                use ::saola_core::FilterBuilder;
-                let map = builder.build();
-                if !map.is_empty() {
-                    use ::saola_core::Filterable;
-                    self.inner.add_filter_arg("where".to_string(), ::saola_core::query_core::ArgumentValue::Object(map));
+        impl<T: ::saola_core::serde::de::DeserializeOwned + Send + Sync + ::saola_core::builder::FromResponseIr> #wrapper_name<T> {
+                pub fn where_clause<F>(mut self, f: F) -> Self where F: FnOnce(&mut #where_builder_name) {
+                    let mut builder = #where_builder_name::default();
+                    f(&mut builder);
+                    use ::saola_core::FilterBuilder;
+                    let map = builder.build();
+                    if !map.is_empty() {
+                        use ::saola_core::Filterable;
+                        self.inner.add_filter_arg("where".to_string(), ::saola_core::query_core::ArgumentValue::Object(map));
+                    }
+                    self
                 }
-                self
-            }
 
             pub fn data<F>(mut self, f: F) -> Self
             where F: FnOnce(&mut #scalar_data_builder_name)
@@ -823,17 +846,24 @@ pub fn generate_update_many_and_return_wrapper(
                 self
             }
 
-            pub fn select<F>(mut self, f: F) -> #wrapper_name where F: FnOnce(&mut #select_builder_name) {
+            pub fn select<F>(mut self, f: F) -> #wrapper_name<::saola_core::serde_json::Value> where F: FnOnce(&mut #select_builder_name) {
                 let mut builder = #select_builder_name::default();
                 f(&mut builder);
                 let selections: Vec<::saola_core::query_core::Selection> = builder.into();
                 use ::saola_core::Selectable;
                 self.inner.state.selection.clear_nested_selections();
                 for sel in selections { self.inner.add_nested_selection(sel); }
-                self
+                #wrapper_name { inner: self.inner.with_type(), _phantom: std::marker::PhantomData }
             }
 
-            pub async fn exec_with(self, provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_)) -> ::saola_core::Result<Vec<#model_name>> {
+            pub fn select_as<U: ::saola_core::builder::SelectStruct>(
+                self,
+            ) -> #wrapper_name<U> {
+                let new_inner = self.inner.select_as::<U, U>();
+                #wrapper_name { inner: new_inner, _phantom: std::marker::PhantomData }
+            }
+
+            pub async fn exec_with(self, provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_)) -> ::saola_core::Result<Vec<T>> {
                 let mut builder = self;
                 if builder.inner.state.selection.nested_selections().is_empty() {
                     for field in &[#(#scalar_field_names),*] {
@@ -844,7 +874,7 @@ pub fn generate_update_many_and_return_wrapper(
                 builder.inner.exec_with(provider).await
             }
 
-            pub async fn exec(self) -> ::saola_core::Result<Vec<#model_name>> {
+            pub async fn exec(self) -> ::saola_core::Result<Vec<T>> {
                 let mut builder = self;
                 if builder.inner.state.selection.nested_selections().is_empty() {
                     for field in &[#(#scalar_field_names),*] {
@@ -871,23 +901,23 @@ pub fn generate_delete_many_wrapper(
         }
 
         impl #wrapper_name {
-            pub fn where_clause(mut self, filter: impl ::saola_core::filters::IntoWhere<#where_builder_name>) -> Self {
-                let mut builder = #where_builder_name::default();
-                filter.into_where(&mut builder);
-                use ::saola_core::FilterBuilder;
-                let map = builder.build();
-                if !map.is_empty() {
-                    use ::saola_core::Filterable;
-                    self.inner.add_filter_arg("where".to_string(), ::saola_core::query_core::ArgumentValue::Object(map));
+                pub fn where_clause<F>(mut self, f: F) -> Self where F: FnOnce(&mut #where_builder_name) {
+                    let mut builder = #where_builder_name::default();
+                    f(&mut builder);
+                    use ::saola_core::FilterBuilder;
+                    let map = builder.build();
+                    if !map.is_empty() {
+                        use ::saola_core::Filterable;
+                        self.inner.add_filter_arg("where".to_string(), ::saola_core::query_core::ArgumentValue::Object(map));
+                    }
+                    self
                 }
-                self
-            }
 
-            pub async fn exec_with(self, provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_)) -> ::saola_core::Result<T> {
+            pub async fn exec_with(self, provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_)) -> ::saola_core::Result<i64> {
                 self.inner.exec_with(provider).await
             }
 
-            pub async fn exec(self) -> ::saola_core::Result<T> {
+            pub async fn exec(self) -> ::saola_core::Result<i64> {
                 self.inner.exec().await
             }
         }
@@ -904,17 +934,17 @@ pub fn generate_count_wrapper(model_name: &syn::Ident) -> proc_macro2::TokenStre
         }
 
         impl #count_wrapper_name {
-            pub fn where_clause(mut self, filter: impl ::saola_core::filters::IntoWhere<#where_builder_name>) -> Self {
-                let mut builder = #where_builder_name::default();
-                filter.into_where(&mut builder);
-                use ::saola_core::FilterBuilder;
-                let map = builder.build();
-                if !map.is_empty() {
-                    use ::saola_core::Filterable;
-                    self.inner.add_filter_arg("where".to_string(), ::saola_core::query_core::ArgumentValue::Object(map));
+                pub fn where_clause<F>(mut self, f: F) -> Self where F: FnOnce(&mut #where_builder_name) {
+                    let mut builder = #where_builder_name::default();
+                    f(&mut builder);
+                    use ::saola_core::FilterBuilder;
+                    let map = builder.build();
+                    if !map.is_empty() {
+                        use ::saola_core::Filterable;
+                        self.inner.add_filter_arg("where".to_string(), ::saola_core::query_core::ArgumentValue::Object(map));
+                    }
+                    self
                 }
-                self
-            }
 
             pub async fn exec_with(self, provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_)) -> ::saola_core::Result<i64> {
                 self.inner.exec_with(provider).await
@@ -944,17 +974,17 @@ pub fn generate_aggregate_wrapper(model_name: &syn::Ident) -> proc_macro2::Token
         }
 
         impl #aggregate_wrapper_name {
-            pub fn where_clause(mut self, filter: impl ::saola_core::filters::IntoWhere<#where_builder_name>) -> Self {
-                let mut builder = #where_builder_name::default();
-                filter.into_where(&mut builder);
-                use ::saola_core::FilterBuilder;
-                let map = builder.build();
-                if !map.is_empty() {
-                    use ::saola_core::Filterable;
-                    self.inner.add_filter_arg("where".to_string(), ::saola_core::query_core::ArgumentValue::Object(map));
+                pub fn where_clause<F>(mut self, f: F) -> Self where F: FnOnce(&mut #where_builder_name) {
+                    let mut builder = #where_builder_name::default();
+                    f(&mut builder);
+                    use ::saola_core::FilterBuilder;
+                    let map = builder.build();
+                    if !map.is_empty() {
+                        use ::saola_core::Filterable;
+                        self.inner.add_filter_arg("where".to_string(), ::saola_core::query_core::ArgumentValue::Object(map));
+                    }
+                    self
                 }
-                self
-            }
 
             pub fn count<F>(mut self, f: F) -> Self
             where F: FnOnce(&mut #count_builder)
@@ -1056,21 +1086,21 @@ pub fn generate_group_by_wrapper(model_name: &syn::Ident) -> proc_macro2::TokenS
         }
 
         impl #group_by_wrapper_name {
-            pub fn where_clause(mut self, filter: impl ::saola_core::filters::IntoWhere<#where_builder_name>) -> Self {
-                let mut builder = #where_builder_name::default();
-                filter.into_where(&mut builder);
-                use ::saola_core::FilterBuilder;
-                let map = builder.build();
-                if !map.is_empty() {
-                    use ::saola_core::Filterable;
-                    self.inner.add_filter_arg("where".to_string(), ::saola_core::query_core::ArgumentValue::Object(map));
+                pub fn where_clause<F>(mut self, f: F) -> Self where F: FnOnce(&mut #where_builder_name) {
+                    let mut builder = #where_builder_name::default();
+                    f(&mut builder);
+                    use ::saola_core::FilterBuilder;
+                    let map = builder.build();
+                    if !map.is_empty() {
+                        use ::saola_core::Filterable;
+                        self.inner.add_filter_arg("where".to_string(), ::saola_core::query_core::ArgumentValue::Object(map));
+                    }
+                    self
                 }
-                self
-            }
 
-            pub fn having(mut self, filter: impl ::saola_core::filters::IntoWhere<#where_builder_name>) -> Self {
+            pub fn having<F>(mut self, f: F) -> Self where F: FnOnce(&mut #where_builder_name) {
                 let mut builder = #where_builder_name::default();
-                filter.into_where(&mut builder);
+                f(&mut builder);
                 use ::saola_core::FilterBuilder;
                 let map = builder.build();
                 if !map.is_empty() {

@@ -107,8 +107,8 @@ impl UserWhereBuilder {
             _phantom: std::marker::PhantomData,
         }
     }
-    pub fn score(&mut self) -> ::saola_core::StringFilter<'_, Self> {
-        ::saola_core::StringFilter {
+    pub fn score(&mut self) -> ::saola_core::FloatFilter<'_, Self> {
+        ::saola_core::FloatFilter {
             builder: self,
             field_name: "score",
             _phantom: std::marker::PhantomData,
@@ -121,8 +121,8 @@ impl UserWhereBuilder {
             _phantom: std::marker::PhantomData,
         }
     }
-    pub fn created_at(&mut self) -> ::saola_core::StringFilter<'_, Self> {
-        ::saola_core::StringFilter {
+    pub fn created_at(&mut self) -> ::saola_core::DateTimeFilter<'_, Self> {
+        ::saola_core::DateTimeFilter {
             builder: self,
             field_name: "createdAt",
             _phantom: std::marker::PhantomData,
@@ -186,6 +186,11 @@ impl UserUniqueWhereBuilder {
 #[derive(Default)]
 pub struct UserOrderByBuilder {
     pub args: Vec<::saola_core::ArgumentValue>,
+}
+impl ::saola_core::builder::OrderByBuilderTrait for UserOrderByBuilder {
+    fn build(self) -> Vec<::saola_core::ArgumentValue> {
+        self.args
+    }
 }
 impl UserOrderByBuilder {
     pub fn id(&mut self, order: ::saola_core::SortOrder) -> &mut Self {
@@ -284,7 +289,7 @@ impl UserSelectBuilder {
     }
     #[allow(non_snake_case)]
     pub fn _validate_field_score(&self) {}
-    pub fn score(&mut self) -> ::saola_core::SelectionField<'_, String, Self> {
+    pub fn score(&mut self) -> ::saola_core::SelectionField<'_, f64, Self> {
         self.selections
             .push(::saola_core::query_core::Selection::with_name("score".to_string()));
         ::saola_core::SelectionField::new(self)
@@ -298,7 +303,9 @@ impl UserSelectBuilder {
     }
     #[allow(non_snake_case)]
     pub fn _validate_field_createdAt(&self) {}
-    pub fn created_at(&mut self) -> ::saola_core::SelectionField<'_, String, Self> {
+    pub fn created_at(
+        &mut self,
+    ) -> ::saola_core::SelectionField<'_, ::saola_core::chrono::DateTime<::saola_core::chrono::Utc>, Self> {
         self.selections
             .push(::saola_core::query_core::Selection::with_name("createdAt".to_string()));
         ::saola_core::SelectionField::new(self)
@@ -340,140 +347,6 @@ impl From<UserSelectBuilder> for Vec<::saola_core::query_core::Selection> {
     fn from(b: UserSelectBuilder) -> Self {
         b.selections
     }
-}
-#[derive(Default)]
-pub struct UserIncludeBuilder {
-    pub args: Vec<(String, ::saola_core::query_core::ArgumentValue)>,
-}
-impl UserIncludeBuilder {
-    pub fn posts(&mut self) -> UserIncludePosts {
-        let mut sel = ::saola_core::query_core::Selection::with_name("posts".to_string());
-        for f in super::super::post_dir::builders::PostMarker::SCALAR_FIELDS {
-            sel.push_nested_selection(::saola_core::query_core::Selection::with_name(f.to_string()));
-        }
-        UserIncludePosts { selection: sel }
-    }
-    pub fn posts_as<U: ::saola_core::builder::SelectStruct>(&mut self) -> UserIncludePostsAs<U> {
-        let mut sel = ::saola_core::query_core::Selection::with_name("posts".to_string());
-        for f in U::selections() {
-            sel.push_nested_selection(f);
-        }
-        UserIncludePostsAs {
-            selection: sel,
-            _phantom: std::marker::PhantomData,
-        }
-    }
-    pub fn profile(&mut self) -> UserIncludeProfile {
-        let mut sel = ::saola_core::query_core::Selection::with_name("profile".to_string());
-        for f in super::super::profile_dir::builders::ProfileMarker::SCALAR_FIELDS {
-            sel.push_nested_selection(::saola_core::query_core::Selection::with_name(f.to_string()));
-        }
-        UserIncludeProfile { selection: sel }
-    }
-    pub fn profile_as<U: ::saola_core::builder::SelectStruct>(&mut self) -> UserIncludeProfileAs<U> {
-        let mut sel = ::saola_core::query_core::Selection::with_name("profile".to_string());
-        for f in U::selections() {
-            sel.push_nested_selection(f);
-        }
-        UserIncludeProfileAs {
-            selection: sel,
-            _phantom: std::marker::PhantomData,
-        }
-    }
-}
-pub struct UserIncludePosts {
-    pub selection: ::saola_core::query_core::Selection,
-}
-impl ::saola_core::builder::IncludeMarker for UserIncludePosts {
-    fn into_selection(self) -> Option<::saola_core::query_core::Selection> {
-        Some(self.selection)
-    }
-}
-impl UserIncludePosts {
-    pub fn model_as<U: ::saola_core::builder::SelectStruct>(mut self) -> UserIncludePostsAs<U> {
-        self.selection.clear_nested_selections();
-        for sel in U::selections() {
-            self.selection.push_nested_selection(sel);
-        }
-        UserIncludePostsAs {
-            selection: self.selection,
-            _phantom: std::marker::PhantomData,
-        }
-    }
-}
-pub struct UserIncludePostsAs<U> {
-    pub selection: ::saola_core::query_core::Selection,
-    pub _phantom: std::marker::PhantomData<U>,
-}
-impl<U> ::saola_core::builder::IncludeMarker for UserIncludePostsAs<U> {
-    fn into_selection(self) -> Option<::saola_core::query_core::Selection> {
-        Some(self.selection)
-    }
-}
-pub struct UserIncludeProfile {
-    pub selection: ::saola_core::query_core::Selection,
-}
-impl ::saola_core::builder::IncludeMarker for UserIncludeProfile {
-    fn into_selection(self) -> Option<::saola_core::query_core::Selection> {
-        Some(self.selection)
-    }
-}
-impl UserIncludeProfile {
-    pub fn model_as<U: ::saola_core::builder::SelectStruct>(mut self) -> UserIncludeProfileAs<U> {
-        self.selection.clear_nested_selections();
-        for sel in U::selections() {
-            self.selection.push_nested_selection(sel);
-        }
-        UserIncludeProfileAs {
-            selection: self.selection,
-            _phantom: std::marker::PhantomData,
-        }
-    }
-}
-pub struct UserIncludeProfileAs<U> {
-    pub selection: ::saola_core::query_core::Selection,
-    pub _phantom: std::marker::PhantomData<U>,
-}
-impl<U> ::saola_core::builder::IncludeMarker for UserIncludeProfileAs<U> {
-    fn into_selection(self) -> Option<::saola_core::query_core::Selection> {
-        Some(self.selection)
-    }
-}
-impl<T0, T1> ::saola_core::builder::IncludeTransition<UserIncludePosts> for UserData<T0, T1>
-where
-    T0: ::saola_core::builder::FromResponseIr + Default + Send + Sync,
-    T1: ::saola_core::builder::FromResponseIr + Default + Send + Sync,
-{
-    type Output = UserData<Vec<PostData>, T1>;
-}
-impl<U: ::saola_core::builder::SelectStruct, T0, T1> ::saola_core::builder::IncludeTransition<UserIncludePostsAs<U>>
-    for UserData<T0, T1>
-where
-    T0: ::saola_core::builder::FromResponseIr + Default + Send + Sync,
-    T1: ::saola_core::builder::FromResponseIr + Default + Send + Sync,
-{
-    type Output = UserData<Vec<U>, T1>;
-}
-impl<T0, T1> ::saola_core::builder::IncludeTransition<UserIncludeProfile> for UserData<T0, T1>
-where
-    T0: ::saola_core::builder::FromResponseIr + Default + Send + Sync,
-    T1: ::saola_core::builder::FromResponseIr + Default + Send + Sync,
-{
-    type Output = UserData<T0, Option<Box<ProfileData>>>;
-}
-impl<U: ::saola_core::builder::SelectStruct, T0, T1> ::saola_core::builder::IncludeTransition<UserIncludeProfileAs<U>>
-    for UserData<T0, T1>
-where
-    T0: ::saola_core::builder::FromResponseIr + Default + Send + Sync,
-    T1: ::saola_core::builder::FromResponseIr + Default + Send + Sync,
-{
-    type Output = UserData<T0, Option<U>>;
-}
-impl<U, T0, T1> ::saola_core::builder::SelectAsTransition<U> for UserData<T0, T1> {
-    type Output = U;
-}
-impl<SM, T0, T1> ::saola_core::builder::SelectTransition<SM> for UserData<T0, T1> {
-    type Output = ::saola_core::serde_json::Value;
 }
 #[derive(Default)]
 pub struct UserDataBuilder {
@@ -532,6 +405,66 @@ impl UserDataBuilder {
         self.data.insert(
             "score".to_string(),
             ::saola_core::query_core::ArgumentValue::Scalar(value.into()),
+        );
+        self
+    }
+    pub fn score_increment<T>(&mut self, value: T) -> &mut Self
+    where
+        T: Into<::saola_core::query_structure::PrismaValue>,
+    {
+        let mut map = ::saola_core::IndexMap::new();
+        map.insert(
+            "increment".to_string(),
+            ::saola_core::query_core::ArgumentValue::Scalar(value.into()),
+        );
+        self.data.insert(
+            "score".to_string(),
+            ::saola_core::query_core::ArgumentValue::Object(map),
+        );
+        self
+    }
+    pub fn score_decrement<T>(&mut self, value: T) -> &mut Self
+    where
+        T: Into<::saola_core::query_structure::PrismaValue>,
+    {
+        let mut map = ::saola_core::IndexMap::new();
+        map.insert(
+            "decrement".to_string(),
+            ::saola_core::query_core::ArgumentValue::Scalar(value.into()),
+        );
+        self.data.insert(
+            "score".to_string(),
+            ::saola_core::query_core::ArgumentValue::Object(map),
+        );
+        self
+    }
+    pub fn score_multiply<T>(&mut self, value: T) -> &mut Self
+    where
+        T: Into<::saola_core::query_structure::PrismaValue>,
+    {
+        let mut map = ::saola_core::IndexMap::new();
+        map.insert(
+            "multiply".to_string(),
+            ::saola_core::query_core::ArgumentValue::Scalar(value.into()),
+        );
+        self.data.insert(
+            "score".to_string(),
+            ::saola_core::query_core::ArgumentValue::Object(map),
+        );
+        self
+    }
+    pub fn score_divide<T>(&mut self, value: T) -> &mut Self
+    where
+        T: Into<::saola_core::query_structure::PrismaValue>,
+    {
+        let mut map = ::saola_core::IndexMap::new();
+        map.insert(
+            "divide".to_string(),
+            ::saola_core::query_core::ArgumentValue::Scalar(value.into()),
+        );
+        self.data.insert(
+            "score".to_string(),
+            ::saola_core::query_core::ArgumentValue::Object(map),
         );
         self
     }
@@ -706,6 +639,66 @@ impl UserScalarDataBuilder {
         self.data.insert(
             "score".to_string(),
             ::saola_core::query_core::ArgumentValue::Scalar(value.into()),
+        );
+        self
+    }
+    pub fn score_increment<T>(&mut self, value: T) -> &mut Self
+    where
+        T: Into<::saola_core::query_structure::PrismaValue>,
+    {
+        let mut map = ::saola_core::IndexMap::new();
+        map.insert(
+            "increment".to_string(),
+            ::saola_core::query_core::ArgumentValue::Scalar(value.into()),
+        );
+        self.data.insert(
+            "score".to_string(),
+            ::saola_core::query_core::ArgumentValue::Object(map),
+        );
+        self
+    }
+    pub fn score_decrement<T>(&mut self, value: T) -> &mut Self
+    where
+        T: Into<::saola_core::query_structure::PrismaValue>,
+    {
+        let mut map = ::saola_core::IndexMap::new();
+        map.insert(
+            "decrement".to_string(),
+            ::saola_core::query_core::ArgumentValue::Scalar(value.into()),
+        );
+        self.data.insert(
+            "score".to_string(),
+            ::saola_core::query_core::ArgumentValue::Object(map),
+        );
+        self
+    }
+    pub fn score_multiply<T>(&mut self, value: T) -> &mut Self
+    where
+        T: Into<::saola_core::query_structure::PrismaValue>,
+    {
+        let mut map = ::saola_core::IndexMap::new();
+        map.insert(
+            "multiply".to_string(),
+            ::saola_core::query_core::ArgumentValue::Scalar(value.into()),
+        );
+        self.data.insert(
+            "score".to_string(),
+            ::saola_core::query_core::ArgumentValue::Object(map),
+        );
+        self
+    }
+    pub fn score_divide<T>(&mut self, value: T) -> &mut Self
+    where
+        T: Into<::saola_core::query_structure::PrismaValue>,
+    {
+        let mut map = ::saola_core::IndexMap::new();
+        map.insert(
+            "divide".to_string(),
+            ::saola_core::query_core::ArgumentValue::Scalar(value.into()),
+        );
+        self.data.insert(
+            "score".to_string(),
+            ::saola_core::query_core::ArgumentValue::Object(map),
         );
         self
     }
@@ -1149,6 +1142,11 @@ pub struct UserSumAggregateSelectBuilder {
     pub selections: Vec<::saola_core::query_core::Selection>,
 }
 impl UserSumAggregateSelectBuilder {
+    pub fn score(&mut self) -> &mut Self {
+        self.selections
+            .push(::saola_core::query_core::Selection::with_name("score"));
+        self
+    }
     pub fn level(&mut self) -> &mut Self {
         self.selections
             .push(::saola_core::query_core::Selection::with_name("level"));
@@ -1160,6 +1158,11 @@ pub struct UserAvgAggregateSelectBuilder {
     pub selections: Vec<::saola_core::query_core::Selection>,
 }
 impl UserAvgAggregateSelectBuilder {
+    pub fn score(&mut self) -> &mut Self {
+        self.selections
+            .push(::saola_core::query_core::Selection::with_name("score"));
+        self
+    }
     pub fn level(&mut self) -> &mut Self {
         self.selections
             .push(::saola_core::query_core::Selection::with_name("level"));
@@ -1286,23 +1289,62 @@ pub struct UserQuery {
     pub provider: std::sync::Arc<dyn ::saola_core::transaction::QueryExecutorProvider>,
 }
 impl UserQuery {
-    pub fn find_many(&self) -> ::saola_core::Query<UserMarker, ::saola_core::FindMany, Vec<User>> {
-        ::saola_core::Query::new("findMany").with_provider(self.provider.clone())
+    pub fn find_many(&self) -> UserManyReadBuilder<User> {
+        UserManyReadBuilder {
+            inner: ::saola_core::ReadBuilder::find_many(
+                UserMarker::NAME.to_string(),
+                UserMarker::SCALAR_FIELDS.iter().map(|s| s.to_string()).collect(),
+            )
+            .with_provider(self.provider.clone()),
+            _phantom: std::marker::PhantomData,
+        }
     }
-    pub fn find_unique(&self) -> ::saola_core::Query<UserMarker, ::saola_core::FindUnique, Option<User>> {
-        ::saola_core::Query::new("findUnique").with_provider(self.provider.clone())
+    pub fn find_unique(&self) -> UserUniqueReadBuilder<User> {
+        UserUniqueReadBuilder {
+            inner: ::saola_core::ReadBuilder::find_unique(
+                UserMarker::NAME.to_string(),
+                UserMarker::SCALAR_FIELDS.iter().map(|s| s.to_string()).collect(),
+            )
+            .with_provider(self.provider.clone()),
+            _phantom: std::marker::PhantomData,
+        }
     }
-    pub fn find_first(&self) -> ::saola_core::Query<UserMarker, ::saola_core::FindFirst, Option<User>> {
-        ::saola_core::Query::new("findFirst").with_provider(self.provider.clone())
+    pub fn find_first(&self) -> UserFirstReadBuilder<User> {
+        UserFirstReadBuilder {
+            inner: ::saola_core::ReadBuilder::find_first(
+                UserMarker::NAME.to_string(),
+                UserMarker::SCALAR_FIELDS.iter().map(|s| s.to_string()).collect(),
+            )
+            .with_provider(self.provider.clone()),
+            _phantom: std::marker::PhantomData,
+        }
     }
-    pub fn find_unique_or_throw(&self) -> ::saola_core::Query<UserMarker, ::saola_core::FindUniqueOrThrow, User> {
-        ::saola_core::Query::new("findUniqueOrThrow").with_provider(self.provider.clone())
+    pub fn find_unique_or_throw(&self) -> UserUniqueOrThrowReadBuilder<User> {
+        UserUniqueOrThrowReadBuilder {
+            inner: ::saola_core::ReadBuilder::find_unique_or_throw(
+                UserMarker::NAME.to_string(),
+                UserMarker::SCALAR_FIELDS.iter().map(|s| s.to_string()).collect(),
+            )
+            .with_provider(self.provider.clone()),
+            _phantom: std::marker::PhantomData,
+        }
     }
-    pub fn find_first_or_throw(&self) -> ::saola_core::Query<UserMarker, ::saola_core::FindFirstOrThrow, User> {
-        ::saola_core::Query::new("findFirstOrThrow").with_provider(self.provider.clone())
+    pub fn find_first_or_throw(&self) -> UserFirstOrThrowReadBuilder<User> {
+        UserFirstOrThrowReadBuilder {
+            inner: ::saola_core::ReadBuilder::find_first_or_throw(
+                UserMarker::NAME.to_string(),
+                UserMarker::SCALAR_FIELDS.iter().map(|s| s.to_string()).collect(),
+            )
+            .with_provider(self.provider.clone()),
+            _phantom: std::marker::PhantomData,
+        }
     }
-    pub fn create(&self, email: String, name: String) -> ::saola_core::Query<UserMarker, ::saola_core::Create, User> {
-        let mut query = ::saola_core::Query::new("createOne").with_provider(self.provider.clone());
+    pub fn create(&self, email: String, name: String) -> UserWriteBuilder<User> {
+        let mut inner = ::saola_core::WriteBuilder::create(
+            UserMarker::NAME.to_string(),
+            UserMarker::SCALAR_FIELDS.iter().map(|s| s.to_string()).collect(),
+        )
+        .with_provider(self.provider.clone());
         let mut data_map = ::saola_core::IndexMap::new();
         data_map.insert(
             "email".to_string(),
@@ -1312,20 +1354,41 @@ impl UserQuery {
             "name".to_string(),
             ::saola_core::query_core::ArgumentValue::Scalar(::saola_core::query_structure::PrismaValue::from(name)),
         );
-        query.state.arguments.insert(
+        inner.state.arguments.insert(
             "data".to_string(),
             ::saola_core::query_core::ArgumentValue::Object(data_map),
         );
-        query
+        UserWriteBuilder {
+            inner,
+            _phantom: std::marker::PhantomData,
+        }
     }
-    pub fn update(&self) -> ::saola_core::Query<UserMarker, ::saola_core::Update, User> {
-        ::saola_core::Query::new("updateOne").with_provider(self.provider.clone())
+    pub fn update(&self) -> UserWriteBuilder<User> {
+        UserWriteBuilder {
+            inner: ::saola_core::WriteBuilder::update(
+                UserMarker::NAME.to_string(),
+                UserMarker::SCALAR_FIELDS.iter().map(|s| s.to_string()).collect(),
+            )
+            .with_provider(self.provider.clone()),
+            _phantom: std::marker::PhantomData,
+        }
     }
-    pub fn delete(&self) -> ::saola_core::Query<UserMarker, ::saola_core::Delete, User> {
-        ::saola_core::Query::new("deleteOne").with_provider(self.provider.clone())
+    pub fn delete(&self) -> UserWriteBuilder<User> {
+        UserWriteBuilder {
+            inner: ::saola_core::WriteBuilder::delete(
+                UserMarker::NAME.to_string(),
+                UserMarker::SCALAR_FIELDS.iter().map(|s| s.to_string()).collect(),
+            )
+            .with_provider(self.provider.clone()),
+            _phantom: std::marker::PhantomData,
+        }
     }
-    pub fn upsert(&self, email: String, name: String) -> ::saola_core::Query<UserMarker, ::saola_core::Upsert, User> {
-        let mut query = ::saola_core::Query::new("upsertOne").with_provider(self.provider.clone());
+    pub fn upsert(&self, email: String, name: String) -> UserUpsertBuilder {
+        let mut inner = ::saola_core::WriteBuilder::upsert(
+            UserMarker::NAME.to_string(),
+            UserMarker::SCALAR_FIELDS.iter().map(|s| s.to_string()).collect(),
+        )
+        .with_provider(self.provider.clone());
         let mut data_map = ::saola_core::IndexMap::new();
         data_map.insert(
             "email".to_string(),
@@ -1335,10 +1398,1845 @@ impl UserQuery {
             "name".to_string(),
             ::saola_core::query_core::ArgumentValue::Scalar(::saola_core::query_structure::PrismaValue::from(name)),
         );
-        query.state.arguments.insert(
+        inner.state.arguments.insert(
             "create".to_string(),
             ::saola_core::query_core::ArgumentValue::Object(data_map),
         );
-        query
+        UserUpsertBuilder { inner }
+    }
+    pub fn create_many(&self) -> UserCreateManyBuilder {
+        UserCreateManyBuilder {
+            inner: ::saola_core::CreateManyBuilder::new(UserMarker::NAME.to_string())
+                .with_provider(self.provider.clone()),
+        }
+    }
+    pub fn create_many_and_return(&self) -> UserCreateManyAndReturnBuilder {
+        UserCreateManyAndReturnBuilder {
+            inner: ::saola_core::CreateManyAndReturnBuilder::new(
+                UserMarker::NAME.to_string(),
+                UserMarker::SCALAR_FIELDS.iter().map(|s| s.to_string()).collect(),
+            )
+            .with_provider(self.provider.clone()),
+            _phantom: std::marker::PhantomData,
+        }
+    }
+    pub fn update_many(&self) -> UserUpdateManyBuilder {
+        UserUpdateManyBuilder {
+            inner: ::saola_core::UpdateManyBuilder::new(UserMarker::NAME.to_string())
+                .with_provider(self.provider.clone()),
+        }
+    }
+    pub fn update_many_and_return(&self) -> UserUpdateManyAndReturnBuilder {
+        UserUpdateManyAndReturnBuilder {
+            inner: ::saola_core::UpdateManyAndReturnBuilder::new(
+                UserMarker::NAME.to_string(),
+                UserMarker::SCALAR_FIELDS.iter().map(|s| s.to_string()).collect(),
+            )
+            .with_provider(self.provider.clone()),
+            _phantom: std::marker::PhantomData,
+        }
+    }
+    pub fn delete_many(&self) -> UserDeleteManyBuilder {
+        UserDeleteManyBuilder {
+            inner: ::saola_core::DeleteManyBuilder::new(UserMarker::NAME.to_string())
+                .with_provider(self.provider.clone()),
+        }
+    }
+    pub fn count(&self) -> UserCountBuilder {
+        UserCountBuilder {
+            inner: ::saola_core::CountBuilder::new(
+                UserMarker::NAME.to_string(),
+                UserMarker::SCALAR_FIELDS.iter().map(|s| s.to_string()).collect(),
+            )
+            .with_provider(self.provider.clone()),
+        }
+    }
+    pub fn aggregate(&self) -> UserAggregateBuilder {
+        UserAggregateBuilder {
+            inner: ::saola_core::AggregateBuilder::new(
+                UserMarker::NAME.to_string(),
+                UserMarker::SCALAR_FIELDS.iter().map(|s| s.to_string()).collect(),
+            )
+            .with_provider(self.provider.clone()),
+        }
+    }
+    pub fn group_by(&self) -> UserGroupByBuilder {
+        UserGroupByBuilder {
+            inner: ::saola_core::GroupByBuilder::new(
+                UserMarker::NAME.to_string(),
+                UserMarker::SCALAR_FIELDS.iter().map(|s| s.to_string()).collect(),
+            )
+            .with_provider(self.provider.clone()),
+        }
+    }
+}
+pub trait UserIncludeMarker {
+    fn into_selection(self) -> Option<::saola_core::query_core::Selection>;
+}
+pub trait UserIncludeTransition<M> {
+    type Output: ::saola_core::serde::de::DeserializeOwned + Send + Sync + Default;
+}
+pub struct UserIncludeEmpty;
+impl UserIncludeMarker for UserIncludeEmpty {
+    fn into_selection(self) -> Option<::saola_core::query_core::Selection> {
+        None
+    }
+}
+pub struct UserIncludePosts {
+    pub selection: ::saola_core::query_core::Selection,
+}
+impl UserIncludeMarker for UserIncludePosts {
+    fn into_selection(self) -> Option<::saola_core::query_core::Selection> {
+        Some(self.selection)
+    }
+}
+impl UserIncludePosts {
+    pub fn model_as<U: ::saola_core::builder::SelectStruct>(mut self) -> UserIncludePostsAs<U> {
+        self.selection.clear_nested_selections();
+        for sel in U::selections() {
+            self.selection.push_nested_selection(sel);
+        }
+        UserIncludePostsAs {
+            selection: self.selection,
+            _phantom: std::marker::PhantomData,
+        }
+    }
+}
+pub struct UserIncludePostsWith<M> {
+    pub selection: ::saola_core::query_core::Selection,
+    pub _phantom: std::marker::PhantomData<M>,
+}
+impl<M> UserIncludeMarker for UserIncludePostsWith<M> {
+    fn into_selection(self) -> Option<::saola_core::query_core::Selection> {
+        Some(self.selection)
+    }
+}
+impl<M> UserIncludePostsWith<M> {
+    pub fn model_as<U: ::saola_core::builder::SelectStruct>(mut self) -> UserIncludePostsAs<U> {
+        self.selection.clear_nested_selections();
+        for sel in U::selections() {
+            self.selection.push_nested_selection(sel);
+        }
+        UserIncludePostsAs {
+            selection: self.selection,
+            _phantom: std::marker::PhantomData,
+        }
+    }
+}
+pub struct UserIncludePostsAs<U> {
+    pub selection: ::saola_core::query_core::Selection,
+    pub _phantom: std::marker::PhantomData<U>,
+}
+impl<U> UserIncludeMarker for UserIncludePostsAs<U> {
+    fn into_selection(self) -> Option<::saola_core::query_core::Selection> {
+        Some(self.selection)
+    }
+}
+pub struct UserIncludeProfile {
+    pub selection: ::saola_core::query_core::Selection,
+}
+impl UserIncludeMarker for UserIncludeProfile {
+    fn into_selection(self) -> Option<::saola_core::query_core::Selection> {
+        Some(self.selection)
+    }
+}
+impl UserIncludeProfile {
+    pub fn model_as<U: ::saola_core::builder::SelectStruct>(mut self) -> UserIncludeProfileAs<U> {
+        self.selection.clear_nested_selections();
+        for sel in U::selections() {
+            self.selection.push_nested_selection(sel);
+        }
+        UserIncludeProfileAs {
+            selection: self.selection,
+            _phantom: std::marker::PhantomData,
+        }
+    }
+}
+pub struct UserIncludeProfileWith<M> {
+    pub selection: ::saola_core::query_core::Selection,
+    pub _phantom: std::marker::PhantomData<M>,
+}
+impl<M> UserIncludeMarker for UserIncludeProfileWith<M> {
+    fn into_selection(self) -> Option<::saola_core::query_core::Selection> {
+        Some(self.selection)
+    }
+}
+impl<M> UserIncludeProfileWith<M> {
+    pub fn model_as<U: ::saola_core::builder::SelectStruct>(mut self) -> UserIncludeProfileAs<U> {
+        self.selection.clear_nested_selections();
+        for sel in U::selections() {
+            self.selection.push_nested_selection(sel);
+        }
+        UserIncludeProfileAs {
+            selection: self.selection,
+            _phantom: std::marker::PhantomData,
+        }
+    }
+}
+pub struct UserIncludeProfileAs<U> {
+    pub selection: ::saola_core::query_core::Selection,
+    pub _phantom: std::marker::PhantomData<U>,
+}
+impl<U> UserIncludeMarker for UserIncludeProfileAs<U> {
+    fn into_selection(self) -> Option<::saola_core::query_core::Selection> {
+        Some(self.selection)
+    }
+}
+impl<T0, T1> UserIncludeTransition<UserIncludePosts> for UserData<T0, T1>
+where
+    T0: ::saola_core::serde::de::DeserializeOwned + Send + Sync + Default,
+    T1: ::saola_core::serde::de::DeserializeOwned + Send + Sync + Default,
+{
+    type Output = UserData<Vec<PostData>, T1>;
+}
+impl<T0, T1, M> UserIncludeTransition<UserIncludePostsWith<M>> for UserData<T0, T1>
+where
+    T0: ::saola_core::serde::de::DeserializeOwned + Send + Sync + Default,
+    T1: ::saola_core::serde::de::DeserializeOwned + Send + Sync + Default,
+    PostData: PostIncludeTransition<M>,
+{
+    type Output = UserData<Vec<<PostData as PostIncludeTransition<M>>::Output>, T1>;
+}
+impl<T0, T1, U: ::saola_core::serde::de::DeserializeOwned + Send + Sync + Default>
+    UserIncludeTransition<UserIncludePostsAs<U>> for UserData<T0, T1>
+where
+    T0: ::saola_core::serde::de::DeserializeOwned + Send + Sync + Default,
+    T1: ::saola_core::serde::de::DeserializeOwned + Send + Sync + Default,
+{
+    type Output = UserData<U, T1>;
+}
+impl<T0, T1> UserIncludeTransition<UserIncludeProfile> for UserData<T0, T1>
+where
+    T0: ::saola_core::serde::de::DeserializeOwned + Send + Sync + Default,
+    T1: ::saola_core::serde::de::DeserializeOwned + Send + Sync + Default,
+{
+    type Output = UserData<T0, Option<Box<ProfileData>>>;
+}
+impl<T0, T1, M> UserIncludeTransition<UserIncludeProfileWith<M>> for UserData<T0, T1>
+where
+    T0: ::saola_core::serde::de::DeserializeOwned + Send + Sync + Default,
+    T1: ::saola_core::serde::de::DeserializeOwned + Send + Sync + Default,
+    ProfileData: ProfileIncludeTransition<M>,
+{
+    type Output = UserData<T0, Option<Box<<ProfileData as ProfileIncludeTransition<M>>::Output>>>;
+}
+impl<T0, T1, U: ::saola_core::serde::de::DeserializeOwned + Send + Sync + Default>
+    UserIncludeTransition<UserIncludeProfileAs<U>> for UserData<T0, T1>
+where
+    T0: ::saola_core::serde::de::DeserializeOwned + Send + Sync + Default,
+    T1: ::saola_core::serde::de::DeserializeOwned + Send + Sync + Default,
+{
+    type Output = UserData<T0, U>;
+}
+impl<T0, T1> UserIncludeTransition<UserIncludeEmpty> for UserData<T0, T1>
+where
+    T0: ::saola_core::serde::de::DeserializeOwned + Send + Sync + Default,
+    T1: ::saola_core::serde::de::DeserializeOwned + Send + Sync + Default,
+{
+    type Output = UserData<T0, T1>;
+}
+impl UserIncludeTransition<UserIncludeEmpty> for ::saola_core::serde_json::Value {
+    type Output = ::saola_core::serde_json::Value;
+}
+impl UserIncludeTransition<UserIncludePosts> for ::saola_core::serde_json::Value {
+    type Output = ::saola_core::serde_json::Value;
+}
+impl<M> UserIncludeTransition<UserIncludePostsWith<M>> for ::saola_core::serde_json::Value {
+    type Output = ::saola_core::serde_json::Value;
+}
+impl<U> UserIncludeTransition<UserIncludePostsAs<U>> for ::saola_core::serde_json::Value {
+    type Output = ::saola_core::serde_json::Value;
+}
+impl UserIncludeTransition<UserIncludeProfile> for ::saola_core::serde_json::Value {
+    type Output = ::saola_core::serde_json::Value;
+}
+impl<M> UserIncludeTransition<UserIncludeProfileWith<M>> for ::saola_core::serde_json::Value {
+    type Output = ::saola_core::serde_json::Value;
+}
+impl<U> UserIncludeTransition<UserIncludeProfileAs<U>> for ::saola_core::serde_json::Value {
+    type Output = ::saola_core::serde_json::Value;
+}
+#[derive(Default)]
+pub struct UserIncludeBuilder {
+    pub args: ::saola_core::IndexMap<String, ::saola_core::query_core::ArgumentValue>,
+}
+impl UserIncludeBuilder {
+    pub fn scalar_selections() -> Vec<::saola_core::query_core::Selection> {
+        vec![
+            ::saola_core::query_core::Selection::with_name("id".to_string()),
+            ::saola_core::query_core::Selection::with_name("email".to_string()),
+            ::saola_core::query_core::Selection::with_name("name".to_string()),
+            ::saola_core::query_core::Selection::with_name("isActive".to_string()),
+            ::saola_core::query_core::Selection::with_name("score".to_string()),
+            ::saola_core::query_core::Selection::with_name("level".to_string()),
+            ::saola_core::query_core::Selection::with_name("createdAt".to_string()),
+        ]
+    }
+    pub fn where_clause<F>(&mut self, f: F) -> &mut Self
+    where
+        F: FnOnce(&mut UserWhereBuilder),
+    {
+        let mut builder = UserWhereBuilder::default();
+        f(&mut builder);
+        let map = builder.build();
+        if !map.is_empty() {
+            self.args.insert(
+                "where".to_string(),
+                ::saola_core::query_core::ArgumentValue::Object(map),
+            );
+        }
+        self
+    }
+    pub fn take(&mut self, take: i64) -> &mut Self {
+        self.args.insert(
+            "take".to_string(),
+            ::saola_core::query_core::ArgumentValue::Scalar(::saola_core::query_structure::PrismaValue::Int(take)),
+        );
+        self
+    }
+    pub fn skip(&mut self, skip: i64) -> &mut Self {
+        self.args.insert(
+            "skip".to_string(),
+            ::saola_core::query_core::ArgumentValue::Scalar(::saola_core::query_structure::PrismaValue::Int(skip)),
+        );
+        self
+    }
+    pub fn order_by<F>(&mut self, f: F) -> &mut Self
+    where
+        F: FnOnce(&mut UserOrderByBuilder),
+    {
+        let mut builder = UserOrderByBuilder::default();
+        f(&mut builder);
+        if !builder.args.is_empty() {
+            self.args.insert(
+                "orderBy".to_string(),
+                ::saola_core::query_core::ArgumentValue::List(builder.args),
+            );
+        }
+        self
+    }
+    pub fn cursor<F>(&mut self, f: F) -> &mut Self
+    where
+        F: FnOnce(&mut UserUniqueWhereBuilder),
+    {
+        let mut builder = UserUniqueWhereBuilder::default();
+        f(&mut builder);
+        let map = builder.build();
+        if !map.is_empty() {
+            self.args.insert(
+                "cursor".to_string(),
+                ::saola_core::query_core::ArgumentValue::Object(map),
+            );
+        }
+        self
+    }
+    pub fn empty(&mut self) -> UserIncludeEmpty {
+        UserIncludeEmpty
+    }
+    pub fn posts(&mut self) -> UserIncludePosts {
+        let mut builder = PostSelectBuilder::default();
+        builder.all();
+        let mut sel = ::saola_core::query_core::Selection::with_name("posts".to_string());
+        let fields: Vec<::saola_core::query_core::Selection> = builder.into();
+        for f in fields {
+            sel.push_nested_selection(f);
+        }
+        UserIncludePosts { selection: sel }
+    }
+    pub fn posts_with<M, F>(&mut self, f: F) -> UserIncludePostsWith<M>
+    where
+        F: FnOnce(&mut PostIncludeBuilder) -> M,
+        M: PostIncludeMarker,
+    {
+        let mut builder = PostIncludeBuilder::default();
+        let marker = f(&mut builder);
+        let mut sel = ::saola_core::query_core::Selection::with_name("posts".to_string());
+        for scalar in PostIncludeBuilder::scalar_selections() {
+            sel.push_nested_selection(scalar);
+        }
+        if let Some(nested) = marker.into_selection() {
+            sel.push_nested_selection(nested);
+        }
+        for (k, v) in std::mem::take(&mut builder.args) {
+            sel.push_argument(k, v);
+        }
+        UserIncludePostsWith {
+            selection: sel,
+            _phantom: std::marker::PhantomData,
+        }
+    }
+    pub fn posts_as<U: ::saola_core::serde::de::DeserializeOwned + Send + Sync, F>(
+        &mut self,
+        selection: (std::marker::PhantomData<U>, F),
+    ) -> UserIncludePostsAs<U>
+    where
+        F: FnOnce(&mut PostSelectBuilder),
+    {
+        let mut builder = PostSelectBuilder::default();
+        (selection.1)(&mut builder);
+        let mut sel = ::saola_core::query_core::Selection::with_name("posts".to_string());
+        let fields: Vec<::saola_core::query_core::Selection> = builder.into();
+        for f in fields {
+            sel.push_nested_selection(f);
+        }
+        UserIncludePostsAs {
+            selection: sel,
+            _phantom: std::marker::PhantomData,
+        }
+    }
+    pub fn profile(&mut self) -> UserIncludeProfile {
+        let mut builder = ProfileSelectBuilder::default();
+        builder.all();
+        let mut sel = ::saola_core::query_core::Selection::with_name("profile".to_string());
+        let fields: Vec<::saola_core::query_core::Selection> = builder.into();
+        for f in fields {
+            sel.push_nested_selection(f);
+        }
+        UserIncludeProfile { selection: sel }
+    }
+    pub fn profile_with<M, F>(&mut self, f: F) -> UserIncludeProfileWith<M>
+    where
+        F: FnOnce(&mut ProfileIncludeBuilder) -> M,
+        M: ProfileIncludeMarker,
+    {
+        let mut builder = ProfileIncludeBuilder::default();
+        let marker = f(&mut builder);
+        let mut sel = ::saola_core::query_core::Selection::with_name("profile".to_string());
+        for scalar in ProfileIncludeBuilder::scalar_selections() {
+            sel.push_nested_selection(scalar);
+        }
+        if let Some(nested) = marker.into_selection() {
+            sel.push_nested_selection(nested);
+        }
+        for (k, v) in std::mem::take(&mut builder.args) {
+            sel.push_argument(k, v);
+        }
+        UserIncludeProfileWith {
+            selection: sel,
+            _phantom: std::marker::PhantomData,
+        }
+    }
+    pub fn profile_as<U: ::saola_core::serde::de::DeserializeOwned + Send + Sync, F>(
+        &mut self,
+        selection: (std::marker::PhantomData<U>, F),
+    ) -> UserIncludeProfileAs<U>
+    where
+        F: FnOnce(&mut ProfileSelectBuilder),
+    {
+        let mut builder = ProfileSelectBuilder::default();
+        (selection.1)(&mut builder);
+        let mut sel = ::saola_core::query_core::Selection::with_name("profile".to_string());
+        let fields: Vec<::saola_core::query_core::Selection> = builder.into();
+        for f in fields {
+            sel.push_nested_selection(f);
+        }
+        UserIncludeProfileAs {
+            selection: sel,
+            _phantom: std::marker::PhantomData,
+        }
+    }
+}
+impl UserIncludeMarker for UserIncludeBuilder {
+    fn into_selection(self) -> Option<::saola_core::query_core::Selection> {
+        None
+    }
+}
+pub struct UserManyReadBuilder<T = User> {
+    pub inner: ::saola_core::ReadBuilder<Vec<T>>,
+    pub _phantom: std::marker::PhantomData<T>,
+}
+impl<T: ::saola_core::serde::de::DeserializeOwned + Send + Sync + ::saola_core::builder::FromResponseIr>
+    UserManyReadBuilder<T>
+{
+    pub fn where_clause<F>(mut self, f: F) -> Self
+    where
+        F: FnOnce(&mut UserWhereBuilder),
+    {
+        let mut builder = UserWhereBuilder::default();
+        f(&mut builder);
+        use ::saola_core::FilterBuilder;
+        let map = builder.build();
+        if !map.is_empty() {
+            use ::saola_core::Filterable;
+            self.inner.add_filter_arg(
+                "where".to_string(),
+                ::saola_core::query_core::ArgumentValue::Object(map),
+            );
+        }
+        self
+    }
+    pub fn where_unique<F>(self, f: F) -> Self
+    where
+        F: FnOnce(&mut UserWhereBuilder),
+    {
+        self.where_clause(f)
+    }
+    pub fn order_by<F>(mut self, f: F) -> Self
+    where
+        F: FnOnce(&mut UserOrderByBuilder),
+    {
+        let mut builder = UserOrderByBuilder::default();
+        f(&mut builder);
+        if !builder.args.is_empty() {
+            use ::saola_core::Filterable;
+            self.inner.add_filter_arg(
+                "orderBy".to_string(),
+                ::saola_core::query_core::ArgumentValue::List(builder.args),
+            );
+        }
+        self
+    }
+    pub fn skip(mut self, skip: i64) -> Self {
+        use ::saola_core::Filterable;
+        self.inner.add_filter_arg(
+            "skip".to_string(),
+            ::saola_core::query_core::ArgumentValue::Scalar(::saola_core::query_structure::PrismaValue::Int(skip)),
+        );
+        self
+    }
+    pub fn take(mut self, take: i64) -> Self {
+        use ::saola_core::Filterable;
+        self.inner.add_filter_arg(
+            "take".to_string(),
+            ::saola_core::query_core::ArgumentValue::Scalar(::saola_core::query_structure::PrismaValue::Int(take)),
+        );
+        self
+    }
+    pub fn cursor<F>(mut self, f: F) -> Self
+    where
+        F: FnOnce(&mut UserUniqueWhereBuilder),
+    {
+        let mut builder = UserUniqueWhereBuilder::default();
+        f(&mut builder);
+        let map = builder.build();
+        if !map.is_empty() {
+            use ::saola_core::Filterable;
+            self.inner.add_filter_arg(
+                "cursor".to_string(),
+                ::saola_core::query_core::ArgumentValue::Object(map),
+            );
+        }
+        self
+    }
+    pub fn select<F>(mut self, f: F) -> UserManyReadBuilder<::saola_core::serde_json::Value>
+    where
+        F: FnOnce(&mut UserSelectBuilder),
+    {
+        let mut builder = UserSelectBuilder::default();
+        f(&mut builder);
+        let selections: Vec<::saola_core::query_core::Selection> = builder.into();
+        use ::saola_core::Selectable;
+        self.inner.state.selection.clear_nested_selections();
+        for sel in selections {
+            self.inner.add_nested_selection(sel);
+        }
+        UserManyReadBuilder {
+            inner: self.inner.with_type(),
+            _phantom: std::marker::PhantomData,
+        }
+    }
+    pub fn select_as<U: ::saola_core::builder::SelectStruct>(self) -> UserManyReadBuilder<U> {
+        let new_inner = self.inner.select_as::<U, Vec<U>>();
+        UserManyReadBuilder {
+            inner: new_inner,
+            _phantom: std::marker::PhantomData,
+        }
+    }
+    pub fn include<M, F>(mut self, f: F) -> UserManyReadBuilder<<T as UserIncludeTransition<M>>::Output>
+    where
+        F: FnOnce(&mut UserIncludeBuilder) -> M,
+        M: UserIncludeMarker,
+        T: UserIncludeTransition<M>,
+    {
+        let mut builder = UserIncludeBuilder::default();
+        let marker = f(&mut builder);
+        use ::saola_core::Selectable;
+        if self.inner.state.selection.nested_selections().is_empty() {
+            for scalar_field in &["id", "email", "name", "isActive", "score", "level", "createdAt"] {
+                self.inner
+                    .add_nested_selection(::saola_core::query_core::Selection::with_name(scalar_field.to_string()));
+            }
+        }
+        if let Some(nested) = marker.into_selection() {
+            self.inner.add_nested_selection(nested);
+        }
+        for (k, v) in std::mem::take(&mut builder.args) {
+            self.inner.add_filter_arg(k, v);
+        }
+        UserManyReadBuilder {
+            inner: self.inner.with_type(),
+            _phantom: std::marker::PhantomData,
+        }
+    }
+    pub fn r#as<U: ::saola_core::serde::de::DeserializeOwned + Send + Sync>(self) -> UserManyReadBuilder<U> {
+        UserManyReadBuilder {
+            inner: self.inner.with_type(),
+            _phantom: std::marker::PhantomData,
+        }
+    }
+    pub async fn exec_with(
+        self,
+        provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_),
+    ) -> ::saola_core::Result<Vec<T>> {
+        self.inner.exec_with(provider).await
+    }
+    pub async fn exec(self) -> ::saola_core::Result<Vec<T>> {
+        self.inner.exec().await
+    }
+}
+pub struct UserUniqueReadBuilder<T = User> {
+    pub inner: ::saola_core::ReadBuilder<Option<T>>,
+    pub _phantom: std::marker::PhantomData<T>,
+}
+impl<T: ::saola_core::serde::de::DeserializeOwned + Send + Sync + ::saola_core::builder::FromResponseIr>
+    UserUniqueReadBuilder<T>
+{
+    pub fn where_clause<F>(mut self, f: F) -> Self
+    where
+        F: FnOnce(&mut UserUniqueWhereBuilder),
+    {
+        let mut builder = UserUniqueWhereBuilder::default();
+        f(&mut builder);
+        use ::saola_core::FilterBuilder;
+        let map = builder.build();
+        if !map.is_empty() {
+            use ::saola_core::Filterable;
+            self.inner.add_filter_arg(
+                "where".to_string(),
+                ::saola_core::query_core::ArgumentValue::Object(map),
+            );
+        }
+        self
+    }
+    pub fn where_unique<F>(self, f: F) -> Self
+    where
+        F: FnOnce(&mut UserUniqueWhereBuilder),
+    {
+        self.where_clause(f)
+    }
+    pub fn select<F>(mut self, f: F) -> UserUniqueReadBuilder<::saola_core::serde_json::Value>
+    where
+        F: FnOnce(&mut UserSelectBuilder),
+    {
+        let mut builder = UserSelectBuilder::default();
+        f(&mut builder);
+        let selections: Vec<::saola_core::query_core::Selection> = builder.into();
+        use ::saola_core::Selectable;
+        self.inner.state.selection.clear_nested_selections();
+        for sel in selections {
+            self.inner.add_nested_selection(sel);
+        }
+        UserUniqueReadBuilder {
+            inner: self.inner.with_type(),
+            _phantom: std::marker::PhantomData,
+        }
+    }
+    pub fn select_as<U: ::saola_core::builder::SelectStruct>(self) -> UserUniqueReadBuilder<U> {
+        let new_inner = self.inner.select_as::<U, Option<U>>();
+        UserUniqueReadBuilder {
+            inner: new_inner,
+            _phantom: std::marker::PhantomData,
+        }
+    }
+    pub fn include<M, F>(mut self, f: F) -> UserUniqueReadBuilder<<T as UserIncludeTransition<M>>::Output>
+    where
+        F: FnOnce(&mut UserIncludeBuilder) -> M,
+        M: UserIncludeMarker,
+        T: UserIncludeTransition<M>,
+    {
+        let mut builder = UserIncludeBuilder::default();
+        let marker = f(&mut builder);
+        use ::saola_core::Selectable;
+        if self.inner.state.selection.nested_selections().is_empty() {
+            for scalar_field in &["id", "email", "name", "isActive", "score", "level", "createdAt"] {
+                self.inner
+                    .add_nested_selection(::saola_core::query_core::Selection::with_name(scalar_field.to_string()));
+            }
+        }
+        if let Some(nested) = marker.into_selection() {
+            self.inner.add_nested_selection(nested);
+        }
+        for (k, v) in std::mem::take(&mut builder.args) {
+            self.inner.add_filter_arg(k, v);
+        }
+        UserUniqueReadBuilder {
+            inner: self.inner.with_type(),
+            _phantom: std::marker::PhantomData,
+        }
+    }
+    pub fn r#as<U: ::saola_core::serde::de::DeserializeOwned + Send + Sync>(self) -> UserUniqueReadBuilder<U> {
+        UserUniqueReadBuilder {
+            inner: self.inner.with_type(),
+            _phantom: std::marker::PhantomData,
+        }
+    }
+    pub async fn exec_with(
+        self,
+        provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_),
+    ) -> ::saola_core::Result<Option<T>> {
+        self.inner.exec_with(provider).await
+    }
+    pub async fn exec(self) -> ::saola_core::Result<Option<T>> {
+        self.inner.exec().await
+    }
+}
+pub struct UserFirstReadBuilder<T = User> {
+    pub inner: ::saola_core::ReadBuilder<Option<T>>,
+    pub _phantom: std::marker::PhantomData<T>,
+}
+impl<T: ::saola_core::serde::de::DeserializeOwned + Send + Sync + ::saola_core::builder::FromResponseIr>
+    UserFirstReadBuilder<T>
+{
+    pub fn where_clause<F>(mut self, f: F) -> Self
+    where
+        F: FnOnce(&mut UserWhereBuilder),
+    {
+        let mut builder = UserWhereBuilder::default();
+        f(&mut builder);
+        use ::saola_core::FilterBuilder;
+        let map = builder.build();
+        if !map.is_empty() {
+            use ::saola_core::Filterable;
+            self.inner.add_filter_arg(
+                "where".to_string(),
+                ::saola_core::query_core::ArgumentValue::Object(map),
+            );
+        }
+        self
+    }
+    pub fn where_unique<F>(self, f: F) -> Self
+    where
+        F: FnOnce(&mut UserWhereBuilder),
+    {
+        self.where_clause(f)
+    }
+    pub fn order_by<F>(mut self, f: F) -> Self
+    where
+        F: FnOnce(&mut UserOrderByBuilder),
+    {
+        let mut builder = UserOrderByBuilder::default();
+        f(&mut builder);
+        if !builder.args.is_empty() {
+            use ::saola_core::Filterable;
+            self.inner.add_filter_arg(
+                "orderBy".to_string(),
+                ::saola_core::query_core::ArgumentValue::List(builder.args),
+            );
+        }
+        self
+    }
+    pub fn skip(mut self, skip: i64) -> Self {
+        use ::saola_core::Filterable;
+        self.inner.add_filter_arg(
+            "skip".to_string(),
+            ::saola_core::query_core::ArgumentValue::Scalar(::saola_core::query_structure::PrismaValue::Int(skip)),
+        );
+        self
+    }
+    pub fn take(mut self, take: i64) -> Self {
+        use ::saola_core::Filterable;
+        self.inner.add_filter_arg(
+            "take".to_string(),
+            ::saola_core::query_core::ArgumentValue::Scalar(::saola_core::query_structure::PrismaValue::Int(take)),
+        );
+        self
+    }
+    pub fn cursor<F>(mut self, f: F) -> Self
+    where
+        F: FnOnce(&mut UserUniqueWhereBuilder),
+    {
+        let mut builder = UserUniqueWhereBuilder::default();
+        f(&mut builder);
+        let map = builder.build();
+        if !map.is_empty() {
+            use ::saola_core::Filterable;
+            self.inner.add_filter_arg(
+                "cursor".to_string(),
+                ::saola_core::query_core::ArgumentValue::Object(map),
+            );
+        }
+        self
+    }
+    pub fn select<F>(mut self, f: F) -> UserFirstReadBuilder<::saola_core::serde_json::Value>
+    where
+        F: FnOnce(&mut UserSelectBuilder),
+    {
+        let mut builder = UserSelectBuilder::default();
+        f(&mut builder);
+        let selections: Vec<::saola_core::query_core::Selection> = builder.into();
+        use ::saola_core::Selectable;
+        self.inner.state.selection.clear_nested_selections();
+        for sel in selections {
+            self.inner.add_nested_selection(sel);
+        }
+        UserFirstReadBuilder {
+            inner: self.inner.with_type(),
+            _phantom: std::marker::PhantomData,
+        }
+    }
+    pub fn select_as<U: ::saola_core::builder::SelectStruct>(self) -> UserFirstReadBuilder<U> {
+        let new_inner = self.inner.select_as::<U, Option<U>>();
+        UserFirstReadBuilder {
+            inner: new_inner,
+            _phantom: std::marker::PhantomData,
+        }
+    }
+    pub fn include<M, F>(mut self, f: F) -> UserFirstReadBuilder<<T as UserIncludeTransition<M>>::Output>
+    where
+        F: FnOnce(&mut UserIncludeBuilder) -> M,
+        M: UserIncludeMarker,
+        T: UserIncludeTransition<M>,
+    {
+        let mut builder = UserIncludeBuilder::default();
+        let marker = f(&mut builder);
+        use ::saola_core::Selectable;
+        if self.inner.state.selection.nested_selections().is_empty() {
+            for scalar_field in &["id", "email", "name", "isActive", "score", "level", "createdAt"] {
+                self.inner
+                    .add_nested_selection(::saola_core::query_core::Selection::with_name(scalar_field.to_string()));
+            }
+        }
+        if let Some(nested) = marker.into_selection() {
+            self.inner.add_nested_selection(nested);
+        }
+        for (k, v) in std::mem::take(&mut builder.args) {
+            self.inner.add_filter_arg(k, v);
+        }
+        UserFirstReadBuilder {
+            inner: self.inner.with_type(),
+            _phantom: std::marker::PhantomData,
+        }
+    }
+    pub fn r#as<U: ::saola_core::serde::de::DeserializeOwned + Send + Sync>(self) -> UserFirstReadBuilder<U> {
+        UserFirstReadBuilder {
+            inner: self.inner.with_type(),
+            _phantom: std::marker::PhantomData,
+        }
+    }
+    pub async fn exec_with(
+        self,
+        provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_),
+    ) -> ::saola_core::Result<Option<T>> {
+        self.inner.exec_with(provider).await
+    }
+    pub async fn exec(self) -> ::saola_core::Result<Option<T>> {
+        self.inner.exec().await
+    }
+}
+pub struct UserUniqueOrThrowReadBuilder<T = User> {
+    pub inner: ::saola_core::ReadBuilder<T>,
+    pub _phantom: std::marker::PhantomData<T>,
+}
+impl<T: ::saola_core::serde::de::DeserializeOwned + Send + Sync + ::saola_core::builder::FromResponseIr>
+    UserUniqueOrThrowReadBuilder<T>
+{
+    pub fn where_clause<F>(mut self, f: F) -> Self
+    where
+        F: FnOnce(&mut UserUniqueWhereBuilder),
+    {
+        let mut builder = UserUniqueWhereBuilder::default();
+        f(&mut builder);
+        use ::saola_core::FilterBuilder;
+        let map = builder.build();
+        if !map.is_empty() {
+            use ::saola_core::Filterable;
+            self.inner.add_filter_arg(
+                "where".to_string(),
+                ::saola_core::query_core::ArgumentValue::Object(map),
+            );
+        }
+        self
+    }
+    pub fn where_unique<F>(self, f: F) -> Self
+    where
+        F: FnOnce(&mut UserUniqueWhereBuilder),
+    {
+        self.where_clause(f)
+    }
+    pub fn select<F>(mut self, f: F) -> UserUniqueOrThrowReadBuilder<::saola_core::serde_json::Value>
+    where
+        F: FnOnce(&mut UserSelectBuilder),
+    {
+        let mut builder = UserSelectBuilder::default();
+        f(&mut builder);
+        let selections: Vec<::saola_core::query_core::Selection> = builder.into();
+        use ::saola_core::Selectable;
+        self.inner.state.selection.clear_nested_selections();
+        for sel in selections {
+            self.inner.add_nested_selection(sel);
+        }
+        UserUniqueOrThrowReadBuilder {
+            inner: self.inner.with_type(),
+            _phantom: std::marker::PhantomData,
+        }
+    }
+    pub fn select_as<U: ::saola_core::builder::SelectStruct>(self) -> UserUniqueOrThrowReadBuilder<U> {
+        let new_inner = self.inner.select_as::<U, U>();
+        UserUniqueOrThrowReadBuilder {
+            inner: new_inner,
+            _phantom: std::marker::PhantomData,
+        }
+    }
+    pub fn include<M, F>(mut self, f: F) -> UserUniqueOrThrowReadBuilder<<T as UserIncludeTransition<M>>::Output>
+    where
+        F: FnOnce(&mut UserIncludeBuilder) -> M,
+        M: UserIncludeMarker,
+        T: UserIncludeTransition<M>,
+    {
+        let mut builder = UserIncludeBuilder::default();
+        let marker = f(&mut builder);
+        use ::saola_core::Selectable;
+        if self.inner.state.selection.nested_selections().is_empty() {
+            for scalar_field in &["id", "email", "name", "isActive", "score", "level", "createdAt"] {
+                self.inner
+                    .add_nested_selection(::saola_core::query_core::Selection::with_name(scalar_field.to_string()));
+            }
+        }
+        if let Some(nested) = marker.into_selection() {
+            self.inner.add_nested_selection(nested);
+        }
+        for (k, v) in std::mem::take(&mut builder.args) {
+            self.inner.add_filter_arg(k, v);
+        }
+        UserUniqueOrThrowReadBuilder {
+            inner: self.inner.with_type(),
+            _phantom: std::marker::PhantomData,
+        }
+    }
+    pub fn r#as<U: ::saola_core::serde::de::DeserializeOwned + Send + Sync>(self) -> UserUniqueOrThrowReadBuilder<U> {
+        UserUniqueOrThrowReadBuilder {
+            inner: self.inner.with_type(),
+            _phantom: std::marker::PhantomData,
+        }
+    }
+    pub async fn exec_with(
+        self,
+        provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_),
+    ) -> ::saola_core::Result<T> {
+        self.inner.exec_with(provider).await
+    }
+    pub async fn exec(self) -> ::saola_core::Result<T> {
+        self.inner.exec().await
+    }
+}
+pub struct UserFirstOrThrowReadBuilder<T = User> {
+    pub inner: ::saola_core::ReadBuilder<T>,
+    pub _phantom: std::marker::PhantomData<T>,
+}
+impl<T: ::saola_core::serde::de::DeserializeOwned + Send + Sync + ::saola_core::builder::FromResponseIr>
+    UserFirstOrThrowReadBuilder<T>
+{
+    pub fn where_clause<F>(mut self, f: F) -> Self
+    where
+        F: FnOnce(&mut UserWhereBuilder),
+    {
+        let mut builder = UserWhereBuilder::default();
+        f(&mut builder);
+        use ::saola_core::FilterBuilder;
+        let map = builder.build();
+        if !map.is_empty() {
+            use ::saola_core::Filterable;
+            self.inner.add_filter_arg(
+                "where".to_string(),
+                ::saola_core::query_core::ArgumentValue::Object(map),
+            );
+        }
+        self
+    }
+    pub fn where_unique<F>(self, f: F) -> Self
+    where
+        F: FnOnce(&mut UserWhereBuilder),
+    {
+        self.where_clause(f)
+    }
+    pub fn order_by<F>(mut self, f: F) -> Self
+    where
+        F: FnOnce(&mut UserOrderByBuilder),
+    {
+        let mut builder = UserOrderByBuilder::default();
+        f(&mut builder);
+        if !builder.args.is_empty() {
+            use ::saola_core::Filterable;
+            self.inner.add_filter_arg(
+                "orderBy".to_string(),
+                ::saola_core::query_core::ArgumentValue::List(builder.args),
+            );
+        }
+        self
+    }
+    pub fn skip(mut self, skip: i64) -> Self {
+        use ::saola_core::Filterable;
+        self.inner.add_filter_arg(
+            "skip".to_string(),
+            ::saola_core::query_core::ArgumentValue::Scalar(::saola_core::query_structure::PrismaValue::Int(skip)),
+        );
+        self
+    }
+    pub fn take(mut self, take: i64) -> Self {
+        use ::saola_core::Filterable;
+        self.inner.add_filter_arg(
+            "take".to_string(),
+            ::saola_core::query_core::ArgumentValue::Scalar(::saola_core::query_structure::PrismaValue::Int(take)),
+        );
+        self
+    }
+    pub fn cursor<F>(mut self, f: F) -> Self
+    where
+        F: FnOnce(&mut UserUniqueWhereBuilder),
+    {
+        let mut builder = UserUniqueWhereBuilder::default();
+        f(&mut builder);
+        let map = builder.build();
+        if !map.is_empty() {
+            use ::saola_core::Filterable;
+            self.inner.add_filter_arg(
+                "cursor".to_string(),
+                ::saola_core::query_core::ArgumentValue::Object(map),
+            );
+        }
+        self
+    }
+    pub fn select<F>(mut self, f: F) -> UserFirstOrThrowReadBuilder<::saola_core::serde_json::Value>
+    where
+        F: FnOnce(&mut UserSelectBuilder),
+    {
+        let mut builder = UserSelectBuilder::default();
+        f(&mut builder);
+        let selections: Vec<::saola_core::query_core::Selection> = builder.into();
+        use ::saola_core::Selectable;
+        self.inner.state.selection.clear_nested_selections();
+        for sel in selections {
+            self.inner.add_nested_selection(sel);
+        }
+        UserFirstOrThrowReadBuilder {
+            inner: self.inner.with_type(),
+            _phantom: std::marker::PhantomData,
+        }
+    }
+    pub fn select_as<U: ::saola_core::builder::SelectStruct>(self) -> UserFirstOrThrowReadBuilder<U> {
+        let new_inner = self.inner.select_as::<U, U>();
+        UserFirstOrThrowReadBuilder {
+            inner: new_inner,
+            _phantom: std::marker::PhantomData,
+        }
+    }
+    pub fn include<M, F>(mut self, f: F) -> UserFirstOrThrowReadBuilder<<T as UserIncludeTransition<M>>::Output>
+    where
+        F: FnOnce(&mut UserIncludeBuilder) -> M,
+        M: UserIncludeMarker,
+        T: UserIncludeTransition<M>,
+    {
+        let mut builder = UserIncludeBuilder::default();
+        let marker = f(&mut builder);
+        use ::saola_core::Selectable;
+        if self.inner.state.selection.nested_selections().is_empty() {
+            for scalar_field in &["id", "email", "name", "isActive", "score", "level", "createdAt"] {
+                self.inner
+                    .add_nested_selection(::saola_core::query_core::Selection::with_name(scalar_field.to_string()));
+            }
+        }
+        if let Some(nested) = marker.into_selection() {
+            self.inner.add_nested_selection(nested);
+        }
+        for (k, v) in std::mem::take(&mut builder.args) {
+            self.inner.add_filter_arg(k, v);
+        }
+        UserFirstOrThrowReadBuilder {
+            inner: self.inner.with_type(),
+            _phantom: std::marker::PhantomData,
+        }
+    }
+    pub fn r#as<U: ::saola_core::serde::de::DeserializeOwned + Send + Sync>(self) -> UserFirstOrThrowReadBuilder<U> {
+        UserFirstOrThrowReadBuilder {
+            inner: self.inner.with_type(),
+            _phantom: std::marker::PhantomData,
+        }
+    }
+    pub async fn exec_with(
+        self,
+        provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_),
+    ) -> ::saola_core::Result<T> {
+        self.inner.exec_with(provider).await
+    }
+    pub async fn exec(self) -> ::saola_core::Result<T> {
+        self.inner.exec().await
+    }
+}
+#[doc = r" Builder for write operations (returns T)"]
+pub struct UserWriteBuilder<T = User> {
+    pub inner: ::saola_core::WriteBuilder<T>,
+    pub _phantom: std::marker::PhantomData<T>,
+}
+impl<T: ::saola_core::serde::de::DeserializeOwned + Send + Sync + ::saola_core::builder::FromResponseIr>
+    UserWriteBuilder<T>
+{
+    pub fn where_clause<F>(mut self, f: F) -> Self
+    where
+        F: FnOnce(&mut UserUniqueWhereBuilder),
+    {
+        let mut builder = UserUniqueWhereBuilder::default();
+        f(&mut builder);
+        use ::saola_core::FilterBuilder;
+        let map = builder.build();
+        if !map.is_empty() {
+            use ::saola_core::Filterable;
+            self.inner.add_filter_arg(
+                "where".to_string(),
+                ::saola_core::query_core::ArgumentValue::Object(map),
+            );
+        }
+        self
+    }
+    pub fn where_unique<F>(self, f: F) -> Self
+    where
+        F: FnOnce(&mut UserUniqueWhereBuilder),
+    {
+        self.where_clause(f)
+    }
+    pub fn data<F>(mut self, f: F) -> Self
+    where
+        F: FnOnce(&mut UserDataBuilder),
+    {
+        let mut builder = UserDataBuilder::default();
+        f(&mut builder);
+        let mut merged_data = std::mem::take(&mut builder.data);
+        if let Some(::saola_core::query_core::ArgumentValue::Object(existing_map)) =
+            self.inner.state.arguments.get("data")
+        {
+            let mut new_map = existing_map.clone();
+            for (k, v) in merged_data {
+                new_map.insert(k, v);
+            }
+            merged_data = new_map;
+        }
+        use ::saola_core::Filterable;
+        self.inner.add_filter_arg(
+            "data".to_string(),
+            ::saola_core::query_core::ArgumentValue::Object(merged_data),
+        );
+        self
+    }
+    pub fn select<F>(mut self, f: F) -> UserWriteBuilder<::saola_core::serde_json::Value>
+    where
+        F: FnOnce(&mut UserSelectBuilder),
+    {
+        let mut builder = UserSelectBuilder::default();
+        f(&mut builder);
+        let selections: Vec<::saola_core::query_core::Selection> = builder.into();
+        use ::saola_core::Selectable;
+        self.inner.state.selection.clear_nested_selections();
+        for sel in selections {
+            self.inner.add_nested_selection(sel);
+        }
+        UserWriteBuilder {
+            inner: self.inner.with_type(),
+            _phantom: std::marker::PhantomData,
+        }
+    }
+    pub fn select_as<U: ::saola_core::builder::SelectStruct>(self) -> UserWriteBuilder<U> {
+        let new_inner = self.inner.select_as::<U, U>();
+        UserWriteBuilder {
+            inner: new_inner,
+            _phantom: std::marker::PhantomData,
+        }
+    }
+    pub fn include<M, F>(mut self, f: F) -> UserWriteBuilder<<T as UserIncludeTransition<M>>::Output>
+    where
+        F: FnOnce(&mut UserIncludeBuilder) -> M,
+        M: UserIncludeMarker,
+        T: UserIncludeTransition<M>,
+    {
+        let mut builder = UserIncludeBuilder::default();
+        let marker = f(&mut builder);
+        use ::saola_core::Selectable;
+        if self.inner.state.selection.nested_selections().is_empty() {
+            for scalar_field in &["id", "email", "name", "isActive", "score", "level", "createdAt"] {
+                self.inner
+                    .add_nested_selection(::saola_core::query_core::Selection::with_name(scalar_field.to_string()));
+            }
+        }
+        if let Some(nested) = marker.into_selection() {
+            self.inner.add_nested_selection(nested);
+        }
+        for (k, v) in std::mem::take(&mut builder.args) {
+            self.inner.add_filter_arg(k, v);
+        }
+        UserWriteBuilder {
+            inner: self.inner.with_type(),
+            _phantom: std::marker::PhantomData,
+        }
+    }
+    pub fn r#as<U: ::saola_core::serde::de::DeserializeOwned + Send + Sync>(self) -> UserWriteBuilder<U> {
+        UserWriteBuilder {
+            inner: self.inner.with_type(),
+            _phantom: std::marker::PhantomData,
+        }
+    }
+    pub async fn exec_with(
+        self,
+        provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_),
+    ) -> ::saola_core::Result<T> {
+        self.inner.exec_with(provider).await
+    }
+    pub async fn exec(self) -> ::saola_core::Result<T> {
+        self.inner.exec().await
+    }
+}
+pub struct UserUpsertBuilder {
+    pub inner: ::saola_core::WriteBuilder<User>,
+}
+impl UserUpsertBuilder {
+    pub fn where_clause<F>(mut self, f: F) -> Self
+    where
+        F: FnOnce(&mut UserUniqueWhereBuilder),
+    {
+        let mut builder = UserUniqueWhereBuilder::default();
+        f(&mut builder);
+        let map = builder.build();
+        if !map.is_empty() {
+            use ::saola_core::FilterBuilder;
+            self.inner.add_filter_arg(
+                "where".to_string(),
+                ::saola_core::query_core::ArgumentValue::Object(map),
+            );
+        }
+        self
+    }
+    pub fn where_unique<F>(self, f: F) -> Self
+    where
+        F: FnOnce(&mut UserUniqueWhereBuilder),
+    {
+        self.where_clause(f)
+    }
+    pub fn update<F>(mut self, f: F) -> Self
+    where
+        F: FnOnce(&mut UserDataBuilder),
+    {
+        let mut builder = UserDataBuilder::default();
+        f(&mut builder);
+        self.inner.add_filter_arg(
+            "update".to_string(),
+            ::saola_core::query_core::ArgumentValue::Object(std::mem::take(&mut builder.data)),
+        );
+        self
+    }
+    pub fn create<F>(mut self, email: String, name: String, f: F) -> Self
+    where
+        F: FnOnce(&mut UserDataBuilder),
+    {
+        let mut create_builder = UserDataBuilder::default();
+        create_builder.data.insert(
+            "email".to_string(),
+            ::saola_core::query_core::ArgumentValue::Scalar(::saola_core::query_structure::PrismaValue::from(email)),
+        );
+        create_builder.data.insert(
+            "name".to_string(),
+            ::saola_core::query_core::ArgumentValue::Scalar(::saola_core::query_structure::PrismaValue::from(name)),
+        );
+        f(&mut create_builder);
+        self.inner.add_filter_arg(
+            "create".to_string(),
+            ::saola_core::query_core::ArgumentValue::Object(std::mem::take(&mut create_builder.data)),
+        );
+        self
+    }
+    pub async fn exec_with(
+        self,
+        provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_),
+    ) -> ::saola_core::Result<User> {
+        self.inner.exec_with(provider).await
+    }
+    pub async fn exec(self) -> ::saola_core::Result<User> {
+        self.inner.exec().await
+    }
+}
+pub struct UserCreateManyBuilder {
+    pub inner: ::saola_core::CreateManyBuilder,
+}
+impl UserCreateManyBuilder {
+    pub fn data<F>(mut self, f: F) -> Self
+    where
+        F: FnOnce(&mut UserScalarDataBuilder),
+    {
+        let mut builder = UserScalarDataBuilder::default();
+        f(&mut builder);
+        let mut list = match self.inner.state.arguments.get("data") {
+            Some(::saola_core::query_core::ArgumentValue::List(l)) => l.clone(),
+            _ => Vec::new(),
+        };
+        list.push(::saola_core::query_core::ArgumentValue::Object(std::mem::take(
+            &mut builder.data,
+        )));
+        use ::saola_core::Filterable;
+        self.inner
+            .add_filter_arg("data".to_string(), ::saola_core::query_core::ArgumentValue::List(list));
+        self
+    }
+    pub fn skip_duplicates(mut self, skip: bool) -> Self {
+        self.inner = self.inner.skip_duplicates(skip);
+        self
+    }
+    pub async fn exec_with(
+        self,
+        provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_),
+    ) -> ::saola_core::Result<i64> {
+        self.inner.exec_with(provider).await
+    }
+    pub async fn exec(self) -> ::saola_core::Result<i64> {
+        self.inner.exec().await
+    }
+}
+pub struct UserCreateManyAndReturnBuilder<T = User> {
+    pub inner: ::saola_core::CreateManyAndReturnBuilder<T>,
+    pub _phantom: std::marker::PhantomData<T>,
+}
+impl<T: ::saola_core::serde::de::DeserializeOwned + Send + Sync + ::saola_core::builder::FromResponseIr>
+    UserCreateManyAndReturnBuilder<T>
+{
+    pub fn data<F>(mut self, f: F) -> Self
+    where
+        F: FnOnce(&mut UserScalarDataBuilder),
+    {
+        let mut builder = UserScalarDataBuilder::default();
+        f(&mut builder);
+        let mut list = match self.inner.state.arguments.get("data") {
+            Some(::saola_core::query_core::ArgumentValue::List(l)) => l.clone(),
+            _ => Vec::new(),
+        };
+        list.push(::saola_core::query_core::ArgumentValue::Object(std::mem::take(
+            &mut builder.data,
+        )));
+        use ::saola_core::Filterable;
+        self.inner
+            .add_filter_arg("data".to_string(), ::saola_core::query_core::ArgumentValue::List(list));
+        self
+    }
+    pub fn skip_duplicates(mut self, skip: bool) -> Self {
+        self.inner = self.inner.skip_duplicates(skip);
+        self
+    }
+    pub fn select<F>(mut self, f: F) -> UserCreateManyAndReturnBuilder<::saola_core::serde_json::Value>
+    where
+        F: FnOnce(&mut UserSelectBuilder),
+    {
+        let mut builder = UserSelectBuilder::default();
+        f(&mut builder);
+        let selections: Vec<::saola_core::query_core::Selection> = builder.into();
+        use ::saola_core::Selectable;
+        self.inner.state.selection.clear_nested_selections();
+        for sel in selections {
+            self.inner.add_nested_selection(sel);
+        }
+        UserCreateManyAndReturnBuilder {
+            inner: self.inner.with_type(),
+            _phantom: std::marker::PhantomData,
+        }
+    }
+    pub fn select_as<U: ::saola_core::builder::SelectStruct>(self) -> UserCreateManyAndReturnBuilder<U> {
+        let new_inner = self.inner.select_as::<U, U>();
+        UserCreateManyAndReturnBuilder {
+            inner: new_inner,
+            _phantom: std::marker::PhantomData,
+        }
+    }
+    pub async fn exec_with(
+        self,
+        provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_),
+    ) -> ::saola_core::Result<Vec<T>> {
+        let mut builder = self;
+        if builder.inner.state.selection.nested_selections().is_empty() {
+            for field in &["id", "email", "name", "isActive", "score", "level", "createdAt"] {
+                use ::saola_core::Selectable;
+                builder
+                    .inner
+                    .add_nested_selection(::saola_core::query_core::Selection::with_name(field.to_string()));
+            }
+        }
+        builder.inner.exec_with(provider).await
+    }
+    pub async fn exec(self) -> ::saola_core::Result<Vec<T>> {
+        let mut builder = self;
+        if builder.inner.state.selection.nested_selections().is_empty() {
+            for field in &["id", "email", "name", "isActive", "score", "level", "createdAt"] {
+                use ::saola_core::Selectable;
+                builder
+                    .inner
+                    .add_nested_selection(::saola_core::query_core::Selection::with_name(field.to_string()));
+            }
+        }
+        builder.inner.exec().await
+    }
+}
+pub struct UserUpdateManyBuilder {
+    pub inner: ::saola_core::UpdateManyBuilder,
+}
+impl UserUpdateManyBuilder {
+    pub fn where_clause<F>(mut self, f: F) -> Self
+    where
+        F: FnOnce(&mut UserWhereBuilder),
+    {
+        let mut builder = UserWhereBuilder::default();
+        f(&mut builder);
+        use ::saola_core::FilterBuilder;
+        let map = builder.build();
+        if !map.is_empty() {
+            use ::saola_core::Filterable;
+            self.inner.add_filter_arg(
+                "where".to_string(),
+                ::saola_core::query_core::ArgumentValue::Object(map),
+            );
+        }
+        self
+    }
+    pub fn data<F>(mut self, f: F) -> Self
+    where
+        F: FnOnce(&mut UserScalarDataBuilder),
+    {
+        let mut builder = UserScalarDataBuilder::default();
+        f(&mut builder);
+        use ::saola_core::Filterable;
+        self.inner.add_filter_arg(
+            "data".to_string(),
+            ::saola_core::query_core::ArgumentValue::Object(std::mem::take(&mut builder.data)),
+        );
+        self
+    }
+    pub async fn exec_with(
+        self,
+        provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_),
+    ) -> ::saola_core::Result<i64> {
+        self.inner.exec_with(provider).await
+    }
+    pub async fn exec(self) -> ::saola_core::Result<i64> {
+        self.inner.exec().await
+    }
+}
+pub struct UserUpdateManyAndReturnBuilder<T = User> {
+    pub inner: ::saola_core::UpdateManyAndReturnBuilder<T>,
+    pub _phantom: std::marker::PhantomData<T>,
+}
+impl<T: ::saola_core::serde::de::DeserializeOwned + Send + Sync + ::saola_core::builder::FromResponseIr>
+    UserUpdateManyAndReturnBuilder<T>
+{
+    pub fn where_clause<F>(mut self, f: F) -> Self
+    where
+        F: FnOnce(&mut UserWhereBuilder),
+    {
+        let mut builder = UserWhereBuilder::default();
+        f(&mut builder);
+        use ::saola_core::FilterBuilder;
+        let map = builder.build();
+        if !map.is_empty() {
+            use ::saola_core::Filterable;
+            self.inner.add_filter_arg(
+                "where".to_string(),
+                ::saola_core::query_core::ArgumentValue::Object(map),
+            );
+        }
+        self
+    }
+    pub fn data<F>(mut self, f: F) -> Self
+    where
+        F: FnOnce(&mut UserScalarDataBuilder),
+    {
+        let mut builder = UserScalarDataBuilder::default();
+        f(&mut builder);
+        use ::saola_core::Filterable;
+        self.inner.add_filter_arg(
+            "data".to_string(),
+            ::saola_core::query_core::ArgumentValue::Object(std::mem::take(&mut builder.data)),
+        );
+        self
+    }
+    pub fn select<F>(mut self, f: F) -> UserUpdateManyAndReturnBuilder<::saola_core::serde_json::Value>
+    where
+        F: FnOnce(&mut UserSelectBuilder),
+    {
+        let mut builder = UserSelectBuilder::default();
+        f(&mut builder);
+        let selections: Vec<::saola_core::query_core::Selection> = builder.into();
+        use ::saola_core::Selectable;
+        self.inner.state.selection.clear_nested_selections();
+        for sel in selections {
+            self.inner.add_nested_selection(sel);
+        }
+        UserUpdateManyAndReturnBuilder {
+            inner: self.inner.with_type(),
+            _phantom: std::marker::PhantomData,
+        }
+    }
+    pub fn select_as<U: ::saola_core::builder::SelectStruct>(self) -> UserUpdateManyAndReturnBuilder<U> {
+        let new_inner = self.inner.select_as::<U, U>();
+        UserUpdateManyAndReturnBuilder {
+            inner: new_inner,
+            _phantom: std::marker::PhantomData,
+        }
+    }
+    pub async fn exec_with(
+        self,
+        provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_),
+    ) -> ::saola_core::Result<Vec<T>> {
+        let mut builder = self;
+        if builder.inner.state.selection.nested_selections().is_empty() {
+            for field in &["id", "email", "name", "isActive", "score", "level", "createdAt"] {
+                use ::saola_core::Selectable;
+                builder
+                    .inner
+                    .add_nested_selection(::saola_core::query_core::Selection::with_name(field.to_string()));
+            }
+        }
+        builder.inner.exec_with(provider).await
+    }
+    pub async fn exec(self) -> ::saola_core::Result<Vec<T>> {
+        let mut builder = self;
+        if builder.inner.state.selection.nested_selections().is_empty() {
+            for field in &["id", "email", "name", "isActive", "score", "level", "createdAt"] {
+                use ::saola_core::Selectable;
+                builder
+                    .inner
+                    .add_nested_selection(::saola_core::query_core::Selection::with_name(field.to_string()));
+            }
+        }
+        builder.inner.exec().await
+    }
+}
+pub struct UserDeleteManyBuilder {
+    pub inner: ::saola_core::DeleteManyBuilder,
+}
+impl UserDeleteManyBuilder {
+    pub fn where_clause<F>(mut self, f: F) -> Self
+    where
+        F: FnOnce(&mut UserWhereBuilder),
+    {
+        let mut builder = UserWhereBuilder::default();
+        f(&mut builder);
+        use ::saola_core::FilterBuilder;
+        let map = builder.build();
+        if !map.is_empty() {
+            use ::saola_core::Filterable;
+            self.inner.add_filter_arg(
+                "where".to_string(),
+                ::saola_core::query_core::ArgumentValue::Object(map),
+            );
+        }
+        self
+    }
+    pub async fn exec_with(
+        self,
+        provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_),
+    ) -> ::saola_core::Result<i64> {
+        self.inner.exec_with(provider).await
+    }
+    pub async fn exec(self) -> ::saola_core::Result<i64> {
+        self.inner.exec().await
+    }
+}
+pub struct UserCountBuilder {
+    pub inner: ::saola_core::CountBuilder,
+}
+impl UserCountBuilder {
+    pub fn where_clause<F>(mut self, f: F) -> Self
+    where
+        F: FnOnce(&mut UserWhereBuilder),
+    {
+        let mut builder = UserWhereBuilder::default();
+        f(&mut builder);
+        use ::saola_core::FilterBuilder;
+        let map = builder.build();
+        if !map.is_empty() {
+            use ::saola_core::Filterable;
+            self.inner.add_filter_arg(
+                "where".to_string(),
+                ::saola_core::query_core::ArgumentValue::Object(map),
+            );
+        }
+        self
+    }
+    pub async fn exec_with(
+        self,
+        provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_),
+    ) -> ::saola_core::Result<i64> {
+        self.inner.exec_with(provider).await
+    }
+    pub async fn exec(self) -> ::saola_core::Result<i64> {
+        self.inner.exec().await
+    }
+}
+pub struct UserAggregateBuilder {
+    pub inner: ::saola_core::AggregateBuilder<UserAggregateResult>,
+}
+impl UserAggregateBuilder {
+    pub fn where_clause<F>(mut self, f: F) -> Self
+    where
+        F: FnOnce(&mut UserWhereBuilder),
+    {
+        let mut builder = UserWhereBuilder::default();
+        f(&mut builder);
+        use ::saola_core::FilterBuilder;
+        let map = builder.build();
+        if !map.is_empty() {
+            use ::saola_core::Filterable;
+            self.inner.add_filter_arg(
+                "where".to_string(),
+                ::saola_core::query_core::ArgumentValue::Object(map),
+            );
+        }
+        self
+    }
+    pub fn count<F>(mut self, f: F) -> Self
+    where
+        F: FnOnce(&mut UserCountAggregateSelectBuilder),
+    {
+        let mut builder = UserCountAggregateSelectBuilder::default();
+        f(&mut builder);
+        let mut sel = ::saola_core::query_core::Selection::with_name("_count");
+        for s in builder.selections {
+            sel.push_nested_selection(s);
+        }
+        use ::saola_core::Selectable;
+        self.inner.add_nested_selection(sel);
+        self
+    }
+    pub fn sum<F>(mut self, f: F) -> Self
+    where
+        F: FnOnce(&mut UserSumAggregateSelectBuilder),
+    {
+        let mut builder = UserSumAggregateSelectBuilder::default();
+        f(&mut builder);
+        let mut sel = ::saola_core::query_core::Selection::with_name("_sum");
+        for s in builder.selections {
+            sel.push_nested_selection(s);
+        }
+        use ::saola_core::Selectable;
+        self.inner.add_nested_selection(sel);
+        self
+    }
+    pub fn avg<F>(mut self, f: F) -> Self
+    where
+        F: FnOnce(&mut UserAvgAggregateSelectBuilder),
+    {
+        let mut builder = UserAvgAggregateSelectBuilder::default();
+        f(&mut builder);
+        let mut sel = ::saola_core::query_core::Selection::with_name("_avg");
+        for s in builder.selections {
+            sel.push_nested_selection(s);
+        }
+        use ::saola_core::Selectable;
+        self.inner.add_nested_selection(sel);
+        self
+    }
+    pub fn min<F>(mut self, f: F) -> Self
+    where
+        F: FnOnce(&mut UserMinAggregateSelectBuilder),
+    {
+        let mut builder = UserMinAggregateSelectBuilder::default();
+        f(&mut builder);
+        let mut sel = ::saola_core::query_core::Selection::with_name("_min");
+        for s in builder.selections {
+            sel.push_nested_selection(s);
+        }
+        use ::saola_core::Selectable;
+        self.inner.add_nested_selection(sel);
+        self
+    }
+    pub fn max<F>(mut self, f: F) -> Self
+    where
+        F: FnOnce(&mut UserMaxAggregateSelectBuilder),
+    {
+        let mut builder = UserMaxAggregateSelectBuilder::default();
+        f(&mut builder);
+        let mut sel = ::saola_core::query_core::Selection::with_name("_max");
+        for s in builder.selections {
+            sel.push_nested_selection(s);
+        }
+        use ::saola_core::Selectable;
+        self.inner.add_nested_selection(sel);
+        self
+    }
+    pub async fn exec_with(
+        self,
+        provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_),
+    ) -> ::saola_core::Result<UserAggregateResult> {
+        self.inner.exec_with(provider).await
+    }
+    pub async fn exec(self) -> ::saola_core::Result<UserAggregateResult> {
+        self.inner.exec().await
+    }
+}
+pub struct UserGroupByBuilder {
+    pub inner: ::saola_core::GroupByBuilder<UserGroupByResult>,
+}
+impl UserGroupByBuilder {
+    pub fn where_clause<F>(mut self, f: F) -> Self
+    where
+        F: FnOnce(&mut UserWhereBuilder),
+    {
+        let mut builder = UserWhereBuilder::default();
+        f(&mut builder);
+        use ::saola_core::FilterBuilder;
+        let map = builder.build();
+        if !map.is_empty() {
+            use ::saola_core::Filterable;
+            self.inner.add_filter_arg(
+                "where".to_string(),
+                ::saola_core::query_core::ArgumentValue::Object(map),
+            );
+        }
+        self
+    }
+    pub fn having<F>(mut self, f: F) -> Self
+    where
+        F: FnOnce(&mut UserWhereBuilder),
+    {
+        let mut builder = UserWhereBuilder::default();
+        f(&mut builder);
+        use ::saola_core::FilterBuilder;
+        let map = builder.build();
+        if !map.is_empty() {
+            use ::saola_core::Filterable;
+            self.inner.add_filter_arg(
+                "having".to_string(),
+                ::saola_core::query_core::ArgumentValue::Object(map),
+            );
+        }
+        self
+    }
+    pub fn take(mut self, take: i64) -> Self {
+        use ::saola_core::Filterable;
+        self.inner.add_filter_arg(
+            "take".to_string(),
+            ::saola_core::query_core::ArgumentValue::Scalar(::saola_core::query_structure::PrismaValue::Int(take)),
+        );
+        self
+    }
+    pub fn skip(mut self, skip: i64) -> Self {
+        use ::saola_core::Filterable;
+        self.inner.add_filter_arg(
+            "skip".to_string(),
+            ::saola_core::query_core::ArgumentValue::Scalar(::saola_core::query_structure::PrismaValue::Int(skip)),
+        );
+        self
+    }
+    pub fn order_by<F>(mut self, f: F) -> Self
+    where
+        F: FnOnce(&mut UserOrderByBuilder),
+    {
+        let mut builder = UserOrderByBuilder::default();
+        f(&mut builder);
+        if !builder.args.is_empty() {
+            use ::saola_core::Filterable;
+            self.inner.add_filter_arg(
+                "orderBy".to_string(),
+                ::saola_core::query_core::ArgumentValue::List(builder.args),
+            );
+        }
+        self
+    }
+    pub fn by<F>(mut self, f: F) -> Self
+    where
+        F: FnOnce(&mut UserGroupBySelectBuilder),
+    {
+        let mut builder = UserGroupBySelectBuilder::default();
+        f(&mut builder);
+        let fields = builder.fields.clone();
+        use ::saola_core::Filterable;
+        self.inner.add_filter_arg(
+            "by".to_string(),
+            ::saola_core::query_core::ArgumentValue::List(
+                fields
+                    .iter()
+                    .map(|f| {
+                        ::saola_core::query_core::ArgumentValue::Scalar(
+                            ::saola_core::query_structure::PrismaValue::String(f.clone()),
+                        )
+                    })
+                    .collect(),
+            ),
+        );
+        use ::saola_core::Selectable;
+        for f in fields {
+            self.inner
+                .add_nested_selection(::saola_core::query_core::Selection::with_name(f));
+        }
+        self
+    }
+    pub fn count<F>(mut self, f: F) -> Self
+    where
+        F: FnOnce(&mut UserCountAggregateSelectBuilder),
+    {
+        let mut builder = UserCountAggregateSelectBuilder::default();
+        f(&mut builder);
+        let mut sel = ::saola_core::query_core::Selection::with_name("_count");
+        for s in builder.selections {
+            sel.push_nested_selection(s);
+        }
+        use ::saola_core::Selectable;
+        self.inner.add_nested_selection(sel);
+        self
+    }
+    pub fn sum<F>(mut self, f: F) -> Self
+    where
+        F: FnOnce(&mut UserSumAggregateSelectBuilder),
+    {
+        let mut builder = UserSumAggregateSelectBuilder::default();
+        f(&mut builder);
+        let mut sel = ::saola_core::query_core::Selection::with_name("_sum");
+        for s in builder.selections {
+            sel.push_nested_selection(s);
+        }
+        use ::saola_core::Selectable;
+        self.inner.add_nested_selection(sel);
+        self
+    }
+    pub fn avg<F>(mut self, f: F) -> Self
+    where
+        F: FnOnce(&mut UserAvgAggregateSelectBuilder),
+    {
+        let mut builder = UserAvgAggregateSelectBuilder::default();
+        f(&mut builder);
+        let mut sel = ::saola_core::query_core::Selection::with_name("_avg");
+        for s in builder.selections {
+            sel.push_nested_selection(s);
+        }
+        use ::saola_core::Selectable;
+        self.inner.add_nested_selection(sel);
+        self
+    }
+    pub fn min<F>(mut self, f: F) -> Self
+    where
+        F: FnOnce(&mut UserMinAggregateSelectBuilder),
+    {
+        let mut builder = UserMinAggregateSelectBuilder::default();
+        f(&mut builder);
+        let mut sel = ::saola_core::query_core::Selection::with_name("_min");
+        for s in builder.selections {
+            sel.push_nested_selection(s);
+        }
+        use ::saola_core::Selectable;
+        self.inner.add_nested_selection(sel);
+        self
+    }
+    pub fn max<F>(mut self, f: F) -> Self
+    where
+        F: FnOnce(&mut UserMaxAggregateSelectBuilder),
+    {
+        let mut builder = UserMaxAggregateSelectBuilder::default();
+        f(&mut builder);
+        let mut sel = ::saola_core::query_core::Selection::with_name("_max");
+        for s in builder.selections {
+            sel.push_nested_selection(s);
+        }
+        use ::saola_core::Selectable;
+        self.inner.add_nested_selection(sel);
+        self
+    }
+    pub async fn exec_with(
+        self,
+        provider: &(dyn ::saola_core::transaction::QueryExecutorProvider + '_),
+    ) -> ::saola_core::Result<Vec<UserGroupByResult>> {
+        self.inner.exec_with(provider).await
+    }
+    pub async fn exec(self) -> ::saola_core::Result<Vec<UserGroupByResult>> {
+        self.inner.exec().await
     }
 }

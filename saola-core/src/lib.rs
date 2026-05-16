@@ -33,7 +33,7 @@ pub use filter_builders::{
     BoolFilter, DateTimeFilter, EnumFilter, FloatFilter, IntFilter, RelationFilter, StringFilter,
 };
 pub use filters::{
-    BoolField, DateTimeField, EnumField, Field, FloatField, IntField, IntoWhere, RelationFilterOps, SelectField,
+    BoolField, DateTimeField, EnumField, Field, FloatField, IntField, RelationFilterOps, SelectField,
     StringField,
 };
 pub use read::ReadBuilder;

@@ -3,10 +3,12 @@ use crate::builder::{BuilderState, Executable, Filterable, FromResponseIr, Selec
 use crate::transaction::QueryExecutorProvider;
 use query_core::{ArgumentValue, Selection};
 use std::marker::PhantomData;
+use std::sync::Arc;
 
 /// Count builder - counts records matching criteria
 pub struct CountBuilder {
-    state: BuilderState,
+    pub state: BuilderState,
+    pub provider: Option<Arc<dyn QueryExecutorProvider>>,
 }
 
 impl CountBuilder {
@@ -17,7 +19,41 @@ impl CountBuilder {
         count_sel.push_nested_selection(Selection::with_name("_all"));
         state.selection.push_nested_selection(count_sel);
 
-        Self { state }
+        Self { state, provider: None }
+    }
+
+    pub fn with_provider(mut self, provider: Arc<dyn QueryExecutorProvider>) -> Self {
+        self.provider = Some(provider);
+        self
+    }
+
+    pub async fn exec(self) -> crate::Result<i64> {
+        let provider = self.provider.clone().ok_or_else(|| {
+            crate::Error::RuntimeError("Builder is not bound to a provider.".to_string())
+        })?;
+        self.exec_with(provider.as_ref()).await
+    }
+
+    pub async fn exec_with<P: QueryExecutorProvider + ?Sized>(self, provider: &P) -> crate::Result<i64> {
+        let operation = self.state.into_operation(false);
+        let item = execute_raw(operation, provider).await?;
+
+        // Count operations return `{ "_count": { "_all": n } }` or just `{ "_count": n }`
+        // We try to drill down to the actual count value if possible
+        let count_item = match &item {
+            query_core::response_ir::Item::Map(map) => {
+                let c = map.get("_count").unwrap_or(&item);
+                match c {
+                    query_core::response_ir::Item::Map(inner_map) => {
+                        inner_map.get("_all").unwrap_or(c).clone()
+                    }
+                    _ => c.clone(),
+                }
+            }
+            _ => item,
+        };
+
+        i64::from_ir(count_item)
     }
 }
 
@@ -40,24 +76,14 @@ impl Executable for CountBuilder {
     type Output = i64;
 
     async fn exec<P: QueryExecutorProvider + ?Sized>(self, provider: &P) -> crate::Result<i64> {
-        let operation = self.state.into_operation(false);
-        let item = execute_raw(operation, provider).await?;
-
-        // Count operations return `{ "_count": { "_all": n } }` or just `{ "_count": n }`
-        // We try to drill down to the actual count value if possible
-        let count_item = if let query_core::response_ir::Item::Map(map) = &item {
-            map.get("_count").cloned().unwrap_or(item)
-        } else {
-            item
-        };
-
-        i64::from_ir(count_item)
+        self.exec_with(provider).await
     }
 }
 
 /// Aggregate builder - aggregates data (sum, avg, min, max, count per field)
 pub struct AggregateBuilder<T> {
-    state: BuilderState,
+    pub state: BuilderState,
+    pub provider: Option<Arc<dyn QueryExecutorProvider>>,
     _phantom: PhantomData<T>,
 }
 
@@ -66,16 +92,42 @@ impl<T> AggregateBuilder<T> {
     pub fn new(model_name: String, _default_selections: Vec<String>) -> Self {
         Self {
             state: BuilderState::read(model_name, "aggregate", Vec::new()),
+            provider: None,
             _phantom: PhantomData,
         }
+    }
+
+    pub fn with_provider(mut self, provider: Arc<dyn QueryExecutorProvider>) -> Self {
+        self.provider = Some(provider);
+        self
     }
 
     /// Transition this builder to return a different type
     pub fn with_type<U>(self) -> AggregateBuilder<U> {
         AggregateBuilder {
             state: self.state,
+            provider: self.provider,
             _phantom: PhantomData,
         }
+    }
+
+    pub async fn exec(self) -> crate::Result<T>
+    where
+        T: FromResponseIr,
+    {
+        let provider = self.provider.clone().ok_or_else(|| {
+            crate::Error::RuntimeError("Builder is not bound to a provider.".to_string())
+        })?;
+        self.exec_with(provider.as_ref()).await
+    }
+
+    pub async fn exec_with<P: QueryExecutorProvider + ?Sized>(self, provider: &P) -> crate::Result<T>
+    where
+        T: FromResponseIr,
+    {
+        let operation = self.state.into_operation(false);
+        let item = execute_raw(operation, provider).await?;
+        T::from_ir(item)
     }
 }
 
@@ -98,21 +150,14 @@ impl<T: FromResponseIr> Executable for AggregateBuilder<T> {
     type Output = T;
 
     async fn exec<P: QueryExecutorProvider + ?Sized>(self, provider: &P) -> crate::Result<T> {
-        let operation = self.state.into_operation(false);
-        let item = execute_raw(operation, provider).await?;
-        T::from_ir(item)
-    }
-}
-
-impl<T: FromResponseIr + Send + Sync> AggregateBuilder<T> {
-    pub async fn exec_inferred<P: QueryExecutorProvider + ?Sized>(self, provider: &P) -> crate::Result<T> {
-        self.exec(provider).await
+        self.exec_with(provider).await
     }
 }
 
 /// GroupBy builder - groups records by field(s) with aggregation
 pub struct GroupByBuilder<T> {
-    state: BuilderState,
+    pub state: BuilderState,
+    pub provider: Option<Arc<dyn QueryExecutorProvider>>,
     _phantom: PhantomData<T>,
 }
 
@@ -121,16 +166,42 @@ impl<T> GroupByBuilder<T> {
     pub fn new(model_name: String, _default_selections: Vec<String>) -> Self {
         Self {
             state: BuilderState::read(model_name, "groupBy", Vec::new()),
+            provider: None,
             _phantom: PhantomData,
         }
+    }
+
+    pub fn with_provider(mut self, provider: Arc<dyn QueryExecutorProvider>) -> Self {
+        self.provider = Some(provider);
+        self
     }
 
     /// Transition this builder to return a different type
     pub fn with_type<U>(self) -> GroupByBuilder<U> {
         GroupByBuilder {
             state: self.state,
+            provider: self.provider,
             _phantom: PhantomData,
         }
+    }
+
+    pub async fn exec(self) -> crate::Result<Vec<T>>
+    where
+        T: FromResponseIr,
+    {
+        let provider = self.provider.clone().ok_or_else(|| {
+            crate::Error::RuntimeError("Builder is not bound to a provider.".to_string())
+        })?;
+        self.exec_with(provider.as_ref()).await
+    }
+
+    pub async fn exec_with<P: QueryExecutorProvider + ?Sized>(self, provider: &P) -> crate::Result<Vec<T>>
+    where
+        T: FromResponseIr,
+    {
+        let operation = self.state.into_operation(false);
+        let item = execute_raw(operation, provider).await?;
+        Vec::<T>::from_ir(item)
     }
 }
 
@@ -153,14 +224,6 @@ impl<T: FromResponseIr> Executable for GroupByBuilder<T> {
     type Output = Vec<T>;
 
     async fn exec<P: QueryExecutorProvider + ?Sized>(self, provider: &P) -> crate::Result<Vec<T>> {
-        let operation = self.state.into_operation(false);
-        let item = execute_raw(operation, provider).await?;
-        Vec::<T>::from_ir(item)
-    }
-}
-
-impl<T: FromResponseIr + Send + Sync> GroupByBuilder<T> {
-    pub async fn exec_inferred<P: QueryExecutorProvider + ?Sized>(self, provider: &P) -> crate::Result<Vec<T>> {
-        self.exec(provider).await
+        self.exec_with(provider).await
     }
 }

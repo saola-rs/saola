@@ -2,10 +2,12 @@ use crate::builder::{BuilderState, Executable, Filterable, FromResponseIr, Selec
 use crate::transaction::QueryExecutorProvider;
 use query_core::{ArgumentValue, Selection};
 use std::marker::PhantomData;
+use std::sync::Arc;
 
 /// Generic Read builder - base for all find operations
 pub struct ReadBuilder<T> {
     pub state: BuilderState,
+    pub provider: Option<Arc<dyn QueryExecutorProvider>>,
     _phantom: PhantomData<T>,
 }
 
@@ -14,8 +16,14 @@ impl<T> ReadBuilder<T> {
     pub fn new(model_name: String, operation: &str, default_selections: Vec<String>) -> Self {
         Self {
             state: BuilderState::read(model_name, operation, default_selections),
+            provider: None,
             _phantom: PhantomData,
         }
+    }
+
+    pub fn with_provider(mut self, provider: Arc<dyn QueryExecutorProvider>) -> Self {
+        self.provider = Some(provider);
+        self
     }
 
     /// Create a findMany operation
@@ -47,8 +55,41 @@ impl<T> ReadBuilder<T> {
     pub fn with_type<U>(self) -> ReadBuilder<U> {
         ReadBuilder {
             state: self.state,
+            provider: self.provider,
             _phantom: PhantomData,
         }
+    }
+
+    pub fn select_as<U: crate::builder::SelectStruct, R>(mut self) -> ReadBuilder<R> {
+        let selections = U::selections();
+        self.state.selection.clear_nested_selections();
+        for sel in selections {
+            self.state.selection.push_nested_selection(sel);
+        }
+        ReadBuilder {
+            state: self.state,
+            provider: self.provider,
+            _phantom: PhantomData,
+        }
+    }
+
+    pub async fn exec(self) -> crate::Result<T>
+    where
+        T: FromResponseIr,
+    {
+        let provider = self.provider.clone().ok_or_else(|| {
+            crate::Error::RuntimeError("Builder is not bound to a provider.".to_string())
+        })?;
+        self.exec_with(provider.as_ref()).await
+    }
+
+    pub async fn exec_with<P: QueryExecutorProvider + ?Sized>(self, provider: &P) -> crate::Result<T>
+    where
+        T: FromResponseIr,
+    {
+        let operation = self.state.into_operation(false);
+        let item = execute_raw(operation, provider).await?;
+        T::from_ir(item)
     }
 }
 
@@ -71,14 +112,6 @@ impl<T: FromResponseIr> Executable for ReadBuilder<T> {
     type Output = T;
 
     async fn exec<P: QueryExecutorProvider + ?Sized>(self, provider: &P) -> crate::Result<T> {
-        let operation = self.state.into_operation(false);
-        let item = execute_raw(operation, provider).await?;
-        T::from_ir(item)
-    }
-}
-
-impl<T: FromResponseIr + Send + Sync> ReadBuilder<T> {
-    pub async fn exec_inferred<P: QueryExecutorProvider + ?Sized>(self, provider: &P) -> crate::Result<T> {
-        self.exec(provider).await
+        self.exec_with(provider).await
     }
 }

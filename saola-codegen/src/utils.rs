@@ -8,15 +8,21 @@ pub fn get_inner_type(ty: &Type) -> String {
     match ty {
         Type::Path(tp) => {
             let segment = tp.path.segments.last().unwrap();
+            let ident_str = segment.ident.to_string();
+            
+            if ident_str == "DateTime" {
+                return ident_str;
+            }
+
             match &segment.arguments {
                 PathArguments::AngleBracketed(args) => {
                     if let Some(GenericArgument::Type(inner_ty)) = args.args.first() {
                         get_inner_type(inner_ty)
                     } else {
-                        segment.ident.to_string()
+                        ident_str
                     }
                 }
-                _ => segment.ident.to_string(),
+                _ => ident_str,
             }
         }
         _ => "String".to_string(),
@@ -29,7 +35,7 @@ pub fn get_filter_type(ty: &Type) -> Option<(&'static str, &'static str)> {
     let type_name = get_inner_type(ty);
 
     match type_name.as_str() {
-        "String" => Some(("StringFilter", "StringFieldOps")),
+        "String" | "Value" => Some(("StringFilter", "StringFieldOps")),
         "i32" | "i64" | "u32" | "u64" => Some(("IntFilter", "IntFieldOps")),
         "bool" => Some(("BoolFilter", "BoolFieldOps")),
         "f32" | "f64" => Some(("FloatFilter", "FloatFieldOps")),

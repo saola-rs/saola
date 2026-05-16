@@ -528,6 +528,18 @@ impl fmt::Display for PrismaValue {
     }
 }
 
+impl From<DateTime<FixedOffset>> for PrismaValue {
+    fn from(dt: DateTime<FixedOffset>) -> Self {
+        PrismaValue::DateTime(dt)
+    }
+}
+
+impl From<DateTime<Utc>> for PrismaValue {
+    fn from(dt: DateTime<Utc>) -> Self {
+        PrismaValue::DateTime(dt.into())
+    }
+}
+
 impl From<&str> for PrismaValue {
     fn from(s: &str) -> Self {
         PrismaValue::from(s.to_string())
