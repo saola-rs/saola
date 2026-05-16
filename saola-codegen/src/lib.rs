@@ -17,15 +17,48 @@ pub struct Generator {
 
 impl Generator {
     pub fn new(schema_path: impl AsRef<Path>) -> anyhow::Result<Self> {
-        let schema_content = fs::read_to_string(&schema_path)?;
-        let source_file = psl::SourceFile::from(schema_content.as_str());
-        let schema = psl::validate(source_file, &psl::parser_database::NoExtensionTypes);
+        let schema_path = schema_path.as_ref();
+        let (schema, schema_content) = if schema_path.is_dir() {
+            let mut files = Vec::new();
+            for entry in fs::read_dir(schema_path)? {
+                let entry = entry?;
+                let path = entry.path();
+                if path.extension().map_or(false, |ext| ext == "prisma") {
+                    let content = fs::read_to_string(&path)?;
+                    let file_name = path.file_name().unwrap().to_string_lossy().to_string();
+                    files.push((file_name, psl::SourceFile::from(content)));
+                }
+            }
+            if files.is_empty() {
+                anyhow::bail!("No .prisma files found in directory: {:?}", schema_path);
+            }
+            let schema = psl::validate_multi_file(&files, &psl::parser_database::NoExtensionTypes);
+            if !schema.diagnostics.errors().is_empty() {
+                anyhow::bail!("Schema validation failed: {:?}", schema.diagnostics.errors());
+            }
+
+            let schema_content = psl::reformat_validated_schema_into_single(schema, 2)
+                .context("Failed to merge multi-file schema")?;
+
+            let source_file = psl::SourceFile::from(schema_content.as_str());
+            let schema = psl::validate(source_file, &psl::parser_database::NoExtensionTypes);
+
+            (schema, schema_content)
+        } else {
+            let schema_content = fs::read_to_string(&schema_path)?;
+            let source_file = psl::SourceFile::from(schema_content.as_str());
+            let schema = psl::validate(source_file, &psl::parser_database::NoExtensionTypes);
+            (schema, schema_content)
+        };
 
         if !schema.diagnostics.errors().is_empty() {
             anyhow::bail!("Schema validation failed: {:?}", schema.diagnostics.errors());
         }
 
-        Ok(Self { schema, schema_content })
+        Ok(Self {
+            schema,
+            schema_content,
+        })
     }
 
     pub fn generate(&self, output_dir: impl AsRef<Path>) -> anyhow::Result<()> {

@@ -5,7 +5,7 @@ use std::path::PathBuf;
 #[derive(Parser)]
 #[command(author, version, about = "Saola ORM CLI for code generation")]
 struct Cli {
-    /// Path to the Prisma schema file
+    /// Path to the Prisma schema file or directory containing schema files
     #[arg(short, long, default_value = "schema.prisma")]
     schema: PathBuf,
 
