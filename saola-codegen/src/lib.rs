@@ -20,15 +20,25 @@ impl Generator {
         let schema_path = schema_path.as_ref();
         let (schema, schema_content) = if schema_path.is_dir() {
             let mut files = Vec::new();
-            for entry in fs::read_dir(schema_path)? {
-                let entry = entry?;
-                let path = entry.path();
-                if path.extension().map_or(false, |ext| ext == "prisma") {
-                    let content = fs::read_to_string(&path)?;
-                    let file_name = path.file_name().unwrap().to_string_lossy().to_string();
-                    files.push((file_name, psl::SourceFile::from(content)));
+            fn collect_prisma_files(
+                root: &Path,
+                dir: &Path,
+                files: &mut Vec<(String, psl::SourceFile)>,
+            ) -> anyhow::Result<()> {
+                for entry in fs::read_dir(dir)? {
+                    let entry = entry?;
+                    let path = entry.path();
+                    if path.is_dir() {
+                        collect_prisma_files(root, &path, files)?;
+                    } else if path.extension().map_or(false, |ext| ext == "prisma") {
+                        let content = fs::read_to_string(&path)?;
+                        let file_name = path.strip_prefix(root).unwrap_or(&path).to_string_lossy().to_string();
+                        files.push((file_name, psl::SourceFile::from(content)));
+                    }
                 }
+                Ok(())
             }
+            collect_prisma_files(schema_path, schema_path, &mut files)?;
             if files.is_empty() {
                 anyhow::bail!("No .prisma files found in directory: {:?}", schema_path);
             }
@@ -37,8 +47,8 @@ impl Generator {
                 anyhow::bail!("Schema validation failed: {:?}", schema.diagnostics.errors());
             }
 
-            let schema_content = psl::reformat_validated_schema_into_single(schema, 2)
-                .context("Failed to merge multi-file schema")?;
+            let schema_content =
+                psl::reformat_validated_schema_into_single(schema, 2).context("Failed to merge multi-file schema")?;
 
             let source_file = psl::SourceFile::from(schema_content.as_str());
             let schema = psl::validate(source_file, &psl::parser_database::NoExtensionTypes);
@@ -55,10 +65,7 @@ impl Generator {
             anyhow::bail!("Schema validation failed: {:?}", schema.diagnostics.errors());
         }
 
-        Ok(Self {
-            schema,
-            schema_content,
-        })
+        Ok(Self { schema, schema_content })
     }
 
     pub fn generate(&self, output_dir: impl AsRef<Path>) -> anyhow::Result<()> {
@@ -100,9 +107,9 @@ impl Generator {
                     psl::parser_database::ScalarFieldType::BuiltInScalar(psl::parser_database::ScalarType::Boolean) => {
                         "bool"
                     }
-                    psl::parser_database::ScalarFieldType::BuiltInScalar(psl::parser_database::ScalarType::DateTime) => {
-                        "::saola_core::chrono::DateTime<::saola_core::chrono::Utc>"
-                    }
+                    psl::parser_database::ScalarFieldType::BuiltInScalar(
+                        psl::parser_database::ScalarType::DateTime,
+                    ) => "::saola_core::chrono::DateTime<::saola_core::chrono::Utc>",
                     psl::parser_database::ScalarFieldType::BuiltInScalar(psl::parser_database::ScalarType::Json) => {
                         "::saola_core::serde_json::Value"
                     }
@@ -527,21 +534,9 @@ impl Generator {
             "{}",
             crate::wrapper_gen::generate_delete_many_wrapper(&model_name, model_metadata)
         )?;
-        write!(
-            f,
-            "{}",
-            crate::wrapper_gen::generate_count_wrapper(&model_name)
-        )?;
-        write!(
-            f,
-            "{}",
-            crate::wrapper_gen::generate_aggregate_wrapper(&model_name)
-        )?;
-        write!(
-            f,
-            "{}",
-            crate::wrapper_gen::generate_group_by_wrapper(&model_name)
-        )?;
+        write!(f, "{}", crate::wrapper_gen::generate_count_wrapper(&model_name))?;
+        write!(f, "{}", crate::wrapper_gen::generate_aggregate_wrapper(&model_name))?;
+        write!(f, "{}", crate::wrapper_gen::generate_group_by_wrapper(&model_name))?;
 
         Ok(())
     }
